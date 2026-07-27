@@ -1,0 +1,8 @@
+# Normaliza los finales de línea: LF en el repositorio, nativos en el working copy.
+* text=auto eol=lf
+
+# Binarios: nunca convertir.
+*.png binary
+*.woff2 binary
+*.xlsx binary
+*.xls binary
