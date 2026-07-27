@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import { normalizeHeaders } from './headers';
 import { FileParseError } from './parse-error';
+import { profileColumns } from '@/features/dataset/lib/infer-columns';
 import type {
   CellValue,
   DataRow,
@@ -157,12 +158,12 @@ function buildDataset({
   bodyRows,
   warnings,
 }: BuildDatasetInput): ParsedDataset {
-  const columns = normalizeHeaders(headerRow);
+  const names = normalizeHeaders(headerRow);
 
   const rows = bodyRows.map((cells) => {
     const row: DataRow = {};
-    for (const [index, column] of columns.entries()) {
-      row[column] = normalizeCell(cells[index]);
+    for (const [index, name] of names.entries()) {
+      row[name] = normalizeCell(cells[index]);
     }
     return row;
   });
@@ -170,17 +171,19 @@ function buildDataset({
   // Celdas más allá de la última cabecera: se pierden al construir la fila.
   const widestRow = bodyRows.reduce((widest, cells) => Math.max(widest, cells.length), 0);
   const allWarnings =
-    widestRow > columns.length
+    widestRow > names.length
       ? [
           ...warnings,
-          `Algunas filas tienen más valores (${widestRow}) que columnas de cabecera (${columns.length}); el exceso se ha descartado.`,
+          `Algunas filas tienen más valores (${widestRow}) que columnas de cabecera (${names.length}); el exceso se ha descartado.`,
         ]
       : warnings;
 
   return {
     fileName,
     fileType,
-    columns,
+    // El perfilado recorre todas las filas, así que se hace aquí —dentro del
+    // worker— y no al pintar el mapeo en el hilo principal.
+    columns: profileColumns(names, rows),
     rows,
     rowCount: rows.length,
     warnings: allWarnings,

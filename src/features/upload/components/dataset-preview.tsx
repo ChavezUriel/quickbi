@@ -65,8 +65,8 @@ export function DatasetPreview({ dataset }: DatasetPreviewProps) {
         {/* Nombres de columna */}
         <div className="flex flex-wrap gap-1.5">
           {dataset.columns.map((column) => (
-            <Badge key={column} variant="outline" className="font-mono text-xs">
-              {column}
+            <Badge key={column.name} variant="outline" className="font-mono text-xs">
+              {column.name}
             </Badge>
           ))}
         </div>
@@ -82,11 +82,11 @@ export function DatasetPreview({ dataset }: DatasetPreviewProps) {
               <TableRow>
                 {dataset.columns.map((column) => (
                   <TableHead
-                    key={column}
+                    key={column.name}
                     scope="col"
                     className="font-mono text-xs whitespace-nowrap"
                   >
-                    {column}
+                    {column.name}
                   </TableHead>
                 ))}
               </TableRow>
@@ -96,8 +96,8 @@ export function DatasetPreview({ dataset }: DatasetPreviewProps) {
                 // eslint-disable-next-line react/no-array-index-key -- la vista previa es de solo lectura y no se reordena
                 <TableRow key={rowIndex}>
                   {dataset.columns.map((column) => (
-                    <TableCell key={column} className="text-sm whitespace-nowrap">
-                      {formatCell(row[column])}
+                    <TableCell key={column.name} className="text-sm whitespace-nowrap">
+                      {formatCell(row[column.name])}
                     </TableCell>
                   ))}
                 </TableRow>

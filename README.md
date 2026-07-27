@@ -43,9 +43,18 @@ src/
 ├── features/
 │   ├── dataset/             Objeto de dominio central + estado compartido
 │   │   ├── types.ts             ParsedDataset, DataRow, CellValue
+│   │   ├── lib/
+│   │   │   ├── column-types.ts     ColumnProfile, ColumnType, formatos
+│   │   │   ├── parse-values.ts     Texto → número / fecha / booleano (puro)
+│   │   │   └── infer-columns.ts    Perfilado de columnas + coerceValue
 │   │   ├── dataset-context.ts
 │   │   ├── dataset-provider.tsx
 │   │   └── use-dataset.ts
+│   ├── mapping/             Confirmación de tipos y configuración del gráfico
+│   │   ├── types.ts             ChartMapping, Aggregation
+│   │   ├── labels.ts            Etiquetas en español
+│   │   ├── use-column-mapping.ts
+│   │   └── components/
 │   └── upload/              Ingesta de ficheros
 │       ├── components/
 │       └── lib/
@@ -84,6 +93,20 @@ muestran junto a la vista previa.
 **SheetJS se carga bajo demanda.** Son ~360 KB que quien solo sube CSV no debería
 pagar; se importa dinámicamente dentro de `parseExcel`.
 
+**El formato de una columna se decide una vez, no celda a celda.** `"1.234"` son
+1234 o 1,234 según de dónde venga el fichero, y `"01/02/2026"` es el 1 de febrero
+o el 2 de enero. Ambos casos se resuelven mirando la columna entera: se prueban
+las dos lecturas y gana la que encaja en más filas (`"15/01"` solo puede ser
+D/M, `"1,5"` solo puede ser coma decimal). El formato detectado se muestra en el
+mapeo, porque una columna leída del revés es un error silencioso si no se ve.
+
+**La inferencia tolera suciedad.** Basta con que el 90 % de los valores no vacíos
+encajen para aceptar un tipo: una celda con «N/D» en una columna de importes no
+debería degradarla a texto y dejarla fuera de los gráficos. Los valores que no
+encajan se cuentan y se muestran («2 no convertibles»), nunca se ocultan. Si el
+usuario corrige un tipo a mano, la columna se vuelve a perfilar para que vea al
+momento cuántos valores no sobrevivirían a su elección.
+
 ## Privacidad
 
 La promesa de que «los datos nunca salen de tu navegador» no se queda en el copy:
@@ -117,5 +140,17 @@ desarrollo vienen del CLI de `shadcn` y no llegan al bundle.
 
 ## Estado
 
-Implementado: ingesta de CSV/Excel y vista previa del dataset.
-Siguiente: mapeo de columnas y visualizaciones (ECharts ya está instalado).
+Implementado:
+
+1. Ingesta de CSV/Excel y vista previa del dataset.
+2. Inferencia de tipos por columna (número, fecha, booleano, texto) con
+   detección de formato y estadísticas de calidad.
+3. Mapeo: confirmación o corrección de los tipos y elección de dimensión,
+   medida y agregación.
+
+Siguiente:
+
+4. Agregación de los datos según el mapeo. `coerceValue` en
+   `infer-columns.ts` es el punto de entrada: convierte cada celda al tipo de
+   su columna y devuelve `null` para lo que no encaje.
+5. Renderizado del gráfico con ECharts (ya instalado, aún sin usar).
