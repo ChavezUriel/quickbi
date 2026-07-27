@@ -1,79 +1,114 @@
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
-import type { CellValue, DataRow, ParsedDataset } from '../types';
+import { normalizeHeaders } from './headers';
+import { FileParseError } from './parse-error';
+import type {
+  CellValue,
+  DataRow,
+  ParsedDataset,
+  SupportedFileType,
+} from '@/features/dataset/types';
 
-const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB, límite defensivo en memoria
+/** Límite defensivo: todo el dataset vive en memoria, no hay servidor donde delegar. */
+export const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
 
-/** Error de dominio para fallos de parsing (permite distinguirlos de errores inesperados). */
-export class FileParseError extends Error {}
+/**
+ * Deriva el formato de la extensión. Se exporta para poder validar el fichero
+ * antes de pagar el coste de leerlo.
+ */
+export function detectFileType(fileName: string): SupportedFileType {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+
+  switch (extension) {
+    case 'csv':
+      return 'csv';
+    case 'xlsx':
+      return 'xlsx';
+    case 'xls':
+      return 'xls';
+    default:
+      throw new FileParseError(
+        `Formato ".${extension ?? 'desconocido'}" no soportado. Usa .csv, .xlsx o .xls.`,
+      );
+  }
+}
 
 /**
  * Punto de entrada único: detecta el formato por extensión y delega en el parser.
  * Garantiza que SIEMPRE devolvemos la misma estructura `ParsedDataset`,
  * independientemente del formato de origen.
+ *
+ * Pensado para ejecutarse dentro de un Web Worker (ver `parse-file.worker.ts`):
+ * ambos parsers son intensivos en CPU y bloquearían la UI en el hilo principal.
  */
 export async function parseFile(file: File): Promise<ParsedDataset> {
+  if (file.size === 0) {
+    throw new FileParseError('El archivo está vacío.');
+  }
+
   if (file.size > MAX_FILE_SIZE_BYTES) {
     throw new FileParseError(
       `El archivo supera el máximo de 100 MB (${formatBytes(file.size)}).`,
     );
   }
 
-  const extension = file.name.split('.').pop()?.toLowerCase();
+  const fileType = detectFileType(file.name);
 
-  switch (extension) {
-    case 'csv':
-      return parseCsv(file);
-    case 'xlsx':
-    case 'xls':
-      return parseExcel(file);
-    default:
-      throw new FileParseError(
-        `Formato ".${extension ?? 'desconocido'}" no soportado. Usa .csv o .xlsx.`,
-      );
-  }
+  return fileType === 'csv' ? parseCsv(file, fileType) : parseExcel(file, fileType);
 }
 
-function parseCsv(file: File): Promise<ParsedDataset> {
-  return new Promise((resolve, reject) => {
-    const dedupe = createHeaderDeduper();
+async function parseCsv(file: File, fileType: SupportedFileType): Promise<ParsedDataset> {
+  const { data, errors } = Papa.parse<string[]>(await file.text(), {
+    // Leemos como array-de-arrays para que la normalización de cabeceras sea
+    // idéntica a la ruta de Excel, en lugar de delegarla en Papa.
+    header: false,
+    // Deliberadamente desactivado: la inferencia automática destruye datos
+    // (`"007"` → `7`, teléfonos, IDs por encima de MAX_SAFE_INTEGER).
+    // Los tipos se deciden en el paso de mapeo, donde el usuario los ve.
+    dynamicTyping: false,
+    skipEmptyLines: 'greedy',
+  });
 
-    Papa.parse<DataRow>(file, {
-      header: true,
-      dynamicTyping: true, // infiere number/boolean automáticamente
-      skipEmptyLines: 'greedy',
-      transformHeader: (header) => dedupe(header),
-      complete: ({ data, meta, errors }) => {
-        if (data.length === 0 && errors.length > 0) {
-          reject(new FileParseError(`CSV inválido: ${errors[0].message}`));
-          return;
-        }
-        resolve({
-          fileName: file.name,
-          fileType: 'csv',
-          columns: meta.fields ?? [],
-          rows: data,
-          rowCount: data.length,
-        });
-      },
-      error: (error) =>
-        reject(new FileParseError(`No se pudo leer el CSV: ${error.message}`)),
-    });
+  const blocking = errors.find(
+    (error) => error.type === 'Delimiter' || error.type === 'Quotes',
+  );
+
+  if (data.length === 0) {
+    throw new FileParseError(
+      blocking ? `CSV inválido: ${blocking.message}` : 'El archivo CSV no tiene filas.',
+    );
+  }
+
+  const [headerRow = [], ...bodyRows] = data;
+
+  return buildDataset({
+    fileName: file.name,
+    fileType,
+    headerRow,
+    bodyRows,
+    warnings: blocking ? [`Se han encontrado filas malformadas: ${blocking.message}`] : [],
   });
 }
 
-async function parseExcel(file: File): Promise<ParsedDataset> {
-  const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
+async function parseExcel(file: File, fileType: SupportedFileType): Promise<ParsedDataset> {
+  // Import diferido: SheetJS pesa ~430 KB minificado y los usuarios que solo
+  // suben CSV no deberían descargarlo.
+  const XLSX = await import('xlsx');
 
-  const sheetName = workbook.SheetNames[0];
+  const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+
+  const [sheetName, ...ignoredSheets] = workbook.SheetNames;
   if (!sheetName) {
     throw new FileParseError('El libro de Excel no contiene ninguna hoja.');
   }
 
-  // Parseamos como array-de-arrays (header: 1) para tener control total
-  // sobre el orden de columnas y los nombres de cabecera.
-  const aoa = XLSX.utils.sheet_to_json<CellValue[]>(workbook.Sheets[sheetName], {
+  const sheet = workbook.Sheets[sheetName];
+  if (!sheet) {
+    throw new FileParseError(`No se pudo leer la hoja "${sheetName}".`);
+  }
+
+  // `header: 1` nos da array-de-arrays: control total sobre el orden de las
+  // columnas y sobre los nombres de cabecera.
+  const aoa = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
     header: 1,
     defval: null,
     raw: true,
@@ -84,37 +119,86 @@ async function parseExcel(file: File): Promise<ParsedDataset> {
     throw new FileParseError(`La hoja "${sheetName}" está vacía.`);
   }
 
-  const dedupe = createHeaderDeduper();
-  const columns = (aoa[0] ?? []).map((cell, i) =>
-    dedupe(String(cell ?? '').trim() || `columna_${i + 1}`),
-  );
+  const [headerRow = [], ...bodyRows] = aoa;
 
-  const rows: DataRow[] = aoa
-    .slice(1)
-    .map((row) => Object.fromEntries(columns.map((col, i) => [col, row[i] ?? null])));
+  return buildDataset({
+    fileName: file.name,
+    fileType,
+    headerRow,
+    bodyRows,
+    // Un libro multi-hoja es lo normal: decirlo evita que el usuario crea que
+    // ha importado todo el fichero.
+    warnings:
+      ignoredSheets.length > 0
+        ? [
+            `Se ha importado la hoja "${sheetName}". Se han ignorado ${ignoredSheets.length} hoja(s): ${ignoredSheets.join(', ')}.`,
+          ]
+        : [],
+  });
+}
+
+interface BuildDatasetInput {
+  fileName: string;
+  fileType: SupportedFileType;
+  headerRow: readonly unknown[];
+  bodyRows: readonly (readonly unknown[])[];
+  warnings: string[];
+}
+
+/**
+ * Tronco común de ambos formatos: cabecera + filas crudas → `ParsedDataset`.
+ * Mantenerlo compartido garantiza que un CSV y un XLSX con el mismo contenido
+ * produzcan exactamente la misma estructura.
+ */
+function buildDataset({
+  fileName,
+  fileType,
+  headerRow,
+  bodyRows,
+  warnings,
+}: BuildDatasetInput): ParsedDataset {
+  const columns = normalizeHeaders(headerRow);
+
+  const rows = bodyRows.map((cells) => {
+    const row: DataRow = {};
+    for (const [index, column] of columns.entries()) {
+      row[column] = normalizeCell(cells[index]);
+    }
+    return row;
+  });
+
+  // Celdas más allá de la última cabecera: se pierden al construir la fila.
+  const widestRow = bodyRows.reduce((widest, cells) => Math.max(widest, cells.length), 0);
+  const allWarnings =
+    widestRow > columns.length
+      ? [
+          ...warnings,
+          `Algunas filas tienen más valores (${widestRow}) que columnas de cabecera (${columns.length}); el exceso se ha descartado.`,
+        ]
+      : warnings;
 
   return {
-    fileName: file.name,
-    fileType: 'xlsx',
+    fileName,
+    fileType,
     columns,
     rows,
     rowCount: rows.length,
+    warnings: allWarnings,
   };
 }
 
 /**
- * Evita colisiones de cabeceras duplicadas, que de otro modo sobrescribirían
- * datos silenciosamente al construir los objetos fila.
- * Ej.: ["total", "total"] → ["total", "total_2"]
+ * Reduce cualquier valor crudo al conjunto `CellValue`, tratando como nulo
+ * lo que no representa un dato (cadenas vacías, NaN, fechas inválidas).
  */
-function createHeaderDeduper(): (header: string) => string {
-  const counts = new Map<string, number>();
-  return (header) => {
-    const base = header || 'columna';
-    const seen = counts.get(base) ?? 0;
-    counts.set(base, seen + 1);
-    return seen === 0 ? base : `${base}_${seen + 1}`;
-  };
+function normalizeCell(value: unknown): CellValue {
+  if (value === null || value === undefined) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'boolean') return value;
+
+  const text = String(value);
+  return text.trim() === '' ? null : text;
 }
 
 function formatBytes(bytes: number): string {

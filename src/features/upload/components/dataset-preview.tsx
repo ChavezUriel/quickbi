@@ -1,3 +1,5 @@
+import { TriangleAlert } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -9,12 +11,13 @@ import {
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import type { CellValue, ParsedDataset } from '../types';
+import type { CellValue, ParsedDataset } from '@/features/dataset/types';
 
 const PREVIEW_ROW_COUNT = 5;
 
@@ -35,15 +38,30 @@ export function DatasetPreview({ dataset }: DatasetPreviewProps) {
         <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
           <span className="break-all">{dataset.fileName}</span>
           <Badge variant="secondary">{dataset.fileType.toUpperCase()}</Badge>
-          <Badge variant="outline">{dataset.rowCount.toLocaleString()} filas</Badge>
+          <Badge variant="outline">{dataset.rowCount.toLocaleString('es-ES')} filas</Badge>
         </CardTitle>
         <CardDescription>
           {dataset.columns.length} columnas detectadas — vista previa de las primeras{' '}
-          {PREVIEW_ROW_COUNT} filas
+          {Math.min(PREVIEW_ROW_COUNT, dataset.rowCount)} filas
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Avisos no fatales: hojas ignoradas, filas truncadas… */}
+        {dataset.warnings.length > 0 && (
+          <Alert role="status">
+            <TriangleAlert className="size-4" />
+            <AlertTitle>Revisa la importación</AlertTitle>
+            <AlertDescription>
+              <ul className="list-inside list-disc space-y-1">
+                {dataset.warnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Nombres de columna */}
         <div className="flex flex-wrap gap-1.5">
           {dataset.columns.map((column) => (
@@ -56,10 +74,18 @@ export function DatasetPreview({ dataset }: DatasetPreviewProps) {
         {/* Tabla responsive con scroll horizontal */}
         <div className="overflow-x-auto rounded-md border">
           <Table>
+            <TableCaption className="sr-only">
+              Vista previa de {dataset.fileName}: primeras{' '}
+              {Math.min(PREVIEW_ROW_COUNT, dataset.rowCount)} de {dataset.rowCount} filas.
+            </TableCaption>
             <TableHeader>
               <TableRow>
                 {dataset.columns.map((column) => (
-                  <TableHead key={column} className="font-mono text-xs whitespace-nowrap">
+                  <TableHead
+                    key={column}
+                    scope="col"
+                    className="font-mono text-xs whitespace-nowrap"
+                  >
                     {column}
                   </TableHead>
                 ))}
@@ -67,6 +93,7 @@ export function DatasetPreview({ dataset }: DatasetPreviewProps) {
             </TableHeader>
             <TableBody>
               {previewRows.map((row, rowIndex) => (
+                // eslint-disable-next-line react/no-array-index-key -- la vista previa es de solo lectura y no se reordena
                 <TableRow key={rowIndex}>
                   {dataset.columns.map((column) => (
                     <TableCell key={column} className="text-sm whitespace-nowrap">
@@ -83,8 +110,10 @@ export function DatasetPreview({ dataset }: DatasetPreviewProps) {
   );
 }
 
-function formatCell(value: CellValue): string {
+function formatCell(value: CellValue | undefined): string {
   if (value === null || value === undefined) return '—';
   if (value instanceof Date) return value.toLocaleDateString('es-ES');
-  return String(value);
+  if (typeof value === 'number') return value.toLocaleString('es-ES');
+  if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+  return value;
 }

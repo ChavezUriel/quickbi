@@ -3,8 +3,9 @@ import { Loader2, Lock, UploadCloud } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { FileParseError, parseFile } from '../lib/parse-file';
-import type { ParsedDataset } from '../types';
+import { FileParseError } from '../lib/parse-error';
+import { parseFileWithWorker } from '../lib/parse-client';
+import type { ParsedDataset } from '@/features/dataset/types';
 
 const ACCEPTED_EXTENSIONS = ['.csv', '.xlsx', '.xls'];
 
@@ -15,6 +16,9 @@ interface FileUploaderProps {
 
 export function FileUploader({ onDatasetParsed }: FileUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  // `dragleave` se dispara también al cruzar elementos hijos. Un booleano
+  // simple haría parpadear el resaltado; contamos entradas y salidas.
+  const dragDepth = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,8 +29,7 @@ export function FileUploader({ onDatasetParsed }: FileUploaderProps) {
       setError(null);
       setIsParsing(true);
       try {
-        const dataset = await parseFile(file);
-        onDatasetParsed(dataset);
+        onDatasetParsed(await parseFileWithWorker(file));
       } catch (err) {
         setError(
           err instanceof FileParseError
@@ -40,13 +43,24 @@ export function FileUploader({ onDatasetParsed }: FileUploaderProps) {
     [onDatasetParsed],
   );
 
+  const openFilePicker = useCallback(() => {
+    if (isParsing) return; // evita encolar un segundo parseo sobre el primero
+    inputRef.current?.click();
+  }, [isParsing]);
+
+  const resetDragState = useCallback(() => {
+    dragDepth.current = 0;
+    setIsDragging(false);
+  }, []);
+
   const handleDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
-      setIsDragging(false);
+      resetDragState();
+      if (isParsing) return;
       void handleFile(event.dataTransfer.files[0]);
     },
-    [handleFile],
+    [handleFile, isParsing, resetDragState],
   );
 
   return (
@@ -55,18 +69,29 @@ export function FileUploader({ onDatasetParsed }: FileUploaderProps) {
         role="button"
         tabIndex={0}
         aria-label="Zona de carga de archivos"
-        onClick={() => inputRef.current?.click()}
+        aria-busy={isParsing}
+        aria-disabled={isParsing}
+        onClick={openFilePicker}
         onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') inputRef.current?.click();
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault(); // sin esto, la barra espaciadora hace scroll
+            openFilePicker();
+          }
         }}
-        onDragOver={(event) => {
+        onDragEnter={(event) => {
           event.preventDefault();
+          dragDepth.current += 1;
           setIsDragging(true);
         }}
-        onDragLeave={() => setIsDragging(false)}
+        onDragOver={(event) => event.preventDefault()} // necesario para permitir el drop
+        onDragLeave={() => {
+          dragDepth.current -= 1;
+          if (dragDepth.current <= 0) resetDragState();
+        }}
         onDrop={handleDrop}
         className={cn(
-          'cursor-pointer border-2 border-dashed transition-colors',
+          'border-2 border-dashed transition-colors',
+          isParsing ? 'cursor-progress' : 'cursor-pointer',
           isDragging
             ? 'border-primary bg-primary/5'
             : 'border-muted-foreground/25 hover:border-primary/50',
@@ -105,6 +130,7 @@ export function FileUploader({ onDatasetParsed }: FileUploaderProps) {
         type="file"
         accept={ACCEPTED_EXTENSIONS.join(',')}
         className="hidden"
+        tabIndex={-1}
         onChange={(event) => {
           void handleFile(event.target.files?.[0]);
           event.target.value = ''; // permite volver a cargar el mismo archivo
@@ -112,7 +138,8 @@ export function FileUploader({ onDatasetParsed }: FileUploaderProps) {
       />
 
       {error && (
-        <Alert variant="destructive">
+        // `role="alert"` para que un lector de pantalla lo anuncie al aparecer.
+        <Alert variant="destructive" role="alert">
           <AlertTitle>No se pudo procesar el archivo</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
