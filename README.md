@@ -55,6 +55,19 @@ src/
 │   │   ├── labels.ts            Etiquetas en español
 │   │   ├── use-column-mapping.ts
 │   │   └── components/
+│   ├── chart/               Agregación y visualización
+│   │   ├── types.ts             ChartConfig, ChartType, DateGranularity
+│   │   ├── labels.ts            Etiquetas en español
+│   │   ├── use-chart-config.ts  Ajustes derivados de la dimensión
+│   │   ├── lib/
+│   │   │   ├── aggregate.ts        Filas → categorías agregadas (puro)
+│   │   │   ├── chart-option.ts     Resultado → opción de ECharts (puro)
+│   │   │   ├── export-csv.ts       Resultado → CSV es-ES para Excel (puro)
+│   │   │   └── download.ts         Descargas locales (blob/data URL)
+│   │   └── components/
+│   │       ├── echart.tsx          Envoltorio React perezoso sobre echarts/core
+│   │       ├── chart-view.tsx      Tarjeta del gráfico: controles y exportación
+│   │       └── chart-table.tsx     Los mismos datos en tabla (accesibilidad)
 │   └── upload/              Ingesta de ficheros
 │       ├── components/
 │       └── lib/
@@ -92,6 +105,31 @@ muestran junto a la vista previa.
 
 **SheetJS se carga bajo demanda.** Son ~360 KB que quien solo sube CSV no debería
 pagar; se importa dinámicamente dentro de `parseExcel`.
+
+**ECharts también se carga bajo demanda y se usa sin wrapper.** Es ~1 MB que no se
+descarga hasta que hay algo que pintar. `echart.tsx` importa `echarts/core` con
+solo los gráficos (barras, líneas, sectores) y componentes necesarios, en lugar
+de `echarts-for-react`: ese wrapper arrastra el paquete completo de golpe y su
+versión 3 es anterior a ECharts 6, que es la que usa este proyecto. El tema
+oscuro se recrea con la instancia —`setOption` no basta— observando la clase
+`dark` del elemento raíz, y el fondo del gráfico es transparente para que se vea
+la tarjeta y no el lienzo por defecto del tema.
+
+**«Otros» se calcula sobre los acumuladores, no sobre los valores.** Al plegar
+las categorías por debajo del top N, la media de «Otros» es la media ponderada
+de sus filas (no la media de las medias) y el mínimo/máximo son los de sus
+categorías. «Otros» se ordena siempre al final. En dimensiones de fecha no hay
+top N: una serie temporal recortada por valor deja de contar su historia; ahí
+el control es la granularidad (día, mes, año).
+
+**Las filas excluidas del gráfico se cuentan.** Una fila cuya dimensión o medida
+no se convierte al tipo elegido no aporta a ninguna categoría; el total se
+muestra bajo el gráfico («2 de 17 filas no se han representado»), como ya hace
+el mapeo con «N no convertibles».
+
+**El CSV exportado habla español de Excel.** Separador `;` (la coma es el
+decimal), números en formato es-ES y BOM de UTF-8 para que Excel lo abra sin el
+asistente de importación.
 
 **El formato de una columna se decide una vez, no celda a celda.** `"1.234"` son
 1234 o 1,234 según de dónde venga el fichero, y `"01/02/2026"` es el 1 de febrero
@@ -147,10 +185,11 @@ Implementado:
    detección de formato y estadísticas de calidad.
 3. Mapeo: confirmación o corrección de los tipos y elección de dimensión,
    medida y agregación.
+4. Agregación de los datos según el mapeo (`aggregate.ts`): suma, media,
+   recuento, mínimo y máximo, con granularidad de fechas, ordenación y
+   plegado top N en «Otros».
+5. Renderizado con ECharts (barras, líneas, sectores), tema claro/oscuro,
+   tabla de datos agregados y exportación a PNG y CSV.
 
-Siguiente:
-
-4. Agregación de los datos según el mapeo. `coerceValue` en
-   `infer-columns.ts` es el punto de entrada: convierte cada celda al tipo de
-   su columna y devuelve `null` para lo que no encaje.
-5. Renderizado del gráfico con ECharts (ya instalado, aún sin usar).
+Posibles siguientes pasos: varias medidas a la vez, filtros sobre las filas,
+y modo offline instalable (PWA).
