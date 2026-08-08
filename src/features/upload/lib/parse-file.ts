@@ -179,6 +179,8 @@ function buildDataset({
       : warnings;
 
   return {
+    // Identidad de esta carga: disponible tanto en el worker como en Node.
+    id: crypto.randomUUID(),
     fileName,
     fileType,
     // El perfilado recorre todas las filas, así que se hace aquí —dentro del

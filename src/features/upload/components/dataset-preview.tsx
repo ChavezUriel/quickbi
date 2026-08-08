@@ -23,21 +23,29 @@ const PREVIEW_ROW_COUNT = 5;
 
 interface DatasetPreviewProps {
   dataset: ParsedDataset;
+  sourceFileCount?: number;
 }
 
 /**
  * Vista previa del dataset: nombre de columnas + primeras 5 filas.
  * Es la última validación visual del usuario antes de entrar al mapeo de columnas.
  */
-export function DatasetPreview({ dataset }: DatasetPreviewProps) {
+export function DatasetPreview({ dataset, sourceFileCount }: DatasetPreviewProps) {
   const previewRows = dataset.rows.slice(0, PREVIEW_ROW_COUNT);
+  const showMultipleFilesTitle = sourceFileCount && sourceFileCount > 1;
 
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
-          <span className="break-all">{dataset.fileName}</span>
-          <Badge variant="secondary">{dataset.fileType.toUpperCase()}</Badge>
+          <span className="break-all">
+            {showMultipleFilesTitle
+              ? `${sourceFileCount} archivos combinados`
+              : dataset.fileName}
+          </span>
+          {!showMultipleFilesTitle && (
+            <Badge variant="secondary">{dataset.fileType.toUpperCase()}</Badge>
+          )}
           <Badge variant="outline">{dataset.rowCount.toLocaleString('es-ES')} filas</Badge>
         </CardTitle>
         <CardDescription>
