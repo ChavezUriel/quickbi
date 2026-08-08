@@ -1,4 +1,5 @@
-import { TriangleAlert } from 'lucide-react';
+import { useMemo } from 'react';
+import { Info, TriangleAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Card,
@@ -24,42 +25,28 @@ import {
 } from '@/components/ui/table';
 import type { ColumnProfile, ColumnType } from '@/features/dataset/lib/column-types';
 import type { ParsedDataset } from '@/features/dataset/types';
-import {
-  AGGREGATION_LABEL,
-  AGGREGATION_PHRASE,
-  AGGREGATIONS,
-  SELECTABLE_TYPES,
-  TYPE_LABEL,
-  describeFormat,
-} from '../labels';
-import { isMappingComplete, needsMeasure, type Aggregation } from '../types';
-import { useColumnMapping } from '../use-column-mapping';
-
-/** Por encima de esto, un gráfico de barras deja de leerse. */
-const MAX_READABLE_CATEGORIES = 50;
+import { SELECTABLE_TYPES, TYPE_LABEL, describeFormat } from '../labels';
+import type { ColumnMappingState } from '../use-column-mapping';
+import { CastFailureDetail } from './cast-failure-detail';
+import { generateCastReport } from '../lib/cast-report';
 
 interface ColumnMapperProps {
   dataset: ParsedDataset;
+  /**
+   * Estado del mapeo, creado por el padre con `useColumnMapping`: el gráfico
+   * necesita el mismo estado, así que no puede vivir dentro de este componente.
+   */
+  state: ColumnMappingState;
 }
 
 /**
  * Paso intermedio entre la vista previa y el gráfico: el usuario confirma los
- * tipos inferidos y elige qué se mide y cómo se agrupa.
+ * tipos inferidos y gestiona posibles errores de conversión.
  */
-export function ColumnMapper({ dataset }: ColumnMapperProps) {
-  const {
-    columns,
-    dimensions,
-    measures,
-    mapping,
-    setColumnType,
-    setDimension,
-    setMeasure,
-    setAggregation,
-  } = useColumnMapping(dataset);
+export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
+  const { columns, preserveInvalid, effectiveRowCount, setColumnType, setPreserveInvalid } = state;
 
-  const dimension = columns.find((column) => column.name === mapping.dimension);
-  const showMeasure = needsMeasure(mapping.aggregation);
+  const isFiltered = effectiveRowCount < dataset.rowCount;
 
   return (
     <div className="space-y-4">
@@ -72,7 +59,26 @@ export function ColumnMapper({ dataset }: ColumnMapperProps) {
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="space-y-4">
+          {isFiltered ? (
+            <Alert variant="destructive" role="status">
+              <TriangleAlert className="size-4" />
+              <AlertTitle>Filas excluidas por errores de conversión</AlertTitle>
+              <AlertDescription>
+                {effectiveRowCount.toLocaleString('es-ES')} de{' '}
+                {dataset.rowCount.toLocaleString('es-ES')} filas se incluirán en el análisis.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert role="status">
+              <Info className="size-4" />
+              <AlertDescription>
+                {effectiveRowCount.toLocaleString('es-ES')} de{' '}
+                {dataset.rowCount.toLocaleString('es-ES')} filas se incluirán en el análisis.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
@@ -85,184 +91,97 @@ export function ColumnMapper({ dataset }: ColumnMapperProps) {
               </TableHeader>
               <TableBody>
                 {columns.map((column) => (
-                  <TableRow key={column.name}>
-                    <TableCell className="font-mono text-xs whitespace-nowrap">
-                      {column.name}
-                    </TableCell>
-
-                    <TableCell>
-                      <Select
-                        value={column.type}
-                        // Base UI admite deseleccionar; aquí siempre hay un tipo.
-                        onValueChange={(value: ColumnType | null) => {
-                          if (value !== null) setColumnType(column.name, value);
-                        }}
-                        items={SELECTABLE_TYPES.map((type) => ({
-                          value: type,
-                          label: TYPE_LABEL[type],
-                        }))}
-                      >
-                        <SelectTrigger
-                          size="sm"
-                          aria-label={`Tipo de la columna ${column.name}`}
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SELECTABLE_TYPES.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {TYPE_LABEL[type]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-
-                    <TableCell className="text-xs whitespace-nowrap">
-                      <ColumnStats column={column} />
-                    </TableCell>
-
-                    <TableCell className="max-w-xs truncate font-mono text-xs text-muted-foreground">
-                      {column.samples.join(' · ') || '—'}
-                    </TableCell>
-                  </TableRow>
+                  <ColumnRow
+                    key={column.name}
+                    column={column}
+                    dataset={dataset}
+                    preserveInvalid={!!preserveInvalid[column.name]}
+                    setColumnType={setColumnType}
+                    setPreserveInvalid={setPreserveInvalid}
+                  />
                 ))}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Configuración del gráfico</CardTitle>
-          <CardDescription>
-            Elige qué se agrupa (dimensión) y qué se agrega (medida).
-          </CardDescription>
-        </CardHeader>
+function ColumnRow({
+  column,
+  dataset,
+  preserveInvalid,
+  setColumnType,
+  setPreserveInvalid,
+}: {
+  column: ColumnProfile;
+  dataset: ParsedDataset;
+  preserveInvalid: boolean;
+  setColumnType: (name: string, type: ColumnType) => void;
+  setPreserveInvalid: (columnName: string, preserve: boolean) => void;
+}) {
+  const failures = useMemo(() => {
+    if (column.invalidCount === 0) return [];
+    return generateCastReport(dataset, column.name, column.type, column.format);
+  }, [dataset, column.name, column.type, column.format, column.invalidCount]);
 
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-end gap-4">
-            <Field label="Dimensión" hint="Agrupa las filas">
-              <ColumnSelect
-                value={mapping.dimension}
-                columns={dimensions}
-                onChange={setDimension}
-                ariaLabel="Columna de dimensión"
-                emptyLabel="Sin columnas agrupables"
+  return (
+    <TableRow>
+      <TableCell className="font-mono text-xs whitespace-nowrap align-top pt-3">
+        {column.name}
+      </TableCell>
+
+      <TableCell className="align-top pt-3">
+        <Select
+          value={column.type}
+          onValueChange={(value: ColumnType | null) => {
+            if (value !== null) setColumnType(column.name, value);
+          }}
+          items={SELECTABLE_TYPES.map((type) => ({
+            value: type,
+            label: TYPE_LABEL[type],
+          }))}
+        >
+          <SelectTrigger
+            size="sm"
+            aria-label={`Tipo de la columna ${column.name}`}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SELECTABLE_TYPES.map((type) => (
+              <SelectItem key={type} value={type}>
+                {TYPE_LABEL[type]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </TableCell>
+
+      <TableCell className="text-xs align-top pt-3">
+        <ColumnStats column={column} />
+        {column.invalidCount > 0 && (
+          <div className="mt-2 space-y-1.5">
+            <CastFailureDetail failures={failures} columnName={column.name} />
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={preserveInvalid}
+                onChange={(e) => setPreserveInvalid(column.name, e.target.checked)}
+                className="size-3.5 rounded border-input text-primary focus:ring-1 focus:ring-ring"
               />
-            </Field>
-
-            <Field label="Agregación" hint="Cómo se combinan los valores">
-              <Select
-                value={mapping.aggregation}
-                onValueChange={(value: Aggregation | null) => {
-                  if (value !== null) setAggregation(value);
-                }}
-                items={AGGREGATIONS.map((aggregation) => ({
-                  value: aggregation,
-                  label: AGGREGATION_LABEL[aggregation],
-                }))}
-              >
-                <SelectTrigger aria-label="Agregación">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {AGGREGATIONS.map((aggregation) => (
-                    <SelectItem key={aggregation} value={aggregation}>
-                      {AGGREGATION_LABEL[aggregation]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            {showMeasure && (
-              <Field label="Medida" hint="Columna numérica a agregar">
-                <ColumnSelect
-                  value={mapping.measure}
-                  columns={measures}
-                  onChange={setMeasure}
-                  ariaLabel="Columna de medida"
-                  emptyLabel="Sin columnas numéricas"
-                />
-              </Field>
-            )}
+              <span>Preservar valores no convertibles</span>
+            </label>
           </div>
+        )}
+      </TableCell>
 
-          <MappingSummary
-            dataset={dataset}
-            dimension={dimension}
-            measureName={mapping.measure}
-            aggregation={mapping.aggregation}
-            complete={isMappingComplete(mapping)}
-            hasDimensions={dimensions.length > 0}
-            hasMeasures={measures.length > 0}
-          />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="space-y-0.5">
-        <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function ColumnSelect({
-  value,
-  columns,
-  onChange,
-  ariaLabel,
-  emptyLabel,
-}: {
-  value: string | null;
-  columns: readonly ColumnProfile[];
-  onChange: (name: string) => void;
-  ariaLabel: string;
-  emptyLabel: string;
-}) {
-  if (columns.length === 0) {
-    return (
-      <p className="flex h-8 items-center text-sm text-muted-foreground">{emptyLabel}</p>
-    );
-  }
-
-  return (
-    <Select
-      value={value}
-      onValueChange={(next: string | null) => {
-        if (next !== null) onChange(next);
-      }}
-      items={columns.map((column) => ({ value: column.name, label: column.name }))}
-    >
-      <SelectTrigger aria-label={ariaLabel}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {columns.map((column) => (
-          <SelectItem key={column.name} value={column.name}>
-            {column.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      <TableCell className="max-w-xs truncate font-mono text-xs text-muted-foreground align-top pt-3">
+        {column.samples.join(' · ') || '—'}
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -276,81 +195,7 @@ function ColumnStats({ column }: { column: ColumnProfile }) {
         {column.distinctCountExact ? '' : '+'} distintos
         {column.nullCount > 0 && ` · ${column.nullCount.toLocaleString('es-ES')} vacíos`}
       </p>
-      {column.invalidCount > 0 && (
-        <p className="text-destructive">
-          {column.invalidCount.toLocaleString('es-ES')} no convertibles
-        </p>
-      )}
       {format && <p className="text-muted-foreground">{format}</p>}
-    </div>
-  );
-}
-
-function MappingSummary({
-  dataset,
-  dimension,
-  measureName,
-  aggregation,
-  complete,
-  hasDimensions,
-  hasMeasures,
-}: {
-  dataset: ParsedDataset;
-  dimension: ColumnProfile | undefined;
-  measureName: string | null;
-  aggregation: Aggregation;
-  complete: boolean;
-  hasDimensions: boolean;
-  hasMeasures: boolean;
-}) {
-  if (!complete) {
-    return (
-      <Alert variant="destructive" role="status">
-        <TriangleAlert className="size-4" />
-        <AlertTitle>Todavía no se puede representar</AlertTitle>
-        <AlertDescription>
-          {!hasDimensions
-            ? 'Ninguna columna sirve para agrupar. Corrige arriba el tipo de alguna columna.'
-            : !hasMeasures
-              ? 'Ninguna columna es numérica. Corrige el tipo de la columna que quieras medir, o usa la agregación «Recuento».'
-              : 'Completa la selección para continuar.'}
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  const categories = dimension?.distinctCount ?? 0;
-  const tooManyCategories = categories > MAX_READABLE_CATEGORIES;
-
-  return (
-    <div className="space-y-2">
-      <div className="rounded-md border bg-muted/40 p-3 text-sm">
-        Se representará{' '}
-        <strong>
-          {AGGREGATION_PHRASE[aggregation]}
-          {measureName !== null && ' '}
-          {measureName !== null && <span className="font-mono">{measureName}</span>}
-        </strong>{' '}
-        por <span className="font-mono font-medium">{dimension?.name}</span>, sobre{' '}
-        {dataset.rowCount.toLocaleString('es-ES')} filas agrupadas en{' '}
-        {categories.toLocaleString('es-ES')}
-        {dimension?.distinctCountExact === false ? '+' : ''} categorías.
-      </div>
-
-      {tooManyCategories && (
-        <Alert role="status">
-          <TriangleAlert className="size-4" />
-          <AlertTitle>Demasiadas categorías</AlertTitle>
-          <AlertDescription>
-            {categories.toLocaleString('es-ES')} valores distintos son difíciles de leer
-            en un gráfico. Considera agrupar por una columna de menor cardinalidad.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <p className="text-xs text-muted-foreground">
-        La visualización se añadirá en el siguiente paso.
-      </p>
     </div>
   );
 }

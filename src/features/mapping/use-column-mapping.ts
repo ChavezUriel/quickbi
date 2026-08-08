@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { profileColumn } from '@/features/dataset/lib/infer-columns';
+import { coerceValue, profileColumn } from '@/features/dataset/lib/infer-columns';
 import type { ColumnProfile, ColumnType } from '@/features/dataset/lib/column-types';
 import type { ParsedDataset } from '@/features/dataset/types';
 import { needsMeasure, type Aggregation, type ChartMapping } from './types';
@@ -10,14 +10,18 @@ export interface ColumnMappingState {
   dimensions: ColumnProfile[];
   measures: ColumnProfile[];
   mapping: ChartMapping;
+  preserveInvalid: Record<string, boolean>;
+  effectiveRowCount: number;
   setColumnType: (name: string, type: ColumnType) => void;
   setDimension: (name: string) => void;
   setMeasure: (name: string) => void;
   setAggregation: (aggregation: Aggregation) => void;
+  setPreserveInvalid: (columnName: string, preserve: boolean) => void;
 }
 
 export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
   const [overrides, setOverrides] = useState<Record<string, ColumnType>>({});
+  const [preserveInvalid, setPreserveInvalidState] = useState<Record<string, boolean>>({});
   const [selection, setSelection] = useState<ChartMapping>({
     dimension: null,
     measure: null,
@@ -66,6 +70,10 @@ export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
     setOverrides((current) => ({ ...current, [name]: type }));
   }, []);
 
+  const setPreserveInvalid = useCallback((columnName: string, preserve: boolean) => {
+    setPreserveInvalidState((current) => ({ ...current, [columnName]: preserve }));
+  }, []);
+
   const setDimension = useCallback((name: string) => {
     setSelection((current) => ({ ...current, dimension: name }));
   }, []);
@@ -78,15 +86,49 @@ export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
     setSelection((current) => ({ ...current, aggregation }));
   }, []);
 
+  const effectiveRowCount = useMemo(() => {
+    if (!dataset.rows || dataset.rows.length === 0) return 0;
+
+    const columnsWithExclusion = columns.filter(
+      (col) => col.invalidCount > 0 && !preserveInvalid[col.name],
+    );
+
+    if (columnsWithExclusion.length === 0) {
+      return dataset.rowCount;
+    }
+
+    let count = 0;
+    for (const row of dataset.rows) {
+      if (!row) continue;
+      let isValid = true;
+      for (const col of columnsWithExclusion) {
+        const val = row[col.name];
+        if (val !== null && val !== undefined) {
+          if (coerceValue(val, col.type, col.format) === null) {
+            isValid = false;
+            break;
+          }
+        }
+      }
+      if (isValid) {
+        count++;
+      }
+    }
+    return count;
+  }, [dataset.rows, dataset.rowCount, columns, preserveInvalid]);
+
   return {
     columns,
     dimensions,
     measures,
     mapping,
+    preserveInvalid,
+    effectiveRowCount,
     setColumnType,
     setDimension,
     setMeasure,
     setAggregation,
+    setPreserveInvalid,
   };
 }
 
