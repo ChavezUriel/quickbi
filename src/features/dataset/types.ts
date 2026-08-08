@@ -13,8 +13,19 @@ export type DataRow = Record<string, CellValue>;
 
 export type SupportedFileType = 'csv' | 'xlsx' | 'xls';
 
+export interface RowMeta {
+  sourceFile: string;
+  sourceRowNumber: number; // 1-indexed
+}
+
 /** Dataset parseado y residente en memoria. */
 export interface ParsedDataset {
+  /**
+   * Identidad única de esta carga concreta. Sirve de `key` en React: dos
+   * ficheros distintos con el mismo nombre y número de filas deben reiniciar
+   * el estado de la interfaz igualmente.
+   */
+  id: string;
   fileName: string;
   /** Formato real de origen: un `.xls` no se etiqueta como `xlsx`. */
   fileType: SupportedFileType;
@@ -30,4 +41,7 @@ export interface ParsedDataset {
    * filas malformadas descartadas, etc. Nunca se descartan en silencio.
    */
   warnings: string[];
+  /** Metadata per row tracking source file and original row number. Only present in merged datasets. */
+  rowMeta?: RowMeta[];
 }
+

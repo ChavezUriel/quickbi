@@ -128,3 +128,8 @@
     @apply font-sans;
     }
 }
+
+/* Estilos de transición para el asistente (wizard) */
+.wizard-step-transition {
+  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
