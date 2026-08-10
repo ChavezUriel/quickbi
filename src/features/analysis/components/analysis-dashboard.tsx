@@ -101,14 +101,6 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
             dimensions={config.dimensions}
           />
 
-          {/* El resumen siempre habla del conjunto filtrado, nunca de la vista
-              ampliada que conserva el widget emisor. */}
-          <SummaryHeader
-            result={state.result}
-            metric={metric}
-            currency={config.currency}
-          />
-
           {prepared.dropped > 0 && (
             <p className="text-xs text-pretty text-muted-foreground">
               {formatCount(prepared.dropped)} de {formatCount(dataset.rowCount)} filas
@@ -144,7 +136,17 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
               : 'xl:grid-cols-2',
           )}
         >
-          <Panel
+          <div className="min-w-0 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:gap-3">
+            <SummaryHeader
+              result={state.result}
+              metric={metric}
+              currency={config.currency}
+              dimension={dimensionHeader}
+              isTotal={state.dim === TOTAL_DIM}
+            />
+
+            <Panel
+            className="xl:flex-1"
             title="Evolución"
             description={
               <>
@@ -190,7 +192,8 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
                 onSelect={(name, additive) => state.select('serie', name, additive)}
               />
             )}
-          </Panel>
+            </Panel>
+          </div>
 
           {hasMovements && (
             // Aquí el scroll lo pone la tarjeta: la lista no tiene una altura
@@ -239,12 +242,14 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
  * recorta con scroll (la tabla y las listas).
  */
 function Panel({
+  className,
   title,
   description,
   action,
   scroll = false,
   children,
 }: {
+  className?: string;
   title: string;
   description: ReactNode;
   action?: ReactNode;
@@ -253,7 +258,7 @@ function Panel({
   children: ReactNode;
 }) {
   return (
-    <Card size="sm" className="min-w-0 xl:h-full xl:min-h-0">
+    <Card size="sm" className={cn('min-w-0 xl:h-full xl:min-h-0', className)}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription className="text-xs text-pretty">{description}</CardDescription>
