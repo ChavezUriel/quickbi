@@ -46,7 +46,7 @@ export function WizardShell() {
         )}
       </main>
 
-      <StepNavigation />
+      {step < 3 && <StepNavigation />}
     </AppShell>
   );
 }
