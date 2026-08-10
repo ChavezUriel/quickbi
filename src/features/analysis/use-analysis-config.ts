@@ -23,6 +23,8 @@ export interface AnalysisConfigState {
   dateColumns: ColumnProfile[];
   dimensionColumns: ColumnProfile[];
   measureColumns: ColumnProfile[];
+  /** Orden efectivo de las columnas numéricas, incluyendo las desactivadas. */
+  metricOrder: string[];
   /** Ajuste efectivo de cada columna numérica, con los defaults ya aplicados. */
   metricSettings: Record<string, MetricSetting>;
   /** `true` si alguna métrica se muestra como moneda: solo entonces importa cuál. */
@@ -31,6 +33,7 @@ export interface AnalysisConfigState {
   toggleDimension: (name: string) => void;
   setMetricEnabled: (column: string, enabled: boolean) => void;
   setMetricSetting: (column: string, patch: Partial<MetricSetting>) => void;
+  moveMetric: (name: string, beforeName: string) => void;
   setCurrency: (currency: Currency) => void;
 }
 
@@ -50,6 +53,7 @@ export function useAnalysisConfig(mapping: ColumnMappingState): AnalysisConfigSt
   const [metricOverrides, setMetricOverrides] = useState<
     Record<string, Partial<MetricSetting>>
   >({});
+  const [metricOrderOverride, setMetricOrderOverride] = useState<string[] | undefined>(undefined);
   const [currency, setCurrency] = useState<Currency>('EUR');
 
   const dateColumn = useMemo<string | null>(() => {
@@ -92,18 +96,32 @@ export function useAnalysisConfig(mapping: ColumnMappingState): AnalysisConfigSt
     return settings;
   }, [measureColumns, metricOverrides]);
 
+  const metricOrder = useMemo<string[]>(() => {
+    const availableNames = measureColumns.map((column) => column.name);
+    const available = new Set(availableNames);
+    const configured = metricOrderOverride ?? [];
+
+    // Keep an order override useful when a column changes type or new columns
+    // appear: discard names that are no longer measures, then append new ones
+    // in their dataset order.
+    return [
+      ...configured.filter((name) => available.has(name)),
+      ...availableNames.filter((name) => !configured.includes(name)),
+    ];
+  }, [measureColumns, metricOrderOverride]);
+
   const config = useMemo<AnalysisConfig>(() => {
-    const metrics = measureColumns
-      .filter((column) => metricSettings[column.name]?.enabled === true)
-      .map((column) => {
-        const setting = metricSettings[column.name];
-        return columnMetric(column.name, setting?.agg ?? 'sum', setting?.format ?? 'numero');
+    const metrics = metricOrder
+      .filter((name) => metricSettings[name]?.enabled === true)
+      .map((name) => {
+        const setting = metricSettings[name];
+        return columnMetric(name, setting?.agg ?? 'sum', setting?.format ?? 'numero');
       });
 
     // El recuento de filas va siempre al final: es el plan B cuando no hay
     // ninguna columna numérica, no la métrica que se quiere ver primero.
     return { dateColumn, dimensions, metrics: [...metrics, countMetric()], currency };
-  }, [measureColumns, metricSettings, dateColumn, dimensions, currency]);
+  }, [metricOrder, metricSettings, dateColumn, dimensions, currency]);
 
   const toggleDimension = useCallback(
     (name: string) => {
@@ -131,17 +149,43 @@ export function useAnalysisConfig(mapping: ColumnMappingState): AnalysisConfigSt
     [setMetricSetting],
   );
 
+  const moveMetric = useCallback(
+    (name: string, beforeName: string) => {
+      setMetricOrderOverride((current) => {
+        const availableNames = measureColumns.map((column) => column.name);
+        const available = new Set(availableNames);
+        const configured = current ?? [];
+        const order = [
+          ...configured.filter((item) => available.has(item)),
+          ...availableNames.filter((item) => !configured.includes(item)),
+        ];
+        const fromIndex = order.indexOf(name);
+        const targetIndex = order.indexOf(beforeName);
+
+        if (fromIndex < 0 || targetIndex < 0 || fromIndex === targetIndex) return order;
+
+        const next = order.filter((item) => item !== name);
+        const insertionIndex = next.indexOf(beforeName);
+        next.splice(insertionIndex, 0, name);
+        return next;
+      });
+    },
+    [measureColumns],
+  );
+
   return {
     config,
     dateColumns,
     dimensionColumns,
     measureColumns,
+    metricOrder,
     metricSettings,
     usesCurrency: config.metrics.some((metric) => metric.format === 'moneda'),
     setDateColumn: setDateOverride,
     toggleDimension,
     setMetricEnabled,
     setMetricSetting,
+    moveMetric,
     setCurrency,
   };
 }

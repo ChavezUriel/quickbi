@@ -1,4 +1,5 @@
-import { Info } from 'lucide-react';
+import { useState } from 'react';
+import { GripVertical, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Card,
@@ -36,6 +37,9 @@ const NO_DATE = '__sin_fecha__';
  */
 export function AnalysisSetup({ state }: { state: AnalysisConfigState }) {
   const { config, dateColumns, dimensionColumns, measureColumns, metricSettings } = state;
+  const [draggedMetric, setDraggedMetric] = useState<string | null>(null);
+  const [dragOverMetric, setDragOverMetric] = useState<string | null>(null);
+  const columnsByName = new Map(measureColumns.map((column) => [column.name, column]));
 
   return (
     <Card>
@@ -149,14 +153,21 @@ export function AnalysisSetup({ state }: { state: AnalysisConfigState }) {
               Cifras que se podrán medir. El recuento de filas está siempre disponible.
             </p>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Arrastra el asa de una métrica para cambiar su posición. El recuento de filas se
+            mantiene al final.
+          </p>
 
           {measureColumns.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Ninguna columna numérica: solo se podrá contar filas.
             </p>
           ) : (
-            <ul className="space-y-2">
-              {measureColumns.map((column) => {
+            <ul className="space-y-2" aria-label="Orden de las métricas">
+              {state.metricOrder.map((metricName) => {
+                const column = columnsByName.get(metricName);
+                if (column === undefined) return null;
+
                 const setting = metricSettings[column.name];
                 if (setting === undefined) return null;
 
@@ -166,19 +177,63 @@ export function AnalysisSetup({ state }: { state: AnalysisConfigState }) {
                   // desplegables de 100 px con el rótulo cortado.
                   <li
                     key={column.name}
-                    className="space-y-2 rounded-md border p-2 @md:flex @md:flex-wrap @md:items-center @md:gap-3 @md:space-y-0"
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = 'move';
+                      if (draggedMetric !== null && draggedMetric !== column.name) {
+                        setDragOverMetric(column.name);
+                      }
+                    }}
+                    onDragEnter={() => {
+                      if (draggedMetric !== null && draggedMetric !== column.name) {
+                        setDragOverMetric(column.name);
+                      }
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const source = event.dataTransfer.getData('text/plain') || draggedMetric;
+                      if (source !== null && source !== column.name) {
+                        state.moveMetric(source, column.name);
+                      }
+                      setDraggedMetric(null);
+                      setDragOverMetric(null);
+                    }}
+                    className={cn(
+                      'space-y-2 rounded-md border p-2 transition-colors @md:flex @md:flex-wrap @md:items-center @md:gap-3 @md:space-y-0',
+                      dragOverMetric === column.name && 'border-primary bg-primary/5',
+                    )}
                   >
-                    <label className="flex cursor-pointer items-center gap-2 text-sm select-none @md:flex-1">
-                      <input
-                        type="checkbox"
-                        checked={setting.enabled}
-                        onChange={(event) =>
-                          state.setMetricEnabled(column.name, event.target.checked)
-                        }
-                        className="size-4 shrink-0 rounded border-input text-primary focus:ring-1 focus:ring-ring"
-                      />
-                      <span className="min-w-0 truncate font-mono text-xs">{column.name}</span>
-                    </label>
+                    <div className="flex min-w-0 items-center gap-2 @md:flex-1">
+                      <button
+                        type="button"
+                        draggable
+                        aria-label={`Arrastrar para reordenar ${column.name}`}
+                        title="Arrastrar para reordenar"
+                        onDragStart={(event) => {
+                          event.dataTransfer.effectAllowed = 'move';
+                          event.dataTransfer.setData('text/plain', column.name);
+                          setDraggedMetric(column.name);
+                        }}
+                        onDragEnd={() => {
+                          setDraggedMetric(null);
+                          setDragOverMetric(null);
+                        }}
+                        className="shrink-0 cursor-grab touch-none rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none active:cursor-grabbing"
+                      >
+                        <GripVertical className="size-4" aria-hidden="true" />
+                      </button>
+                      <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-sm select-none">
+                        <input
+                          type="checkbox"
+                          checked={setting.enabled}
+                          onChange={(event) =>
+                            state.setMetricEnabled(column.name, event.target.checked)
+                          }
+                          className="size-4 shrink-0 rounded border-input text-primary focus:ring-1 focus:ring-ring"
+                        />
+                        <span className="min-w-0 truncate font-mono text-xs">{column.name}</span>
+                      </label>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-2 @md:contents">
                     <Select
