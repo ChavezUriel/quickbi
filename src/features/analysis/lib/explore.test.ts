@@ -91,6 +91,9 @@ describe('computeExploration', () => {
 
     expect(result.total).toBe(210);
     expect(result.previousTotal).toBe(270);
+    expect(result.rowsMatched).toBe(3);
+    expect(result.previousRowsMatched).toBe(3);
+    expect(result.previousItemsCount).toBe(3);
   });
 
   it('ordena subidas y caídas por variación, y lista lo desaparecido aparte', () => {

@@ -131,6 +131,10 @@ export interface ExplorationResult {
   desaparecidos: DisappearedItem[];
   /** Filas que entran en la ventana actual tras aplicar los filtros. */
   rowsMatched: number;
+  /** Filas que entran en la ventana de comparaciÃ³n tras aplicar los filtros. */
+  previousRowsMatched: number | null;
+  /** Valores distintos de la dimensiÃ³n en la ventana de comparaciÃ³n. */
+  previousItemsCount: number | null;
   /** Filas que pasan los filtros pero quedan fuera por no tener fecha. */
   rowsWithoutDate: number;
 }

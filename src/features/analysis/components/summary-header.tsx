@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { formatNaturalWindow } from '../lib/dates';
+import { formatCompactWindow } from '../lib/dates';
 import { formatCount, formatMetric } from '../lib/format';
 import type { Currency, ExplorationResult, MetricDef } from '../types';
 import { DeltaPill } from './delta-pill';
@@ -10,6 +10,7 @@ interface SummaryHeaderProps {
   currency: Currency;
   dimension: string;
   isTotal: boolean;
+  periodLabel: string;
 }
 
 /**
@@ -17,7 +18,14 @@ interface SummaryHeaderProps {
  * cifra principal ocupa el primer KPI y los contadores completan la misma
  * tira visual, dejando la barra de controles para selectores y filtros.
  */
-export function SummaryHeader({ result, metric, currency, dimension, isTotal }: SummaryHeaderProps) {
+export function SummaryHeader({
+  result,
+  metric,
+  currency,
+  dimension,
+  isTotal,
+  periodLabel,
+}: SummaryHeaderProps) {
   const delta =
     result.previousTotal === null || result.previousTotal === 0
       ? null
@@ -46,42 +54,76 @@ export function SummaryHeader({ result, metric, currency, dimension, isTotal }: 
           )}
         </div>
         {result.window !== null && (
-          <div className="mt-0.5 text-xs text-pretty text-muted-foreground">
-            {result.previousWindow !== null ? (
+          <div className="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-0.5 text-xs text-pretty text-muted-foreground">
+            <p className="min-w-0">{periodLabel}</p>
+            <p className="whitespace-nowrap tabular-nums">
+              {formatCompactWindow(result.window)}
+            </p>
+            {result.previousWindow !== null && (
               <>
-                <p>{formatNaturalWindow(result.window)} comparado con</p>
-                <p>
-                  <span className="tabular-nums">
-                    {formatMetric(result.previousTotal, {
-                      format: metric.format,
-                      currency,
-                    })}
-                  </span>{' '}
-                  {formatNaturalWindow(result.previousWindow)}
+                <p className="col-span-2 pt-1 text-sm font-medium tabular-nums text-foreground/80">
+                  {formatMetric(result.previousTotal, {
+                    format: metric.format,
+                    currency,
+                  })}
+                </p>
+                <p>Periodo anterior</p>
+                <p className="whitespace-nowrap tabular-nums">
+                  {formatCompactWindow(result.previousWindow)}
                 </p>
               </>
-            ) : (
-              <p>{formatNaturalWindow(result.window)}</p>
             )}
           </div>
         )}
       </div>
 
       <dl className="contents">
-        <Stat label="Registros" value={formatCount(result.rowsMatched)} />
+        <Stat
+          label="Registros"
+          value={result.rowsMatched}
+          previousValue={result.previousRowsMatched}
+        />
         {!isTotal && (
-          <Stat label={pluralizeDimension(dimension)} value={formatCount(result.items.length)} />
+          <Stat
+            label={pluralizeDimension(dimension)}
+            value={result.items.length}
+            previousValue={result.previousItemsCount}
+          />
         )}
       </dl>
     </section>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  previousValue,
+}: {
+  label: string;
+  value: number;
+  previousValue: number | null;
+}) {
+  const previousLabel = previousValue === null ? null : formatCount(previousValue);
+  const delta =
+    previousValue === null || previousValue === 0
+      ? null
+      : ((value - previousValue) / Math.abs(previousValue)) * 100;
+
   return (
     <div className="flex min-w-0 flex-col justify-center gap-0.5 border-t pt-2 text-xs text-muted-foreground sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
       <dt>{label}</dt>
-      <dd className="text-lg font-semibold tabular-nums text-foreground">{value}</dd>
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+        <dd className="text-lg font-semibold tabular-nums text-foreground">
+          {formatCount(value)}
+        </dd>
+        {previousValue !== null && (
+          <DeltaPill value={delta} scale={Math.abs(delta ?? 0)} />
+        )}
+      </div>
+      {previousLabel !== null && (
+        <dd className="text-xs tabular-nums text-muted-foreground">vs. {previousLabel}</dd>
+      )}
     </div>
   );
 }

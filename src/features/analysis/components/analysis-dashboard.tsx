@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { RANGE_ALL, RANGE_CUSTOM, RANGE_PRESETS } from '../labels';
 import { formatCount } from '../lib/format';
 import { prepareRows } from '../lib/prepare-rows';
 import { TOTAL_DIM } from '../types';
@@ -67,6 +68,13 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
   const tableResult = state.resultFor('tabla');
 
   const hasMovements = state.previousWindow !== null;
+  const periodLabel =
+    RANGE_PRESETS.find((preset) => preset.id === state.rangeId)?.label ??
+    (state.rangeId === RANGE_CUSTOM
+      ? 'Rango personalizado'
+      : state.rangeId === RANGE_ALL
+        ? 'Todo el histórico'
+        : 'Periodo seleccionado');
 
   return (
     <div className="flex flex-col gap-3 xl:h-full xl:min-h-0">
@@ -143,6 +151,7 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
               currency={config.currency}
               dimension={dimensionHeader}
               isTotal={state.dim === TOTAL_DIM}
+              periodLabel={periodLabel}
             />
 
             <Panel

@@ -101,7 +101,7 @@ const DAY_LABEL = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'sho
 const COMPACT_DATE_LABEL = new Intl.DateTimeFormat('es-ES', {
   day: 'numeric',
   month: 'short',
-  year: 'numeric',
+  year: '2-digit',
 });
 
 export function bucketLabel(bucket: string, grano: Granularity): string {
@@ -188,11 +188,11 @@ export function formatWindow(window: DateWindow): string {
   return `${formatDay(window.desde)} — ${formatDay(window.hasta)}`;
 }
 
-export function formatNaturalWindow(window: DateWindow): string {
+export function formatCompactWindow(window: DateWindow): string {
   const formatDate = (iso: string) =>
-    COMPACT_DATE_LABEL.format(fromIso(iso)).replace(/\s+/gu, '-');
+    COMPACT_DATE_LABEL.format(fromIso(iso)).replace(/\s+/gu, '/');
 
-  return `del ${formatDate(window.desde)} al ${formatDate(window.hasta)}`;
+  return `${formatDate(window.desde)} — ${formatDate(window.hasta)}`;
 }
 
 function daysInMonth(year: number, month: number): number {

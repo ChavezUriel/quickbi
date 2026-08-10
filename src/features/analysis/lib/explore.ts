@@ -167,6 +167,8 @@ export function computeExploration(
   const hasComparison = previousWindow !== null;
   const total = valueOf(currentGlobal, metric.agg);
   const previousTotal = hasComparison ? valueOf(previousGlobal, metric.agg) : null;
+  const previousRowsMatched = hasComparison ? previousRows.length : null;
+  const previousItemsCount = hasComparison ? previousTotals.size : null;
 
   const items: ExplorationItem[] = [...currentTotals.entries()]
     .map(([name, accumulator]) => {
@@ -241,6 +243,8 @@ export function computeExploration(
     caidas,
     desaparecidos,
     rowsMatched: currentRows.length,
+    previousRowsMatched,
+    previousItemsCount,
     rowsWithoutDate,
   };
 }

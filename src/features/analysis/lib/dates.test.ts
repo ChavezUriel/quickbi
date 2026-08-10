@@ -4,6 +4,7 @@ import {
   autoGranularity,
   bucketOf,
   daysBetween,
+  formatCompactWindow,
   generateBuckets,
   shiftByDuration,
   shiftWindow,
@@ -45,6 +46,14 @@ describe('bucketOf', () => {
     expect(bucketOf('2026-08-07', 'mes')).toBe('2026-08');
     expect(bucketOf('2026-08-07', 'trimestre')).toBe('2026-T3');
     expect(bucketOf('2026-08-07', 'anio')).toBe('2026');
+  });
+});
+
+describe('formatCompactWindow', () => {
+  it('uses abbreviated month and two-digit year', () => {
+    expect(formatCompactWindow({ desde: '2026-05-02', hasta: '2026-05-09' })).toBe(
+      '2/may/26 \u2014 9/may/26',
+    );
   });
 });
 
