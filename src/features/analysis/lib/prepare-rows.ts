@@ -35,19 +35,15 @@ export function prepareRows(
   const dateColumn =
     config.dateColumn === null ? undefined : byName.get(config.dateColumn);
 
-  const dimensionColumns = config.dimensions
-    .map((name) => byName.get(name))
-    .filter((column): column is ColumnProfile => column !== undefined);
+  // Keep every mapped dimension in the prepared row, not just the dimensions
+  // currently used to group the chart. This lets the filter bar offer a
+  // dimension that was not selected for the current view without rebuilding
+  // the dataset when the user adds it.
+  const dimensionColumns = columns.filter((column) => column.role === 'dimension');
 
-  const metricColumns = [
-    ...new Set(
-      config.metrics
-        .map((metric) => metric.column)
-        .filter((name): name is string => name !== null),
-    ),
-  ]
-    .map((name) => byName.get(name))
-    .filter((column): column is ColumnProfile => column !== undefined);
+  // Numeric ranges can target any mapped measure, including one that is not
+  // currently selected as the displayed metric.
+  const metricColumns = columns.filter((column) => column.role === 'measure');
 
   // Mismo criterio que el resumen del paso 2: una fila que no convierte en una
   // columna cuyos errores no se han marcado como «preservar» queda fuera.

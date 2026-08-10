@@ -1,351 +1,791 @@
-import { useState } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useMediaQuery } from '@/lib/use-media-query';
+  Check,
+  ChevronDown,
+  RotateCcw,
+  Search,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   COMPARISON_LABEL,
   COMPARISONS,
+  DEFAULT_RANGE,
   GRANULARITIES,
   GRANULARITY_LABEL,
   RANGE_ALL,
   RANGE_CUSTOM,
   RANGE_PRESETS,
 } from '../labels';
-import { activeSelections } from '../lib/filters';
-import type { ComparisonMode, DateWindow, Granularity } from '../types';
+import {
+  getMembership,
+  matchesSelections,
+  MAX_MEMBERSHIP_VALUES,
+  withoutColumn,
+} from '../lib/filters';
+import type {
+  AnalysisRow,
+  Condition,
+  DateFilterMode,
+  DateWindow,
+} from '../types';
 import type { ExplorationState } from '../use-exploration';
 
 interface FilterBarProps {
   state: ExplorationState;
-  /** Valores distintos de cada dimensión, para los desplegables. */
+  /** Distinct values for every mapped dimension. */
   distinct: Record<string, string[]>;
+  /** Mapped dimensions, including ones not currently used to group the chart. */
   dimensions: readonly string[];
+  /** Numeric columns that can be constrained with a min/max range. */
+  numericColumns: readonly string[];
+  /** Prepared rows used only to show other-filter-aware row counts. */
+  rows: readonly AnalysisRow[];
+  /** Columns that are not mapped to a filterable role yet. */
+  unmappedColumns?: readonly string[];
 }
 
-const ALL = '__todos__';
-const SEVERAL = '__varios__';
+const DATE_PRESET_IDS = ['7d', '30d', '3m', '6m', '12m'] as const;
 
 /**
- * Controles que afectan a toda la sección: período, comparación, grano y
- * filtros por dimensión. Debajo, lo que está filtrado ahora mismo, porque un
- * cuadro de mando filtrado sin decirlo es un cuadro de mando que miente.
- *
- * En pantalla estrecha los controles se pliegan tras un botón: son siete u
- * ocho desplegables que, desplegados, empujan el gráfico fuera de la pantalla
- * de salida. Lo que nunca se pliega es la lista de filtros activos —esa es
- * justamente la parte que no puede quedar escondida.
+ * BI-style filter strip. Each control is a compact pill and opens its own
+ * popover, keeping the dashboard readable while preserving the full state in
+ * the shared exploration hook.
  */
-export function FilterBar({ state, distinct, dimensions }: FilterBarProps) {
-  const selections = activeSelections(state.filters);
-  // Solo el teléfono los pliega: en tableta caben en dos filas sin echar el
-  // gráfico fuera de la pantalla, y un control visible siempre gana a uno que
-  // hay que ir a buscar.
-  const isWide = useMediaQuery('(min-width: 48rem)');
-  const [expanded, setExpanded] = useState(false);
+export function FilterBar({
+  state,
+  distinct,
+  dimensions,
+  numericColumns,
+  rows,
+  unmappedColumns = [],
+}: FilterBarProps) {
+  const [openFilter, setOpenFilter] = useState<string | null>(null);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const filterableColumns = useMemo(
+    () => [...new Set([...dimensions, ...numericColumns])],
+    [dimensions, numericColumns],
+  );
+  const numericSet = useMemo(() => new Set(numericColumns), [numericColumns]);
+  const activeColumns = useMemo(
+    () =>
+      new Set(
+        state.filters.conditions
+          .filter(
+            (condition) =>
+              (condition.op === 'in' || condition.op === 'not_in' || condition.op === 'rango') &&
+              condition.column.length > 0,
+          )
+          .map((condition) => condition.column),
+      ),
+    [state.filters],
+  );
+  const dateModified =
+    state.hasDateAxis &&
+    (state.rangeId !== DEFAULT_RANGE.id || state.dateMode !== 'ultimos');
+  const dateSettingsModified =
+    dateModified || state.comparison !== 'anterior' || state.granoChoice !== 'auto';
+  const clearable = activeColumns.size > 0 || dateSettingsModified;
 
-  const showControls = isWide || expanded;
+  const rowCounts = useMemo(() => {
+    const counts: Record<string, Record<string, number>> = {};
+    for (const column of dimensions) {
+      const baseFilters = withoutColumn(state.filters, column);
+      const values = distinct[column] ?? [];
+      const valueSet = new Set(values);
+      const columnCounts: Record<string, number> = Object.fromEntries(
+        values.map((value) => [value, 0]),
+      );
+      for (const row of rows) {
+        if (!matchesSelections(row, baseFilters)) continue;
+        const value = row.dims[column];
+        if (value !== undefined && valueSet.has(value)) {
+          columnCounts[value] = (columnCounts[value] ?? 0) + 1;
+        }
+      }
+      counts[column] = columnCounts;
+    }
+    return counts;
+  }, [dimensions, distinct, rows, state.filters]);
 
   return (
-    <div className="@container space-y-2 rounded-lg border bg-muted/30 p-2">
-      {!isWide && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 w-full justify-between"
-          aria-expanded={expanded}
-          onClick={() => setExpanded((previous) => !previous)}
-        >
-          <span className="flex items-center gap-2">
-            <SlidersHorizontal className="size-4" aria-hidden />
-            Período y filtros
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {selections.length > 0 ? `${selections.length} activos` : 'Todos'}
-          </span>
-        </Button>
-      )}
-
-      {showControls && (
-        <div className="grid grid-cols-2 items-end gap-3 @2xl:flex @2xl:flex-wrap @2xl:items-center @2xl:gap-x-4 @2xl:gap-y-2">
+    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {state.hasDateAxis && (
-            <>
-              <Field label="Período">
-                <Select
-                  value={state.rangeId}
-                  onValueChange={(value: string | null) => {
-                    if (value !== null) state.setRange(value);
-                  }}
-                  items={rangeItems()}
-                >
-                  <SelectTrigger size="sm" className={CONTROL} aria-label="Período analizado">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rangeItems().map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              {state.rangeId === RANGE_CUSTOM && state.customRange !== null && (
-                <RangeInputs
-                  label="Rango"
-                  value={state.customRange}
-                  onChange={state.setCustomRange}
-                />
-              )}
-
-              <Field label="Grano">
-                <Select
-                  value={state.granoChoice}
-                  onValueChange={(value: string | null) => {
-                    if (value !== null) state.setGranoChoice(value as 'auto' | Granularity);
-                  }}
-                  items={granoItems()}
-                >
-                  <SelectTrigger
-                    size="sm"
-                    className={CONTROL}
-                    aria-label="Granularidad temporal"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {granoItems().map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field label="Comparar con" className="col-span-2 @2xl:col-span-1">
-                <Select
-                  value={state.comparison}
-                  onValueChange={(value: string | null) => {
-                    if (value !== null) state.setComparison(value as ComparisonMode);
-                  }}
-                  items={COMPARISONS.map((mode) => ({
-                    value: mode,
-                    label: COMPARISON_LABEL[mode],
-                  }))}
-                >
-                  <SelectTrigger
-                    size="sm"
-                    className={CONTROL}
-                    aria-label="Período de comparación"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COMPARISONS.map((mode) => (
-                      <SelectItem key={mode} value={mode}>
-                        {COMPARISON_LABEL[mode]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              {state.comparison === 'personalizada' && (
-                <RangeInputs
-                  label="Rango de comparación"
-                  value={state.customPrevious ?? state.window ?? { desde: '', hasta: '' }}
-                  onChange={state.setCustomPrevious}
-                />
-              )}
-            </>
+            <DatePill state={state} open={openFilter === '__fecha__'} onOpen={() => setOpenFilter('__fecha__')} onClose={() => setOpenFilter(null)} />
           )}
 
-          {dimensions.map((dimension) => (
-            <DimensionFilter
-              key={dimension}
-              dimension={dimension}
-              values={distinct[dimension] ?? []}
-              selected={selectedOf(state, dimension)}
-              onChange={(values) => state.setDimensionFilter(dimension, values)}
+          {state.hasDateAxis && (
+            <ComparisonPill
+              state={state}
+              open={openFilter === '__comparacion__'}
+              onOpen={() => setOpenFilter('__comparacion__')}
+              onClose={() => setOpenFilter(null)}
             />
-          ))}
-        </div>
-      )}
+          )
+          }
 
+          {state.hasDateAxis && (
+            <GranularityPill
+              state={state}
+              open={openFilter === '__grano__'}
+              onOpen={() => setOpenFilter('__grano__')}
+              onClose={() => setOpenFilter(null)}
+            />
+          )}
+
+          {filterableColumns.map((column) => {
+            const active = activeColumns.has(column);
+            if (!active && openFilter !== column) return null;
+
+            return numericSet.has(column) ? (
+              <NumericPill
+                key={column}
+                column={column}
+                condition={state.filters.conditions.find(
+                  (item): item is Extract<Condition, { op: 'rango' }> =>
+                    item.op === 'rango' && item.column === column,
+                )}
+                open={openFilter === column}
+                onOpen={() => setOpenFilter(column)}
+                onClose={() => setOpenFilter(null)}
+                onChange={(min, max) => state.setNumericFilter(column, min, max)}
+              />
+            ) : (
+              <MembershipPill
+                key={column}
+                column={column}
+                values={distinct[column] ?? []}
+                counts={rowCounts[column] ?? {}}
+                condition={getMembership(state.filters, column)}
+                open={openFilter === column}
+                onOpen={() => setOpenFilter(column)}
+                onClose={() => setOpenFilter(null)}
+                onChange={(op, values) => state.setMembershipFilter(column, op, values)}
+              />
+            );
+          })}
+
+          <div className="relative">
+            <button
+              type="button"
+              className="inline-flex h-8 items-center gap-1 rounded-full border border-dashed border-primary/50 px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              aria-expanded={addMenuOpen}
+              onClick={() => setAddMenuOpen((previous) => !previous)}
+            >
+              <span className="text-base leading-none">+</span> Filtro
+            </button>
+            <Popover open={addMenuOpen} onClose={() => setAddMenuOpen(false)} className="w-64 p-1.5">
+              <p className="px-2 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Añadir filtro
+              </p>
+              {filterableColumns.filter((column) => !activeColumns.has(column)).length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground">Todos los campos ya están filtrados.</p>
+              ) : (
+                filterableColumns
+                  .filter((column) => !activeColumns.has(column))
+                  .map((column) => (
+                    <button
+                      key={column}
+                      type="button"
+                      className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                      onClick={() => {
+                        setAddMenuOpen(false);
+                        setOpenFilter(column);
+                      }}
+                    >
+                      <span className="min-w-0 truncate font-mono">{column}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {numericSet.has(column) ? 'Número' : 'Categoría'}
+                      </span>
+                    </button>
+                  ))
+              )}
+              {unmappedColumns.length > 0 && (
+                <>
+                  <p className="mt-1 border-t px-2 py-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Sin mapear
+                  </p>
+                  {unmappedColumns.map((column) => (
+                    <button
+                      key={column}
+                      type="button"
+                      disabled
+                      title="Corrige el tipo de columna en el paso de mapeo"
+                      className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-xs opacity-45"
+                    >
+                      <span className="min-w-0 truncate font-mono">{column}</span>
+                      <span className="text-[10px]">No disponible</span>
+                    </button>
+                  ))}
+                </>
+              )}
+            </Popover>
+          </div>
+
+          {clearable && (
+            <button
+              type="button"
+              className="inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              onClick={() => {
+                setOpenFilter(null);
+                setAddMenuOpen(false);
+                state.clearFilters();
+              }}
+            >
+              <RotateCcw className="size-3.5" aria-hidden />
+              Limpiar filtros
+            </button>
+          )}
     </div>
   );
 }
 
-/**
- * Ancho completo mientras los controles van en rejilla; ajustado al contenido
- * cuando pasan a fila. Alto de 36 px en táctil, 28 en puntero fino.
- */
-const CONTROL =
-  'h-9 w-full min-w-0 text-xs @2xl:h-7 @2xl:w-fit @2xl:max-w-56 @2xl:text-sm';
-
-function DimensionFilter({
-  dimension,
-  values,
-  selected,
-  onChange,
-}: {
-  dimension: string;
-  values: readonly string[];
-  selected: readonly string[];
-  onChange: (values: string[]) => void;
-}) {
-  if (values.length === 0) return null;
-
-  // Con varios valores elegidos (ctrl + clic en un widget) no hay una opción
-  // que mostrar: se añade una entrada sintética para que el control no mienta.
-  const items = [
-    { value: ALL, label: 'Todos' },
-    ...(selected.length > 1
-      ? [{ value: SEVERAL, label: `${selected.length} seleccionados` }]
-      : []),
-    ...values.map((value) => ({ value, label: value })),
-  ];
-
-  const current = selected.length === 0 ? ALL : selected.length > 1 ? SEVERAL : selected[0];
-
-  return (
-    <Field label={dimension} mono>
-      <Select
-        value={current ?? ALL}
-        onValueChange={(value: string | null) => {
-          if (value === null || value === SEVERAL) return;
-          onChange(value === ALL ? [] : [value]);
-        }}
-        items={items}
-      >
-        <SelectTrigger size="sm" className={CONTROL} aria-label={`Filtrar por ${dimension}`}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {items.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </Field>
-  );
-}
-
-function RangeInputs({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: DateWindow;
-  onChange: (window: DateWindow) => void;
-}) {
-  return (
-    <Field label={label} className="col-span-2 @2xl:col-span-1">
-      <div className="flex items-center gap-1">
-        <DateInput
-          value={value.desde}
-          ariaLabel={`${label}: desde`}
-          onChange={(desde) => onChange({ ...value, desde })}
-        />
-        <span className="text-xs text-muted-foreground">—</span>
-        <DateInput
-          value={value.hasta}
-          ariaLabel={`${label}: hasta`}
-          onChange={(hasta) => onChange({ ...value, hasta })}
-        />
-      </div>
-    </Field>
-  );
-}
-
-function DateInput({
-  value,
-  ariaLabel,
-  onChange,
-}: {
-  value: string;
-  ariaLabel: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <input
-      type="date"
-      value={value}
-      aria-label={ariaLabel}
-      onChange={(event) => {
-        // Un campo de fecha vacío o a medio escribir no es un filtro válido.
-        if (event.target.value !== '') onChange(event.target.value);
-      }}
-      className="h-9 min-w-0 flex-1 rounded-md border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 @2xl:h-7 @2xl:flex-none dark:bg-input/30"
-    />
-  );
-}
-
-/**
- * Rótulo encima del control en rejilla; a su izquierda cuando los controles
- * pasan a fila. En horizontal la barra entera cabe en un renglón, y cada
- * renglón que no gasta aquí es altura que se queda el gráfico.
- */
-function Field({
-  label,
-  mono,
+function Popover({
+  open,
+  onClose,
   className,
   children,
 }: {
-  label: string;
-  mono?: boolean;
+  open: boolean;
+  onClose: () => void;
   className?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (ref.current !== null && !ref.current.contains(event.target as Node)) onClose();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
   return (
     <div
+      ref={ref}
+      role="dialog"
       className={cn(
-        'min-w-0 space-y-1',
-        '@2xl:flex @2xl:items-center @2xl:gap-1.5 @2xl:space-y-0',
+        'absolute left-0 top-[calc(100%+6px)] z-30 min-w-[240px] rounded-xl border bg-popover p-2 text-popover-foreground shadow-xl ring-1 ring-black/5',
         className,
       )}
     >
-      <p
-        className={cn(
-          'truncate text-xs text-muted-foreground @2xl:shrink-0',
-          mono === true && 'font-mono @2xl:max-w-32',
-        )}
-      >
-        {label}
-      </p>
       {children}
     </div>
   );
 }
 
-function rangeItems(): { value: string; label: string }[] {
-  return [
-    ...RANGE_PRESETS.map((preset) => ({ value: preset.id, label: preset.label })),
-    { value: RANGE_ALL, label: 'Todo el histórico' },
-    { value: RANGE_CUSTOM, label: 'Rango personalizado' },
-  ];
+function Pill({
+  label,
+  summary,
+  active,
+  open,
+  onOpen,
+  onClose,
+  onClear,
+  children,
+}: {
+  label: string;
+  summary: string;
+  active: boolean;
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  onClear?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="relative max-w-full">
+      <div
+        className={cn(
+          'inline-flex h-8 max-w-full items-center rounded-full border text-[12px] transition-colors',
+          active || open
+            ? 'border-primary/60 bg-primary/10 text-foreground'
+            : 'border-border bg-background text-muted-foreground hover:border-primary/40',
+        )}
+      >
+        <button
+          type="button"
+          className="min-w-0 max-w-[240px] truncate px-3 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          aria-expanded={open}
+          onClick={onOpen}
+        >
+          <span className="font-medium">{label}</span>
+          <span className="text-muted-foreground">: {summary}</span>
+        </button>
+        {onClear !== undefined && (
+          <button
+            type="button"
+            aria-label={`Quitar filtro de ${label}`}
+            className="mr-1 flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            onClick={(event) => {
+              event.stopPropagation();
+              onClear();
+              onClose();
+            }}
+          >
+            <X className="size-3.5" aria-hidden />
+          </button>
+        )}
+      </div>
+      <Popover open={open} onClose={onClose}>
+        {children}
+      </Popover>
+    </div>
+  );
 }
 
-function granoItems(): { value: string; label: string }[] {
-  return [
-    { value: 'auto', label: 'Automático' },
-    ...GRANULARITIES.map((grano) => ({ value: grano, label: GRANULARITY_LABEL[grano] })),
-  ];
+function MembershipPill({
+  column,
+  values,
+  counts,
+  condition,
+  open,
+  onOpen,
+  onClose,
+  onChange,
+}: {
+  column: string;
+  values: readonly string[];
+  counts: Record<string, number>;
+  condition: Extract<Condition, { op: 'in' | 'not_in' }> | null;
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  onChange: (op: 'in' | 'not_in', values: string[]) => void;
+}) {
+  const summary = membershipSummary(condition);
+  return (
+    <Pill
+      label={column}
+      summary={summary}
+      active={condition !== null}
+      open={open}
+      onOpen={onOpen}
+      onClose={onClose}
+      onClear={() => onChange('in', [])}
+    >
+      <MembershipPopover
+        column={column}
+        values={values}
+        counts={counts}
+        condition={condition}
+        onChange={onChange}
+      />
+    </Pill>
+  );
 }
 
-function selectedOf(state: ExplorationState, dimension: string): string[] {
-  const found = activeSelections(state.filters).find((entry) => entry.column === dimension);
-  return found?.values ?? [];
+function MembershipPopover({
+  column,
+  values,
+  counts,
+  condition,
+  onChange,
+}: {
+  column: string;
+  values: readonly string[];
+  counts: Record<string, number>;
+  condition: Extract<Condition, { op: 'in' | 'not_in' }> | null;
+  onChange: (op: 'in' | 'not_in', values: string[]) => void;
+}) {
+  const [search, setSearch] = useState('');
+  const [mode, setMode] = useState<'in' | 'not_in'>(condition?.op ?? 'in');
+
+  useEffect(() => {
+    setMode(condition?.op ?? 'in');
+  }, [condition?.op]);
+
+  const selected = condition?.values ?? [];
+  const filteredValues = values.filter((value) => value.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
+  const included = (value: string) => (mode === 'not_in' ? !selected.includes(value) : selected.includes(value));
+  const includedCount = values.filter(included).length;
+  const allIncluded = values.length > 0 && includedCount === values.length;
+  const partiallyIncluded = includedCount > 0 && includedCount < values.length;
+
+  const setValues = (next: string[]) => onChange(mode, next.slice(0, MAX_MEMBERSHIP_VALUES));
+  const toggleValue = (value: string) => {
+    const next = selected.includes(value)
+      ? selected.filter((item) => item !== value)
+      : [...selected, value];
+    setValues(next);
+  };
+
+  return (
+    <div className="w-[min(360px,calc(100vw-2rem))]">
+      <div className="flex items-center justify-between gap-2 border-b pb-2">
+        <div>
+          <p className="text-xs font-semibold">{column}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {mode === 'in' ? 'Incluir valores' : 'Todos excepto'}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={mode === 'not_in'}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] transition-colors',
+            mode === 'not_in'
+              ? 'border-primary/50 bg-primary/10 text-primary'
+              : 'border-border text-muted-foreground hover:bg-muted',
+          )}
+          onClick={() => setMode((current) => (current === 'in' ? 'not_in' : 'in'))}
+        >
+          <span className={cn('flex size-3.5 items-center justify-center rounded border', mode === 'not_in' && 'border-primary bg-primary text-primary-foreground')}>
+            {mode === 'not_in' && <Check className="size-2.5" aria-hidden />}
+          </span>
+          Excluir
+        </button>
+      </div>
+
+      <div className="mt-2 flex items-center gap-2 rounded-lg bg-muted/60 px-2 py-1.5">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={partiallyIncluded ? 'mixed' : allIncluded}
+          className={cn(
+            'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
+            allIncluded || partiallyIncluded
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-input bg-background',
+          )}
+          onClick={() => {
+            if (mode === 'in') setValues(allIncluded ? [] : [...values]);
+            else setValues(allIncluded ? [...values] : []);
+          }}
+        >
+          {allIncluded && <Check className="size-3" aria-hidden />}
+          {partiallyIncluded && <span className="h-px w-2 bg-primary-foreground" />}
+        </button>
+        <span className="min-w-0 flex-1 text-xs">{allIncluded ? 'Todos' : `${includedCount} seleccionados`}</span>
+        {selected.length > MAX_MEMBERSHIP_VALUES - 1 && (
+          <span className="text-[10px] tabular-nums text-amber-700">{selected.length}/200</span>
+        )}
+      </div>
+
+      <label className="mt-2 flex h-8 items-center gap-2 rounded-lg border px-2 text-xs text-muted-foreground focus-within:border-primary">
+        <Search className="size-3.5 shrink-0" aria-hidden />
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Buscar valores"
+          aria-label={`Buscar valores de ${column}`}
+          className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground/70"
+        />
+      </label>
+
+      <div className="mt-2 max-h-64 overflow-y-auto pr-0.5">
+        {filteredValues.length === 0 ? (
+          <p className="px-2 py-5 text-center text-xs text-muted-foreground">Sin coincidencias.</p>
+        ) : (
+          filteredValues.map((value) => {
+            const checked = included(value);
+            return (
+              <div key={value} className="group grid grid-cols-[auto_minmax(0,1fr)_52px] items-center gap-2 rounded-lg px-1.5 py-1.5 hover:bg-muted">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  aria-label={`${checked ? 'Quitar' : 'Seleccionar'} ${value}`}
+                  onChange={() => toggleValue(value)}
+                  className="size-3.5 accent-primary"
+                />
+                <span className="min-w-0 truncate text-xs" title={value}>{value}</span>
+                <span className="relative text-right text-[10px] tabular-nums text-muted-foreground">
+                  <span className="group-hover:invisible">{(counts[value] ?? 0).toLocaleString('es-ES')}</span>
+                  <button
+                    type="button"
+                    className="invisible absolute inset-0 w-full rounded bg-background px-1 text-[10px] font-semibold uppercase tracking-wide text-primary group-hover:visible hover:bg-primary/10 focus-visible:visible focus-visible:outline-none"
+                    onClick={() => {
+                      onChange('in', [value]);
+                    }}
+                  >
+                    Solo
+                  </button>
+                </span>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {selected.length >= MAX_MEMBERSHIP_VALUES && (
+        <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1.5 text-[11px] text-amber-800">
+          Máximo de {MAX_MEMBERSHIP_VALUES} valores por filtro.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function NumericPill({
+  column,
+  condition,
+  open,
+  onOpen,
+  onClose,
+  onChange,
+}: {
+  column: string;
+  condition: Extract<Condition, { op: 'rango' }> | undefined;
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  onChange: (min: number | null, max: number | null) => void;
+}) {
+  return (
+    <Pill
+      label={column}
+      summary={numericSummary(condition)}
+      active={condition !== undefined}
+      open={open}
+      onOpen={onOpen}
+      onClose={onClose}
+      onClear={() => onChange(null, null)}
+    >
+      <NumericPopover condition={condition} onChange={onChange} onClose={onClose} />
+    </Pill>
+  );
+}
+
+function NumericPopover({
+  condition,
+  onChange,
+  onClose,
+}: {
+  condition: Extract<Condition, { op: 'rango' }> | undefined;
+  onChange: (min: number | null, max: number | null) => void;
+  onClose: () => void;
+}) {
+  const [min, setMin] = useState(condition?.min === null || condition === undefined ? '' : String(condition.min));
+  const [max, setMax] = useState(condition?.max === null || condition === undefined ? '' : String(condition.max));
+
+  useEffect(() => {
+    setMin(condition?.min === null || condition === undefined ? '' : String(condition.min));
+    setMax(condition?.max === null || condition === undefined ? '' : String(condition.max));
+  }, [condition]);
+
+  return (
+    <div className="w-64">
+      <p className="text-xs font-semibold">Rango numérico</p>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <label className="space-y-1 text-[11px] text-muted-foreground">
+          Mínimo
+          <input type="number" value={min} onChange={(event) => setMin(event.target.value)} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/30" />
+        </label>
+        <label className="space-y-1 text-[11px] text-muted-foreground">
+          Máximo
+          <input type="number" value={max} onChange={(event) => setMax(event.target.value)} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/30" />
+        </label>
+      </div>
+      <button type="button" className="mt-3 h-8 w-full rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50" onClick={() => { onChange(numberOrNull(min), numberOrNull(max)); onClose(); }}>
+        Aplicar
+      </button>
+    </div>
+  );
+}
+
+function DatePill({
+  state,
+  open,
+  onOpen,
+  onClose,
+}: {
+  state: ExplorationState;
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+}) {
+  const summary = dateSummary(state);
+  return (
+    <Pill
+      label="Fecha"
+      summary={summary}
+      active={state.rangeId !== DEFAULT_RANGE.id || state.dateMode !== 'ultimos'}
+      open={open}
+      onOpen={onOpen}
+      onClose={onClose}
+      // The fixed date filter always has a baseline. Clearing it restores the
+      // section default instead of silently switching to an empty date state.
+      onClear={
+        state.rangeId !== DEFAULT_RANGE.id || state.dateMode !== 'ultimos'
+          ? () => {
+              state.setRange(DEFAULT_RANGE.id);
+              state.setDateMode('ultimos');
+            }
+          : undefined
+      }
+    >
+      <DatePopover state={state} onClose={onClose} />
+    </Pill>
+  );
+}
+
+function DatePopover({ state, onClose }: { state: ExplorationState; onClose: () => void }) {
+  const [custom, setCustom] = useState<DateWindow>(state.customRange ?? state.bounds ?? { desde: '', hasta: '' });
+
+  useEffect(() => {
+    setCustom(state.customRange ?? state.bounds ?? { desde: '', hasta: '' });
+  }, [state.customRange, state.bounds]);
+
+  return (
+    <div className="w-[min(360px,calc(100vw-2rem))]">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-semibold">Ventana de fecha</p>
+          <p className="text-[11px] text-muted-foreground">Selecciona una ventana y su modo.</p>
+        </div>
+        <ChevronDown className="size-3.5 rotate-180 text-muted-foreground" aria-hidden />
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-1.5">
+        {DATE_PRESET_IDS.map((id) => {
+          const preset = RANGE_PRESETS.find((item) => item.id === id);
+          if (preset === undefined) return null;
+          const active = state.rangeId === id;
+          return (
+            <button key={id} type="button" className={cn('rounded-lg border px-2 py-2 text-xs transition-colors hover:bg-muted', active && 'border-primary bg-primary/10 text-primary')} onClick={() => state.setRange(id)}>
+              {shortPresetLabel(preset.id)}
+              <span className="mt-0.5 block text-[10px] text-muted-foreground">{preset.label.replace(/^Últimos\s+/u, '')}</span>
+            </button>
+          );
+        })}
+        <button type="button" className={cn('rounded-lg border px-2 py-2 text-xs transition-colors hover:bg-muted', state.rangeId === RANGE_ALL && 'border-primary bg-primary/10 text-primary')} onClick={() => state.setRange(RANGE_ALL)}>
+          Todo
+          <span className="mt-0.5 block text-[10px] text-muted-foreground">histórico</span>
+        </button>
+      </div>
+
+      <div className="mt-3 flex rounded-lg bg-muted p-0.5">
+        {(['ultimos', 'completo', 'en_curso'] as DateFilterMode[]).map((mode) => (
+          <button key={mode} type="button" className={cn('flex-1 rounded-md px-2 py-1.5 text-[11px] transition-colors', state.dateMode === mode && 'bg-background font-medium shadow-sm')} onClick={() => state.setDateMode(mode)}>
+            {dateModeLabel(mode)}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3 border-t pt-3">
+        <p className="text-[11px] font-medium text-muted-foreground">Rango personalizado</p>
+        <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-end gap-1.5">
+          <label className="space-y-1 text-[10px] text-muted-foreground">Desde<input type="date" value={custom.desde} onChange={(event) => setCustom({ ...custom, desde: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs outline-none focus-visible:border-primary" /></label>
+          <span className="pb-2 text-xs text-muted-foreground">–</span>
+          <label className="space-y-1 text-[10px] text-muted-foreground">Hasta<input type="date" value={custom.hasta} onChange={(event) => setCustom({ ...custom, hasta: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs outline-none focus-visible:border-primary" /></label>
+        </div>
+        <button type="button" disabled={custom.desde === '' || custom.hasta === ''} className="mt-3 h-8 w-full rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/85 disabled:pointer-events-none disabled:opacity-50" onClick={() => { state.setCustomRange(custom); onClose(); }}>
+          Aplicar rango
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ComparisonPill({ state, open, onOpen, onClose }: { state: ExplorationState; open: boolean; onOpen: () => void; onClose: () => void }) {
+  const effectiveLabel = state.comparisonEffective === state.comparison ? COMPARISON_LABEL[state.comparison] : `${COMPARISON_LABEL[state.comparison]} · ${COMPARISON_LABEL[state.comparisonEffective]}`;
+  return (
+    <Pill label="Comparar" summary={effectiveLabel} active={state.comparison !== 'anterior'} open={open} onOpen={onOpen} onClose={onClose}>
+      <div className="w-72">
+        <p className="text-xs font-semibold">Comparación</p>
+        <div className="mt-2 space-y-1">
+          {COMPARISONS.map((mode) => {
+            const disabled = mode === 'anio_anterior' && state.comparisonBlockedReason !== null;
+            return (
+              <button key={mode} type="button" disabled={disabled} title={disabled ? state.comparisonBlockedReason ?? undefined : undefined} className="flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-45" onClick={() => { state.setComparison(mode); if (mode !== 'personalizada') onClose(); }}>
+                <span className={cn('mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full border', state.comparison === mode && 'border-primary bg-primary text-primary-foreground')}>
+                  {state.comparison === mode && <Check className="size-2.5" aria-hidden />}
+                </span>
+                <span>{COMPARISON_LABEL[mode]}{disabled && <span className="mt-0.5 block text-[10px] text-muted-foreground">{state.comparisonBlockedReason}</span>}</span>
+              </button>
+            );
+          })}
+        </div>
+        {state.comparison === 'personalizada' && <CustomComparison state={state} onClose={onClose} />}
+        {state.comparisonEffective !== state.comparison && <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1.5 text-[11px] text-amber-800">La selección se conserva y volverá a aplicarse cuando el rango sea compatible.</p>}
+      </div>
+    </Pill>
+  );
+}
+
+function CustomComparison({ state, onClose }: { state: ExplorationState; onClose: () => void }) {
+  const [range, setRange] = useState<DateWindow>(state.customPrevious ?? state.window ?? { desde: '', hasta: '' });
+  return (
+    <div className="mt-2 border-t pt-2">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-1.5">
+        <label className="space-y-1 text-[10px] text-muted-foreground">Desde<input type="date" value={range.desde} onChange={(event) => setRange({ ...range, desde: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs" /></label>
+        <span className="pb-2 text-xs text-muted-foreground">–</span>
+        <label className="space-y-1 text-[10px] text-muted-foreground">Hasta<input type="date" value={range.hasta} onChange={(event) => setRange({ ...range, hasta: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs" /></label>
+      </div>
+      <button type="button" className="mt-2 h-8 w-full rounded-lg bg-primary text-xs font-medium text-primary-foreground disabled:opacity-50" disabled={range.desde === '' || range.hasta === ''} onClick={() => { state.setCustomPrevious(range); onClose(); }}>Aplicar comparación</button>
+    </div>
+  );
+}
+
+function GranularityPill({ state, open, onOpen, onClose }: { state: ExplorationState; open: boolean; onOpen: () => void; onClose: () => void }) {
+  const current = state.granoChoice === 'auto' ? 'Auto' : GRANULARITY_LABEL[state.granoChoice];
+  return (
+    <Pill label="Grano" summary={current} active={state.granoChoice !== 'auto'} open={open} onOpen={onOpen} onClose={onClose}>
+      <div className="w-52">
+        <p className="text-xs font-semibold">Granularidad temporal</p>
+        <div className="mt-2 grid grid-cols-2 gap-1.5">
+          {(['auto', ...GRANULARITIES] as const).map((value) => (
+            <button key={value} type="button" className={cn('rounded-lg border px-2 py-2 text-xs hover:bg-muted', state.granoChoice === value && 'border-primary bg-primary/10 text-primary')} onClick={() => { state.setGranoChoice(value); onClose(); }}>
+              {value === 'auto' ? 'Auto' : GRANULARITY_LABEL[value]}
+            </button>
+          ))}
+        </div>
+      </div>
+    </Pill>
+  );
+}
+
+function dateSummary(state: ExplorationState): string {
+  if (state.rangeId === RANGE_ALL) return 'Todo';
+  if (state.rangeId === RANGE_CUSTOM && state.customRange !== null) return `${state.customRange.desde} – ${state.customRange.hasta}`;
+  const preset = RANGE_PRESETS.find((item) => item.id === state.rangeId);
+  if (preset === undefined) return 'Seleccionada';
+  return `${shortPresetLabel(preset.id)} · ${dateModeLabel(state.dateMode)}`;
+}
+
+function shortPresetLabel(id: string): string {
+  switch (id) {
+    case '7d': return '1s';
+    case '30d': return '1m';
+    default: return id;
+  }
+}
+
+function dateModeLabel(mode: DateFilterMode): string {
+  switch (mode) {
+    case 'completo': return 'Completos';
+    case 'en_curso': return 'En curso';
+    default: return 'Últimos';
+  }
+}
+
+function membershipSummary(condition: Extract<Condition, { op: 'in' | 'not_in' }> | null): string {
+  if (condition === null || condition.values.length === 0) return 'Todos';
+  if (condition.op === 'not_in') return condition.values.length === 1 ? `Todos excepto ${condition.values[0]}` : `Todos excepto ${condition.values.length}`;
+  const first = condition.values[0] ?? 'Seleccionado';
+  return condition.values.length === 1 ? first : `${first} +${condition.values.length - 1}`;
+}
+
+function numericSummary(condition: Extract<Condition, { op: 'rango' }> | undefined): string {
+  if (condition === undefined || (condition.min === null && condition.max === null)) return 'Todos';
+  if (condition.min !== null && condition.max !== null) return `${condition.min} – ${condition.max}`;
+  if (condition.min !== null) return `≥ ${condition.min}`;
+  return `≤ ${condition.max}`;
+}
+
+function numberOrNull(value: string): number | null {
+  if (value.trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }

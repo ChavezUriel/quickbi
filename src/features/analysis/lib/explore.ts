@@ -15,6 +15,7 @@ import {
   type MetricDef,
 } from '../types';
 import {
+  addDays,
   addUnits,
   bucketLabel,
   bucketOf,
@@ -66,8 +67,21 @@ export function resolveWindows(
     current = { desde: condition.desde, hasta: condition.hasta };
   } else {
     const hasta = bounds.hasta;
-    const desde = addUnits(startOfUnit(hasta, condition.unit), -(condition.n - 1), condition.unit);
-    current = { desde, hasta };
+    const currentStart = startOfUnit(hasta, condition.unit);
+    if (condition.modo === 'completo') {
+      const naturalEnd = addDays(addUnits(currentStart, 1, condition.unit), -1);
+      const completedUntil = hasta >= naturalEnd ? naturalEnd : addDays(currentStart, -1);
+      const desde = startOfUnit(
+        addUnits(completedUntil, -(condition.n - 1), condition.unit),
+        condition.unit,
+      );
+      current = { desde, hasta: completedUntil };
+    } else if (condition.modo === 'en_curso') {
+      current = { desde: currentStart, hasta };
+    } else {
+      const desde = addUnits(currentStart, -(condition.n - 1), condition.unit);
+      current = { desde, hasta };
+    }
   }
 
   if (current.desde > current.hasta) {

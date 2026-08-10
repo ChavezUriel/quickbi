@@ -81,7 +81,7 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
       {/* Barra de control: sin cabecera de tarjeta. El título lo dice ya el
           indicador de pasos y la instrucción, la barra inferior; repetirlos
           costaba 70 px permanentes de la única pantalla que hay. */}
-      <Card size="sm" className="shrink-0">
+      <Card size="sm" className="relative z-20 shrink-0 overflow-visible">
         <CardContent className="space-y-2">
           {/* Donde sí hay scroll, la pista de uso sigue mereciendo su sitio. */}
           <CardDescription className="text-pretty xl:hidden">
@@ -106,7 +106,12 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
           <FilterBar
             state={state}
             distinct={prepared.distinct}
-            dimensions={config.dimensions}
+            dimensions={mapping.dimensions.map((column) => column.name)}
+            numericColumns={mapping.measures.map((column) => column.name)}
+            rows={prepared.rows}
+            unmappedColumns={mapping.columns
+              .filter((column) => column.type === 'empty')
+              .map((column) => column.name)}
           />
 
           {prepared.dropped > 0 && (

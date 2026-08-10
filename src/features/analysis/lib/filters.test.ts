@@ -1,18 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import {
   EMPTY_FILTERS,
+  getMembership,
   getSelected,
   lastPeriods,
   matchesSelections,
   selectSingle,
   setDateCondition,
+  setMembership,
+  setRange,
   setSelected,
   toggleSelected,
   withoutColumn,
 } from './filters';
 import type { AnalysisRow } from '../types';
 
-const row = (dims: Record<string, string>): AnalysisRow => ({ day: null, dims, values: {} });
+const row = (
+  dims: Record<string, string>,
+  values: Record<string, number | null> = {},
+): AnalysisRow => ({ day: null, dims, values });
 
 describe('selección de valores', () => {
   it('sustituye la selección con un clic simple', () => {
@@ -77,5 +83,15 @@ describe('matchesSelections', () => {
   it('ignora la condición temporal, que resuelve el motor', () => {
     const filters = setDateCondition(EMPTY_FILTERS, lastPeriods('fecha', 3, 'mes'));
     expect(matchesSelections(row({ zona: 'Norte' }), filters)).toBe(true);
+  });
+
+  it('aplica exclusiones y rangos numéricos', () => {
+    let filters = setMembership(EMPTY_FILTERS, 'zona', 'not_in', ['Sur']);
+    filters = setRange(filters, 'importe', 10, 50);
+
+    expect(matchesSelections(row({ zona: 'Norte' }, { importe: 25 }), filters)).toBe(true);
+    expect(matchesSelections(row({ zona: 'Sur' }, { importe: 25 }), filters)).toBe(false);
+    expect(matchesSelections(row({ zona: 'Norte' }, { importe: 75 }), filters)).toBe(false);
+    expect(getMembership(filters, 'zona')?.op).toBe('not_in');
   });
 });

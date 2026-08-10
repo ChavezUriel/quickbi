@@ -48,6 +48,8 @@ export interface AnalysisConfig {
 
 export type Granularity = 'dia' | 'semana' | 'mes' | 'trimestre' | 'anio';
 
+export type DateFilterMode = 'ultimos' | 'completo' | 'en_curso';
+
 export type ComparisonMode = 'anterior' | 'anio_anterior' | 'personalizada' | 'ninguna';
 
 /** Ventana temporal cerrada por ambos extremos, en ISO `YYYY-MM-DD`. */
@@ -62,8 +64,16 @@ export interface DateWindow {
  */
 export type Condition =
   | { op: 'in'; column: string; values: string[] }
+  | { op: 'not_in'; column: string; values: string[] }
   | { op: 'entre_fechas'; column: string; desde: string; hasta: string }
-  | { op: 'ultimos_periodos'; column: string; n: number; unit: Granularity };
+  | {
+      op: 'ultimos_periodos';
+      column: string;
+      n: number;
+      unit: Granularity;
+      modo: DateFilterMode;
+    }
+  | { op: 'rango'; column: string; min: number | null; max: number | null };
 
 export interface FilterSet {
   conditions: Condition[];

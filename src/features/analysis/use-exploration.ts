@@ -5,7 +5,7 @@ import {
   RANGE_CUSTOM,
   RANGE_PRESETS,
 } from './labels';
-import { autoGranularity } from './lib/dates';
+import { autoGranularity, daysBetween } from './lib/dates';
 import { computeExploration, resolveWindows } from './lib/explore';
 import {
   clearSelections,
@@ -13,8 +13,11 @@ import {
   getDateCondition,
   getSelected,
   lastPeriods,
+  lastPeriodsWithMode,
   selectSingle,
   setDateCondition,
+  setMembership,
+  setRange as setNumericRange,
   setSelected,
   toggleSelected,
   withoutColumn,
@@ -26,6 +29,7 @@ import {
   TOTAL_DIM,
   type AnalysisConfig,
   type ComparisonMode,
+  type DateFilterMode,
   type DateWindow,
   type ExplorationResult,
   type FilterSet,
@@ -50,10 +54,14 @@ export interface ExplorationState {
   setCustomRange: (window: DateWindow) => void;
   comparison: ComparisonMode;
   setComparison: (comparison: ComparisonMode) => void;
+  comparisonEffective: ComparisonMode;
+  comparisonBlockedReason: string | null;
   customPrevious: DateWindow | null;
   setCustomPrevious: (window: DateWindow) => void;
   granoChoice: 'auto' | Granularity;
   setGranoChoice: (grano: 'auto' | Granularity) => void;
+  dateMode: DateFilterMode;
+  setDateMode: (mode: DateFilterMode) => void;
 
   window: DateWindow | null;
   previousWindow: DateWindow | null;
@@ -66,7 +74,10 @@ export interface ExplorationState {
   /** Valores seleccionados de la dimensión activa. */
   selected: string[];
   setDimensionFilter: (column: string, values: string[]) => void;
+  setMembershipFilter: (column: string, op: 'in' | 'not_in', values: string[]) => void;
+  setNumericFilter: (column: string, min: number | null, max: number | null) => void;
   clearFilters: () => void;
+  filterCount: number;
   /** Widget que originó la selección: se ve entero, con lo elegido resaltado. */
   isEmitter: (widget: WidgetId) => boolean;
   resultFor: (widget: WidgetId) => ExplorationResult;
@@ -129,9 +140,29 @@ export function useExploration(
     return setDateCondition(selections, condition);
   }, [selections, dateCondition, dateColumn]);
 
+  const currentWindow = useMemo(
+    () => resolveWindows(filters, prepared.bounds, 'ninguna').current,
+    [filters, prepared.bounds],
+  );
+
+  const comparisonBlockedReason = useMemo(() => {
+    if (currentWindow === null || prepared.bounds === null) {
+      return null;
+    }
+
+    const windowDays = daysBetween(currentWindow.desde, currentWindow.hasta) + 1;
+    const historyDays = daysBetween(prepared.bounds.desde, prepared.bounds.hasta) + 1;
+    if (windowDays > 366) return 'El rango supera un año.';
+    if (historyDays < 396) return 'El dataset necesita al menos 13 meses de histórico.';
+    return null;
+  }, [currentWindow, prepared.bounds]);
+
+  const comparisonEffective: ComparisonMode =
+    comparison === 'anio_anterior' && comparisonBlockedReason !== null ? 'anterior' : comparison;
+
   const windows = useMemo(
-    () => resolveWindows(filters, prepared.bounds, comparison, customPrevious),
-    [filters, prepared.bounds, comparison, customPrevious],
+    () => resolveWindows(filters, prepared.bounds, comparisonEffective, customPrevious),
+    [filters, prepared.bounds, comparisonEffective, customPrevious],
   );
 
   const grano = useMemo<Granularity>(() => {
@@ -188,10 +219,12 @@ export function useExploration(
 
       const preset = RANGE_PRESETS.find((option) => option.id === id);
       if (preset !== undefined) {
-        setDateConditionState(lastPeriods(dateColumn, preset.n, preset.unit));
+        const mode =
+          dateCondition?.op === 'ultimos_periodos' ? dateCondition.modo : 'ultimos';
+        setDateConditionState(lastPeriodsWithMode(dateColumn, preset.n, preset.unit, mode));
       }
     },
-    [dateColumn, windows, prepared.bounds],
+    [dateColumn, windows, prepared.bounds, dateCondition],
   );
 
   const setCustomRange = useCallback(
@@ -202,15 +235,44 @@ export function useExploration(
     [dateColumn],
   );
 
+  const setDateMode = useCallback(
+    (mode: DateFilterMode) => {
+      if (dateColumn === null) return;
+      setDateConditionState((current) => {
+        const n = current?.op === 'ultimos_periodos' ? current.n : DEFAULT_RANGE.n;
+        const unit = current?.op === 'ultimos_periodos' ? current.unit : DEFAULT_RANGE.unit;
+        return lastPeriodsWithMode(dateColumn, n, unit, mode);
+      });
+    },
+    [dateColumn],
+  );
+
   const setDimensionFilter = useCallback((column: string, values: string[]) => {
     // Un filtro elegido en la barra no tiene widget emisor: se aplica a todos.
     setEmitter(null);
     setSelections((current) => setSelected(current, column, values));
   }, []);
 
+  const setMembershipFilter = useCallback(
+    (column: string, op: 'in' | 'not_in', values: string[]) => {
+      setEmitter(null);
+      setSelections((current) => setMembership(current, column, op, values));
+    },
+    [],
+  );
+
+  const setNumericFilter = useCallback((column: string, min: number | null, max: number | null) => {
+    setEmitter(null);
+    setSelections((current) => setNumericRange(current, column, min, max));
+  }, []);
+
   const clearFilters = useCallback(() => {
     setEmitter(null);
     setSelections((current) => clearSelections(current));
+    setDateConditionState(undefined);
+    setComparison('anterior');
+    setCustomPrevious(null);
+    setGranoChoice('auto');
   }, []);
 
   const select = useCallback(
@@ -238,6 +300,11 @@ export function useExploration(
   );
 
   const activeCondition = getDateCondition(filters);
+  const dateMode: DateFilterMode =
+    activeCondition?.op === 'ultimos_periodos' ? activeCondition.modo : 'ultimos';
+  const filterCount = filters.conditions.filter(
+    (condition) => condition.op !== 'ultimos_periodos' || condition.modo !== 'ultimos',
+  ).length;
 
   return {
     dim,
@@ -255,10 +322,14 @@ export function useExploration(
     setCustomRange,
     comparison,
     setComparison,
+    comparisonEffective,
+    comparisonBlockedReason,
     customPrevious,
     setCustomPrevious,
     granoChoice,
     setGranoChoice,
+    dateMode,
+    setDateMode,
 
     window: windows.current,
     previousWindow: windows.previous,
@@ -269,7 +340,10 @@ export function useExploration(
     result,
     selected,
     setDimensionFilter,
+    setMembershipFilter,
+    setNumericFilter,
     clearFilters,
+    filterCount,
     isEmitter,
     resultFor,
     select,
