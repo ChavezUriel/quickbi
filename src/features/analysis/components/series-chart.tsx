@@ -1,7 +1,6 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
 import { EChart, type EChartHandle } from '@/components/echart';
 import { downloadDataUrl } from '@/lib/download';
-import { useMediaQuery } from '@/lib/use-media-query';
 import { OTHERS_LABEL } from '../lib/explore';
 import { buildSerieOption } from '../lib/serie-option';
 import type { Currency, ExplorationSerie, MetricDef } from '../types';
@@ -36,9 +35,6 @@ export const SeriesChart = forwardRef<SeriesChartHandle, SeriesChartProps>(
     ref,
   ) {
     const chartRef = useRef<EChartHandle>(null);
-    // El lienzo no entiende de puntos de ruptura: la disposición de la leyenda
-    // hay que decidirla en JS y pasarla dentro de la opción.
-    const isWide = useMediaQuery('(min-width: 40rem)');
 
     const option = useMemo(
       () =>
@@ -48,9 +44,11 @@ export const SeriesChart = forwardRef<SeriesChartHandle, SeriesChartProps>(
           currency,
           highlighted,
           ariaDescription: title,
-          layout: isWide ? 'wide' : 'compact',
+          // La leyenda va debajo para que el gráfico use todo el ancho
+          // disponible en el cuadro de mando.
+          layout: 'compact',
         }),
-      [serie, metric, currency, highlighted, title, isWide],
+      [serie, metric, currency, highlighted, title],
     );
 
     useImperativeHandle(ref, () => ({

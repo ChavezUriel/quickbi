@@ -112,12 +112,16 @@ export function buildSerieOption(input: SerieOptionInput): EChartsCoreOption {
     },
     legend: compact
       ? {
-          type: 'scroll',
+          // La leyenda no pagina: ECharts ajusta los elementos en varias
+          // filas dentro del ancho completo del lienzo.
+          type: 'plain',
           orient: 'horizontal',
-          left: 'center',
+          left: 0,
+          right: 0,
           bottom: 0,
           itemWidth: 14,
           itemHeight: 8,
+          itemGap: 8,
           textStyle: { fontSize: 10 },
         }
       : {
@@ -130,7 +134,7 @@ export function buildSerieOption(input: SerieOptionInput): EChartsCoreOption {
           textStyle: { fontSize: 11 },
         },
     grid: compact
-      ? { left: 4, right: 12, top: 12, bottom: 28, containLabel: true }
+      ? { left: 4, right: 12, top: 12, bottom: 56, containLabel: true }
       : // La columna de la leyenda cuesta ancho de trazado. En el cuadro de
         // mando el panel del gráfico ronda los 680 px, no los 1900 de antes:
         // 168 px de rótulos se comían la cuarta parte del gráfico.
