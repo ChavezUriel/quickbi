@@ -104,6 +104,19 @@ export function buildSerieOption(input: SerieOptionInput): EChartsCoreOption {
     aria: { enabled: true, description: ariaDescription },
     tooltip: {
       trigger: 'axis',
+      // Render outside the chart/card stacking and clipping contexts so the
+      // complete tooltip remains visible near the edges of the plot.
+      renderMode: 'html',
+      appendTo: 'body',
+      confine: false,
+      className: 'quickbi-chart-tooltip',
+      // ECharts' built-in dark theme is independent from the app theme. Use
+      // the app tokens so the tooltip follows the active light/dark mode.
+      backgroundColor: 'var(--popover)',
+      borderColor: 'var(--border)',
+      textStyle: { color: 'var(--popover-foreground)' },
+      extraCssText:
+        'z-index: 9999; max-width: min(22rem, calc(100vw - 1rem)); white-space: normal; overflow-wrap: anywhere; pointer-events: none;',
       valueFormatter: (value: unknown) =>
         formatMetric(typeof value === 'number' ? value : null, {
           format: metric.format,
