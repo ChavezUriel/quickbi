@@ -1,7 +1,13 @@
 import { FileSpreadsheet, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { SchemaGroup } from '@/features/wizard/wizard-context';
@@ -48,17 +54,25 @@ export function FileList({
     );
   }
 
+  // Misma tarjeta que el caso de un solo grupo: alineada con la zona de carga
+  // que tiene al lado, y no un bloque suelto con otra tipografía.
   return (
-    <div className="w-full space-y-4">
-      <div className="space-y-1">
-        <h3 className="text-base font-semibold">Estructuras de datos detectadas</h3>
-        <p className="text-sm text-muted-foreground">
-          Los archivos subidos tienen diferentes columnas. Selecciona el grupo de archivos que
-          deseas analizar:
-        </p>
-      </div>
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold">
+          Estructuras de datos detectadas
+        </CardTitle>
+        <CardDescription>
+          Los archivos subidos tienen diferentes columnas. Selecciona el grupo de archivos
+          que deseas analizar:
+        </CardDescription>
+      </CardHeader>
 
-      <div className="space-y-3">
+      <CardContent
+        className="space-y-3"
+        role="radiogroup"
+        aria-label="Grupo de archivos a analizar"
+      >
         {schemaGroups.map((group, index) => {
           const isSelected = selectedFingerprint === group.fingerprint;
           const groupDatasets = group.datasetIds
@@ -68,13 +82,25 @@ export function FileList({
           return (
             <Card
               key={group.fingerprint}
+              // Es un selector excluyente: se anuncia y se opera como tal, con
+              // teclado incluido, no solo como una tarjeta que responde al clic.
+              role="radio"
+              aria-checked={isSelected}
+              tabIndex={0}
               className={cn(
-                'transition-all cursor-pointer border-2',
+                'cursor-pointer border-2 transition-all',
+                'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
                 isSelected
                   ? 'border-primary bg-primary/5 shadow-xs'
-                  : 'border-border/60 hover:border-muted-foreground/40 opacity-70',
+                  : 'border-border/60 opacity-70 hover:border-muted-foreground/40 hover:opacity-100',
               )}
               onClick={() => onSelectFingerprint(group.fingerprint)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelectFingerprint(group.fingerprint);
+                }
+              }}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
@@ -131,8 +157,8 @@ export function FileList({
             </Card>
           );
         })}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

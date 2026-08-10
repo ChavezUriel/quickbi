@@ -2,31 +2,25 @@ import { useCallback, useMemo, useState } from 'react';
 import { coerceValue, profileColumn } from '@/features/dataset/lib/infer-columns';
 import type { ColumnProfile, ColumnType } from '@/features/dataset/lib/column-types';
 import type { ParsedDataset } from '@/features/dataset/types';
-import { needsMeasure, type Aggregation, type ChartMapping } from './types';
 
 export interface ColumnMappingState {
   /** Columnas con las correcciones del usuario ya aplicadas. */
   columns: ColumnProfile[];
+  /** Columnas por las que se puede agrupar (texto y booleanos). */
   dimensions: ColumnProfile[];
+  /** Columnas numéricas: las únicas que se pueden agregar. */
   measures: ColumnProfile[];
-  mapping: ChartMapping;
+  /** Candidatas a eje temporal del cuadro de mando. */
+  dateColumns: ColumnProfile[];
   preserveInvalid: Record<string, boolean>;
   effectiveRowCount: number;
   setColumnType: (name: string, type: ColumnType) => void;
-  setDimension: (name: string) => void;
-  setMeasure: (name: string) => void;
-  setAggregation: (aggregation: Aggregation) => void;
   setPreserveInvalid: (columnName: string, preserve: boolean) => void;
 }
 
 export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
   const [overrides, setOverrides] = useState<Record<string, ColumnType>>({});
   const [preserveInvalid, setPreserveInvalidState] = useState<Record<string, boolean>>({});
-  const [selection, setSelection] = useState<ChartMapping>({
-    dimension: null,
-    measure: null,
-    aggregation: 'sum',
-  });
 
   // Al corregir un tipo hay que reperfilar la columna, no solo reetiquetarla:
   // así el usuario ve al momento cuántos valores no sobrevivirán a su elección.
@@ -41,29 +35,21 @@ export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
     [dataset, overrides],
   );
 
-  // Una columna sin un solo valor no agrupa ni mide: no se ofrece.
+  // Las fechas se excluyen de las dimensiones: su sitio es el eje temporal,
+  // y agrupar por día suelto produce miles de categorías de un solo dato.
   const dimensions = useMemo(
-    () => columns.filter((column) => column.role === 'dimension' && column.type !== 'empty'),
+    () => columns.filter((column) => column.type === 'text' || column.type === 'boolean'),
     [columns],
   );
 
   const measures = useMemo(
-    () => columns.filter((column) => column.role === 'measure'),
+    () => columns.filter((column) => column.type === 'number'),
     [columns],
   );
 
-  // El mapeo se deriva en vez de sincronizarse: corregir un tipo puede dejar la
-  // selección apuntando a una columna que ya no es válida, y recalcularla aquí
-  // evita tener que reconciliar estado en un efecto.
-  const mapping = useMemo<ChartMapping>(
-    () => ({
-      dimension: resolve(selection.dimension, dimensions),
-      measure: needsMeasure(selection.aggregation)
-        ? resolve(selection.measure, measures)
-        : null,
-      aggregation: selection.aggregation,
-    }),
-    [selection, dimensions, measures],
+  const dateColumns = useMemo(
+    () => columns.filter((column) => column.type === 'date'),
+    [columns],
   );
 
   const setColumnType = useCallback((name: string, type: ColumnType) => {
@@ -72,18 +58,6 @@ export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
 
   const setPreserveInvalid = useCallback((columnName: string, preserve: boolean) => {
     setPreserveInvalidState((current) => ({ ...current, [columnName]: preserve }));
-  }, []);
-
-  const setDimension = useCallback((name: string) => {
-    setSelection((current) => ({ ...current, dimension: name }));
-  }, []);
-
-  const setMeasure = useCallback((name: string) => {
-    setSelection((current) => ({ ...current, measure: name }));
-  }, []);
-
-  const setAggregation = useCallback((aggregation: Aggregation) => {
-    setSelection((current) => ({ ...current, aggregation }));
   }, []);
 
   const effectiveRowCount = useMemo(() => {
@@ -121,19 +95,10 @@ export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
     columns,
     dimensions,
     measures,
-    mapping,
+    dateColumns,
     preserveInvalid,
     effectiveRowCount,
     setColumnType,
-    setDimension,
-    setMeasure,
-    setAggregation,
     setPreserveInvalid,
   };
-}
-
-/** Mantiene la elección del usuario si sigue siendo válida; si no, la primera opción. */
-function resolve(chosen: string | null, available: readonly ColumnProfile[]): string | null {
-  if (chosen !== null && available.some((column) => column.name === chosen)) return chosen;
-  return available[0]?.name ?? null;
 }

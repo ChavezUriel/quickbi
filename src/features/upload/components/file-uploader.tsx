@@ -12,9 +12,14 @@ const ACCEPTED_EXTENSIONS = ['.csv', '.xlsx', '.xls'];
 interface FileUploaderProps {
   /** Callback invocado una vez por cada archivo parseado con éxito en memoria. */
   onDatasetParsed: (dataset: ParsedDataset) => void;
+  /**
+   * Versión reducida, para cuando ya hay archivos cargados: la zona de carga
+   * deja de ser el objetivo de la pantalla y no merece media ventana.
+   */
+  compact?: boolean;
 }
 
-export function FileUploader({ onDatasetParsed }: FileUploaderProps) {
+export function FileUploader({ onDatasetParsed, compact = false }: FileUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -122,28 +127,41 @@ export function FileUploader({ onDatasetParsed }: FileUploaderProps) {
             : 'border-muted-foreground/25 hover:border-primary/50',
         )}
       >
-        <CardContent className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+        <CardContent
+          className={cn(
+            'flex flex-col items-center justify-center gap-3 text-center',
+            compact ? 'py-6 sm:py-8' : 'py-10 sm:py-16',
+          )}
+        >
           {isParsing ? (
             <>
-              <Loader2 className="size-10 animate-spin text-primary" />
+              <Loader2
+                className={cn('animate-spin text-primary', compact ? 'size-7' : 'size-10')}
+              />
               <p className="text-sm text-muted-foreground">
                 Procesando {parsingCount} archivo(s)…
               </p>
             </>
           ) : (
             <>
-              <UploadCloud className="size-10 text-muted-foreground" />
+              <UploadCloud
+                className={cn('text-muted-foreground', compact ? 'size-7' : 'size-10')}
+              />
               <div className="space-y-1">
-                <p className="font-medium">
-                  Arrastra tus archivos aquí o haz clic para seleccionarlos
+                <p className={cn('font-medium', compact ? 'text-sm' : 'text-sm sm:text-base')}>
+                  {compact
+                    ? 'Añadir más archivos'
+                    : 'Arrastra tus archivos aquí o haz clic para seleccionarlos'}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground sm:text-sm">
                   Formatos soportados: {ACCEPTED_EXTENSIONS.join(' · ')}
                 </p>
-                <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                  <Lock className="size-3" />
-                  Los datos se procesan en memoria y nunca salen de tu navegador
-                </p>
+                {!compact && (
+                  <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                    <Lock className="size-3" />
+                    Los datos se procesan en memoria y nunca salen de tu navegador
+                  </p>
+                )}
               </div>
             </>
           )}

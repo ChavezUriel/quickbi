@@ -33,7 +33,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (!error) return this.props.children;
 
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center gap-4 p-6">
+      <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col justify-center gap-4 p-4 sm:p-6">
         <Alert variant="destructive" role="alert">
           <AlertTitle>Algo ha ido mal</AlertTitle>
           <AlertDescription>

@@ -34,40 +34,55 @@ npm run dev
 
 ## Arquitectura
 
+La aplicación es un asistente de tres pasos:
+
+1. **Carga de archivos** — ingesta de CSV/Excel, fusión de ficheros con el mismo
+   esquema, vista previa y resumen de qué puede hacer el análisis con ese dataset.
+2. **Configuración de campos** — confirmación de los tipos inferidos y elección
+   del papel de cada columna: eje temporal, dimensiones y métricas.
+3. **Análisis cruzado** — cuadro de mando multidimensional con filtrado cruzado.
+
 ```
 src/
 ├── components/
 │   ├── ui/                  Primitivas de shadcn (no editar a mano)
+│   ├── echart.tsx           Envoltorio React perezoso sobre echarts/core
 │   ├── error-boundary.tsx   Evita la pantalla en blanco ante un fallo de render
 │   └── theme-toggle.tsx
 ├── features/
-│   ├── dataset/             Objeto de dominio central + estado compartido
+│   ├── dataset/             Objeto de dominio central
 │   │   ├── types.ts             ParsedDataset, DataRow, CellValue
-│   │   ├── lib/
-│   │   │   ├── column-types.ts     ColumnProfile, ColumnType, formatos
-│   │   │   ├── parse-values.ts     Texto → número / fecha / booleano (puro)
-│   │   │   └── infer-columns.ts    Perfilado de columnas + coerceValue
-│   │   ├── dataset-context.ts
-│   │   ├── dataset-provider.tsx
-│   │   └── use-dataset.ts
-│   ├── mapping/             Confirmación de tipos y configuración del gráfico
-│   │   ├── types.ts             ChartMapping, Aggregation
+│   │   └── lib/
+│   │       ├── column-types.ts     ColumnProfile, ColumnType, formatos
+│   │       ├── parse-values.ts     Texto → número / fecha / booleano (puro)
+│   │       └── infer-columns.ts    Perfilado de columnas + coerceValue
+│   ├── mapping/             Confirmación de tipos (paso 2)
 │   │   ├── labels.ts            Etiquetas en español
 │   │   ├── use-column-mapping.ts
 │   │   └── components/
-│   ├── chart/               Agregación y visualización
-│   │   ├── types.ts             ChartConfig, ChartType, DateGranularity
-│   │   ├── labels.ts            Etiquetas en español
-│   │   ├── use-chart-config.ts  Ajustes derivados de la dimensión
+│   ├── analysis/            Cuadro de mando de análisis cruzado (paso 3)
+│   │   ├── types.ts             FilterSet, MetricDef, ExplorationResult…
+│   │   ├── labels.ts            Etiquetas y presets de período
+│   │   ├── use-analysis-config.ts  Qué columnas alimentan el cuadro (paso 2)
+│   │   ├── use-exploration.ts      Estado de la sección: filtros y emisor
 │   │   ├── lib/
-│   │   │   ├── aggregate.ts        Filas → categorías agregadas (puro)
-│   │   │   ├── chart-option.ts     Resultado → opción de ECharts (puro)
-│   │   │   ├── export-csv.ts       Resultado → CSV es-ES para Excel (puro)
-│   │   │   └── download.ts         Descargas locales (blob/data URL)
+│   │   │   ├── dates.ts            Aritmética de calendario sobre días ISO (puro)
+│   │   │   ├── filters.ts          Conjunto de filtros compartido (puro)
+│   │   │   ├── prepare-rows.ts     Dataset → filas normalizadas, una sola vez
+│   │   │   ├── explore.ts          Motor: agrupa, compara y construye la serie (puro)
+│   │   │   ├── serie-option.ts     Serie → opción de ECharts (puro)
+│   │   │   ├── format.ts           Formateo es-ES de métricas y variaciones
+│   │   │   └── export-csv.ts       Detalle → CSV es-ES para Excel (puro)
 │   │   └── components/
-│   │       ├── echart.tsx          Envoltorio React perezoso sobre echarts/core
-│   │       ├── chart-view.tsx      Tarjeta del gráfico: controles y exportación
-│   │       └── chart-table.tsx     Los mismos datos en tabla (accesibilidad)
+│   │       ├── analysis-dashboard.tsx  Ensambla la sección
+│   │       ├── analysis-setup.tsx      Configuración del análisis (paso 2)
+│   │       ├── dataset-readiness.tsx   Qué ofrece el dataset (paso 1)
+│   │       ├── filter-bar.tsx          Período, comparación, grano y filtros
+│   │       ├── series-chart.tsx        Evolución temporal
+│   │       ├── movements-list.tsx      Subidas, caídas y desaparecidos
+│   │       ├── detail-table.tsx        Detalle por categoría con barras
+│   │       └── delta-pill.tsx          Insignia de variación con escala divergente
+│   ├── wizard/              Asistente de tres pasos
 │   └── upload/              Ingesta de ficheros
 │       ├── components/
 │       └── lib/
@@ -76,7 +91,7 @@ src/
 │           ├── parse-file.worker.ts  Entrada del Web Worker
 │           ├── parse-client.ts       API del hilo principal
 │           └── parse-error.ts        FileParseError
-└── lib/                     Utilidades transversales (cn, tema)
+└── lib/                     Utilidades transversales (cn, tema, descargas)
 ```
 
 ### Decisiones de diseño
@@ -108,24 +123,56 @@ pagar; se importa dinámicamente dentro de `parseExcel`.
 
 **ECharts también se carga bajo demanda y se usa sin wrapper.** Es ~1 MB que no se
 descarga hasta que hay algo que pintar. `echart.tsx` importa `echarts/core` con
-solo los gráficos (barras, líneas, sectores) y componentes necesarios, en lugar
+solo el gráfico de líneas y los componentes necesarios, en lugar
 de `echarts-for-react`: ese wrapper arrastra el paquete completo de golpe y su
 versión 3 es anterior a ECharts 6, que es la que usa este proyecto. El tema
 oscuro se recrea con la instancia —`setOption` no basta— observando la clase
 `dark` del elemento raíz, y el fondo del gráfico es transparente para que se vea
 la tarjeta y no el lienzo por defecto del tema.
 
-**«Otros» se calcula sobre los acumuladores, no sobre los valores.** Al plegar
-las categorías por debajo del top N, la media de «Otros» es la media ponderada
-de sus filas (no la media de las medias) y el mínimo/máximo son los de sus
-categorías. «Otros» se ordena siempre al final. En dimensiones de fecha no hay
-top N: una serie temporal recortada por valor deja de contar su historia; ahí
-el control es la granularidad (día, mes, año).
+**El ancla temporal es el último día del dataset, no hoy.** «Últimos 3 meses»
+se cuenta hacia atrás desde la fecha más reciente del fichero: un export cerrado
+en marzo mostraría tres meses vacíos si el ancla fuera el reloj del navegador.
+La ventana de comparación se desplaza en las mismas unidades del preset y se
+recorta al día equivalente —tres meses contra tres meses, con el último a la
+misma altura—, porque comparar un mes completo contra uno a medias inventa una
+caída que no existe.
 
-**Las filas excluidas del gráfico se cuentan.** Una fila cuya dimensión o medida
-no se convierte al tipo elegido no aporta a ninguna categoría; el total se
-muestra bajo el gráfico («2 de 17 filas no se han representado»), como ya hace
-el mapeo con «N no convertibles».
+**El cuadro de mando cabe en una pantalla.** A partir de `xl` el paso 3 deja de
+ser un documento que crece y se clava a la altura de la ventana: barra de
+control arriba y los tres paneles en una sola fila que se reparte lo que queda,
+con el scroll dentro de cada uno. La razón es el filtrado cruzado: pulsar una
+categoría y no ver a la vez qué le pasa al total, a la evolución y al detalle es
+perder justamente lo que hace útil el gesto. Por debajo de `xl` no hay altura
+que repartir —encajarlo a la fuerza daría tres cajas de 80 px— y se vuelve al
+documento largo. La altura viaja por una cadena de `flex-1` + `min-h-0` desde
+`AppShell` hasta el lienzo, así que el ancho de cada panel ya no se parece al de
+la ventana: lo que decide cuántas columnas enseña la tabla de detalle o si los
+movimientos van en fila o apilados son consultas de contenedor, no de pantalla.
+
+**El cuadro de mando calcula dos veces, no una.** Al pulsar una categoría, el
+widget que originó el clic sigue viendo todas las suyas (con lo elegido
+resaltado y el resto atenuado) mientras los demás muestran ya el conjunto
+filtrado. Son dos ejecuciones del motor sobre el mismo conjunto de filtros: una
+con la condición de la dimensión activa y otra sin ella. Sin eso, filtrar por
+«Norte» dejaría en pantalla un único elemento y no habría forma de cambiar la
+selección sin deshacerla antes.
+
+**Las filas se normalizan una sola vez.** `prepare-rows.ts` convierte el dataset
+a fechas ISO, texto y número antes de explorar. Es lo que hace que el filtrado
+cruzado se sienta instantáneo: sin ello, cada clic volvería a interpretar
+«1.234,56» y «15/01/2026» en cada fila y para cada widget.
+
+**La participación solo existe si la métrica es acumulativa.** Una suma reparte
+su total entre las categorías; una media, no (la media de las partes no es la
+media del todo). Por eso con una media no hay porcentaje de participación ni
+residuo «Otros», y un período sin datos se dibuja como hueco y no como cero:
+un cero fingiría un desplome donde solo hubo silencio.
+
+**Las filas que quedan fuera se cuentan.** Las que no tienen fecha convertible
+no entran en ninguna ventana temporal y se muestran aparte («Sin fecha: 12»),
+igual que las descartadas por errores de conversión, que se recuerdan con un
+enlace mental al paso anterior donde se pueden preservar.
 
 **El CSV exportado habla español de Excel.** Separador `;` (la coma es el
 decimal), números en formato es-ES y BOM de UTF-8 para que Excel lo abra sin el
@@ -180,16 +227,26 @@ desarrollo vienen del CLI de `shadcn` y no llegan al bundle.
 
 Implementado:
 
-1. Ingesta de CSV/Excel y vista previa del dataset.
+1. Ingesta de CSV/Excel, fusión de varios ficheros con el mismo esquema y
+   vista previa del dataset.
 2. Inferencia de tipos por columna (número, fecha, booleano, texto) con
-   detección de formato y estadísticas de calidad.
-3. Mapeo: confirmación o corrección de los tipos y elección de dimensión,
-   medida y agregación.
-4. Agregación de los datos según el mapeo (`aggregate.ts`): suma, media,
-   recuento, mínimo y máximo, con granularidad de fechas, ordenación y
-   plegado top N en «Otros».
-5. Renderizado con ECharts (barras, líneas, sectores), tema claro/oscuro,
-   tabla de datos agregados y exportación a PNG y CSV.
+   detección de formato y estadísticas de calidad, corregible a mano.
+3. Configuración del análisis: eje temporal, dimensiones y métricas (suma o
+   media de cualquier columna numérica, más el recuento de filas), con formato
+   de número, moneda o porcentaje.
+4. Cuadro de mando de análisis cruzado:
+   - selección de la dimensión activa (o el total sin agrupar) y de la métrica;
+   - período por presets o rango libre, granularidad automática o forzada, y
+     comparación contra el período anterior, el mismo del año anterior o un
+     rango propio;
+   - filtrado cruzado bidireccional entre la evolución, los movimientos y la
+     tabla, con selección múltiple mediante Ctrl/⌘;
+   - evolución temporal con las diez series mayores y el residuo «Otros»,
+     superponiendo el período de comparación cuando hay una sola serie;
+   - rankings de subidas, caídas y desaparecidos;
+   - detalle por categoría con participación, valor previo y variación.
+5. Tema claro/oscuro y exportación a PNG y CSV.
 
-Posibles siguientes pasos: varias medidas a la vez, filtros sobre las filas,
-y modo offline instalable (PWA).
+Posibles siguientes pasos: varias métricas a la vez en la misma tabla, jerarquías
+de dimensiones (drill-down encadenado), cálculo en un Web Worker para datasets
+de más de 100 000 filas, y modo offline instalable (PWA).

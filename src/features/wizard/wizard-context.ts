@@ -6,7 +6,7 @@ export type WizardStep = 1 | 2 | 3;
 export const STEP_LABELS: Record<WizardStep, string> = {
   1: 'Carga de archivos',
   2: 'Configuración de campos',
-  3: 'Visualización',
+  3: 'Análisis cruzado',
 };
 
 export interface SchemaGroup {

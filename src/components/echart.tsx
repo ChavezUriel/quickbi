@@ -4,8 +4,9 @@ import { useResolvedTheme } from '@/lib/use-resolved-theme';
 
 /**
  * ECharts pesa ~1 MB: se carga bajo demanda, igual que SheetJS. Solo se
- * importan los tipos de gráfico y componentes que la app usa, y el tema
- * oscuro se registra como efecto lateral de su propio módulo.
+ * registra el tipo de gráfico que la app usa —la evolución es de líneas; las
+ * barras del detalle son CSS, no lienzo— y el tema oscuro se registra como
+ * efecto lateral de su propio módulo.
  */
 let echartsModule: Promise<typeof import('echarts/core')> | null = null;
 
@@ -18,9 +19,7 @@ function loadECharts(): Promise<typeof import('echarts/core')> {
     import('echarts/theme/dark.js'),
   ]).then(([echarts, charts, components, renderers]) => {
     echarts.use([
-      charts.BarChart,
       charts.LineChart,
-      charts.PieChart,
       components.AriaComponent,
       components.GridComponent,
       components.LegendComponent,
@@ -38,11 +37,31 @@ export interface EChartHandle {
   toPngDataUrl: () => string | null;
 }
 
+export interface EChartSelection {
+  /** Nombre de la serie pulsada, o de la entrada de leyenda. */
+  name: string;
+  /** Ctrl/Cmd pulsado: la selección se acumula en vez de sustituirse. */
+  additive: boolean;
+}
+
 interface EChartProps {
   option: EChartsCoreOption;
-  /** Descripción accesible («Suma de importe por provincia»). */
+  /** Descripción accesible («Evolución de la suma de importe por zona»). */
   ariaLabel: string;
   className?: string;
+  /** Clic sobre un punto o una línea: alimenta el filtrado cruzado. */
+  onSelect?: (selection: EChartSelection) => void;
+}
+
+interface ClickParams {
+  seriesName?: string;
+  name?: string;
+  event?: { event?: { ctrlKey?: boolean; metaKey?: boolean } };
+}
+
+interface LegendParams {
+  name?: string;
+  selected?: Record<string, boolean>;
 }
 
 /**
@@ -50,7 +69,7 @@ interface EChartProps {
  * resuelto, la redimensiona con el contenedor y actualiza la opción.
  */
 export const EChart = forwardRef<EChartHandle, EChartProps>(function EChart(
-  { option, ariaLabel, className },
+  { option, ariaLabel, className, onSelect },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -59,6 +78,10 @@ export const EChart = forwardRef<EChartHandle, EChartProps>(function EChart(
   // recibir la opción vigente, no la que había al dispararse el efecto.
   const optionRef = useRef(option);
   optionRef.current = option;
+  // Los manejadores se leen por referencia: registrarlos como dependencia
+  // recrearía el gráfico entero en cada render del padre.
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
   const theme = useResolvedTheme();
 
   // El tema de ECharts se decide al crear la instancia: hay que recrearla.
@@ -75,6 +98,32 @@ export const EChart = forwardRef<EChartHandle, EChartProps>(function EChart(
       );
       chart.setOption(optionRef.current, { notMerge: true });
       chartRef.current = chart;
+
+      chart.on('click', (params) => {
+        const { seriesName, event } = params as ClickParams;
+        if (seriesName === undefined) return;
+        onSelectRef.current?.({
+          name: seriesName,
+          additive: event?.event?.ctrlKey === true || event?.event?.metaKey === true,
+        });
+      });
+
+      // La leyenda aquí no oculta series, selecciona: es el mismo gesto que
+      // pulsar la línea. Se restaura la visibilidad para que no desaparezca.
+      chart.on('legendselectchanged', (params) => {
+        const { name, selected } = params as LegendParams;
+        if (name === undefined) return;
+
+        if (selected !== undefined) {
+          chart.setOption({
+            legend: {
+              selected: Object.fromEntries(Object.keys(selected).map((key) => [key, true])),
+            },
+          });
+        }
+
+        onSelectRef.current?.({ name, additive: false });
+      });
 
       observer = new ResizeObserver(() => chart.resize());
       observer.observe(containerRef.current);

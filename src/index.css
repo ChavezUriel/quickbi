@@ -121,15 +121,15 @@
   * {
     @apply border-border outline-ring/50;
     }
+  html {
+    @apply font-sans;
+    /* La app crece y mengua de alto al cambiar de paso y al filtrar. Sin el
+       hueco reservado, aparecer y desaparecer la barra de desplazamiento
+       reencuadra todo el cuadro de mando unos píxeles a cada cambio. */
+    scrollbar-gutter: stable;
+    -webkit-text-size-adjust: 100%;
+    }
   body {
     @apply bg-background text-foreground;
     }
-  html {
-    @apply font-sans;
-    }
-}
-
-/* Estilos de transición para el asistente (wizard) */
-.wizard-step-transition {
-  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
