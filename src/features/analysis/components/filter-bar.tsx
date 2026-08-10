@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SlidersHorizontal, X } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -181,34 +181,6 @@ export function FilterBar({ state, distinct, dimensions }: FilterBarProps) {
         </div>
       )}
 
-      {selections.length > 0 && (
-        <div
-          className={cn(
-            'flex flex-wrap items-center gap-1.5',
-            showControls && 'border-t pt-2',
-          )}
-        >
-          <span className="text-xs text-muted-foreground">Filtrado por:</span>
-          {selections.map(({ column, values }) => (
-            <button
-              key={column}
-              type="button"
-              onClick={() => state.setDimensionFilter(column, [])}
-              className="inline-flex h-7 max-w-full items-center gap-1 rounded-full border border-input bg-background px-2 text-xs hover:bg-muted"
-            >
-              <span className="min-w-0 truncate font-mono">{column}</span>
-              <span className="min-w-0 truncate text-muted-foreground">
-                {values.length === 1 ? values[0] : `${values.length} valores`}
-              </span>
-              <X className="size-3 shrink-0" aria-hidden />
-              <span className="sr-only">Quitar el filtro de {column}</span>
-            </button>
-          ))}
-          <Button variant="ghost" size="sm" className="h-7" onClick={state.clearFilters}>
-            Limpiar todo
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
