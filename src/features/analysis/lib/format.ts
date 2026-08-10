@@ -28,26 +28,36 @@ export function formatMetric(value: number | null, options: FormatOptions): stri
   if (value === null || !Number.isFinite(value)) return '—';
 
   const { format, currency, compact = false } = options;
-  const notation = compact ? 'compact' : 'standard';
-  const key = `${format}:${currency}:${notation}`;
+  const notation: Intl.NumberFormatOptions['notation'] = compact ? 'compact' : 'standard';
+  const maximumFractionDigits = compact ? 1 : 2;
+  const minimumFractionDigits =
+    compact || format === 'moneda' ? undefined : Number.isInteger(value) ? 0 : 2;
+  const key = `${format}:${currency}:${notation}:${minimumFractionDigits ?? 'default'}:${maximumFractionDigits}`;
+
+  // En la presentación normal, las métricas con resultado decimal mantienen
+  // dos posiciones (por ejemplo, `12,50`), mientras que los enteros no ganan
+  // ceros innecesarios. La notación compacta conserva su regla más corta para
+  // ejes y celdas estrechas.
+  const fractionOptions = {
+    notation,
+    maximumFractionDigits,
+    ...(minimumFractionDigits === undefined ? {} : { minimumFractionDigits }),
+  };
 
   switch (format) {
     case 'moneda':
       return formatter(key, {
         style: 'currency',
         currency,
-        notation,
-        maximumFractionDigits: compact ? 1 : 2,
+        ...fractionOptions,
       }).format(value);
     case 'porcentaje':
       return `${formatter(key, {
-        notation,
-        maximumFractionDigits: compact ? 1 : 2,
+        ...fractionOptions,
       }).format(value)} %`;
     case 'numero':
       return formatter(key, {
-        notation,
-        maximumFractionDigits: compact ? 1 : 2,
+        ...fractionOptions,
       }).format(value);
   }
 }
