@@ -65,10 +65,11 @@ export const SeriesChart = forwardRef<SeriesChartHandle, SeriesChartProps>(
         ref={chartRef}
         option={option}
         ariaLabel={title}
-        // Altura propia mientras la página scrollea; a partir de `xl` la pone
-        // el panel, que ya se ha repartido lo que quedaba de ventana. ECharts
-        // se entera por el ResizeObserver del envoltorio.
-        className="h-64 w-full sm:h-80 xl:h-full xl:min-h-0 xl:flex-1"
+        // El lienzo se come todo el alto que le deje el panel y solo defiende
+        // un mínimo por debajo del cual dejaría de leerse; ese mínimo es el
+        // que fija la altura cuando el panel crece con su contenido. ECharts
+        // se entera del cambio por el ResizeObserver del envoltorio.
+        className="w-full min-h-64 flex-1 sm:min-h-80 3xl:min-h-0"
         onSelect={({ name, additive }) => {
           // «Otros» y el período de comparación no son categorías del dataset:
           // filtrar por ellos no querría decir nada.

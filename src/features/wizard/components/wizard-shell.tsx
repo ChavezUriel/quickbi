@@ -27,7 +27,7 @@ export function WizardShell() {
         className={cn(
           SHELL_CONTAINER,
           'flex-1 py-4 sm:py-6',
-          fill && 'xl:flex xl:min-h-0 xl:flex-col xl:py-3',
+          fill && '3xl:flex 3xl:min-h-0 3xl:flex-col 3xl:py-3',
         )}
       >
         {/* Paso 1: siempre montado, oculto cuando no es el activo. */}
@@ -82,7 +82,7 @@ function DataWorkspace({
     // queda de ventana», cada envoltorio entre `main` y él tiene que ceder su
     // altura en vez de crecer con el contenido.
     <div
-      className={cn(fill && 'xl:flex xl:min-h-0 xl:flex-1 xl:flex-col')}
+      className={cn(fill && '3xl:flex 3xl:min-h-0 3xl:flex-1 3xl:flex-col')}
       style={{ display: hidden ? 'none' : undefined }}
     >
       {/* Los tipos ocupan lo ancho —una tabla por columna— y la configuración
@@ -98,7 +98,7 @@ function DataWorkspace({
 
       {dashboardMounted && (
         <div
-          className={cn(fill && 'xl:min-h-0 xl:flex-1')}
+          className={cn(fill && '3xl:min-h-0 3xl:flex-1')}
           style={{ display: step === 3 ? undefined : 'none' }}
         >
           <AnalysisDashboard

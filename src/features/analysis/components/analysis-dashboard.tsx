@@ -40,12 +40,18 @@ interface AnalysisDashboardProps {
  * cualquiera de ellos filtra los demás; el que originó la selección se queda
  * entero, con lo elegido resaltado, para poder cambiarla sin deshacerla antes.
  *
- * A partir de `xl` la sección deja de ser un documento y pasa a ser un cuadro
- * de mando de verdad: barra de control arriba, los tres paneles en una sola
- * fila que se reparte la altura que queda de ventana, y el scroll dentro de
- * cada panel. Un cuadro de mando que hay que scrollear no es un cuadro de
- * mando: filtrar por una categoría y no ver a la vez qué le pasa al total, a la
- * evolución y al detalle es perder justamente lo que hace útil el gesto.
+ * La disposición tiene tres escalones y siempre reparte todo el ancho que hay;
+ * lo que cambia con el tamaño es cuántos paneles comparten fila. Cuando dejan
+ * de caber sin apretarse, las tablas bajan —primero el detalle, después los
+ * movimientos— en vez de encogerse todos a la vez:
+ *
+ * - `3xl`: los tres en una fila y la sección clavada a la altura de ventana.
+ *   Un cuadro de mando que hay que scrollear no es un cuadro de mando: filtrar
+ *   por una categoría y no ver a la vez qué le pasa al total, a la evolución y
+ *   al detalle es perder justamente lo que hace útil el gesto.
+ * - `lg`: evolución y movimientos arriba, detalle a lo ancho debajo. La fila de
+ *   arriba se estira hasta casi la ventana entera y el detalle asoma por abajo.
+ * - por debajo: una columna, evolución primero y las dos tablas debajo.
  */
 export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashboardProps) {
   const { config } = analysis;
@@ -77,14 +83,14 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
         : 'Periodo seleccionado');
 
   return (
-    <div className="flex flex-col gap-3 xl:h-full xl:min-h-0">
+    <div className="flex flex-col gap-3 3xl:h-full 3xl:min-h-0">
       {/* Barra de control: sin cabecera de tarjeta. El título lo dice ya el
           indicador de pasos y la instrucción, la barra inferior; repetirlos
           costaba 70 px permanentes de la única pantalla que hay. */}
       <Card size="sm" className="relative z-20 shrink-0 overflow-visible">
         <CardContent className="space-y-2">
           {/* Donde sí hay scroll, la pista de uso sigue mereciendo su sitio. */}
-          <CardDescription className="text-pretty xl:hidden">
+          <CardDescription className="text-pretty 3xl:hidden">
             Pulsa cualquier categoría —en el gráfico, en los movimientos o en la
             tabla— para filtrar el resto de la sección; con Ctrl o ⌘ se añade a la
             selección.
@@ -134,22 +140,27 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
           </AlertDescription>
         </Alert>
       ) : (
-        // Los tres paneles en una fila: el gráfico y el detalle se llevan el
-        // ancho —uno necesita área de trazado, el otro cinco columnas de
-        // cifras— y los movimientos, que son dos listas cortas, el resto.
         <div
           className={cn(
-            'grid min-h-0 gap-3 xl:flex-1',
+            // La fila única de `3xl` es explícita: es la que se reparte la
+            // altura de ventana en vez de crecer con el contenido.
+            'grid min-h-0 gap-3 3xl:flex-1 3xl:grid-rows-[minmax(0,1fr)]',
             // El reparto sale de lo que cada panel necesita, no de partes
             // iguales: el detalle pide sitio para sus cinco columnas, el
             // gráfico para su eje de tiempo, y los movimientos son dos listas
             // de «nombre · cifra · variación» que con 400 px van sobradas.
             hasMovements
-              ? 'xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.72fr)_minmax(0,1.33fr)]'
-              : 'xl:grid-cols-2',
+              ? [
+                  'lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]',
+                  '3xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.72fr)_minmax(0,1.35fr)]',
+                ]
+              : // Sin comparación no hay movimientos, y el detalle se queda sin
+                // las dos columnas que más ancho piden: cabe al lado del
+                // gráfico mucho antes.
+                'lg:grid-cols-2',
           )}
         >
-          <div className="min-w-0 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:gap-3">
+          <div className="flex h-full min-h-0 min-w-0 flex-col gap-3">
             <SummaryHeader
               result={state.result}
               metric={metric}
@@ -160,7 +171,7 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
             />
 
             <Panel
-            className="xl:flex-1"
+            className="flex-1"
             title="Evolución"
             description={
               <>
@@ -212,7 +223,18 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
           {hasMovements && (
             // Aquí el scroll lo pone la tarjeta: la lista no tiene una altura
             // propia que respetar, simplemente se corta donde acaba el panel.
+            //
+            // Es el último en bajar: mientras quede fila arriba se queda al
+            // lado de la evolución, porque «qué ha subido» se lee contra la
+            // curva, no contra la tabla.
+            //
+            // Es también quien pone el techo de esa fila: sus listas crecen
+            // con el número de categorías y sin tope arrastrarían al gráfico
+            // hasta dejar el detalle a dos pantallas de scroll. El techo cede
+            // ante la altura natural del gráfico —de ahí el `max`— para que en
+            // pantallas bajas las dos tarjetas sigan midiendo lo mismo.
             <Panel
+              className="order-3 lg:order-2 lg:max-h-[max(33rem,calc(100dvh_-_22rem))] 3xl:max-h-none"
               title="Crecimientos y caídas"
               description={`Variación de ${metric.label.toLocaleLowerCase('es')} frente al período de comparación.`}
               scroll
@@ -229,6 +251,11 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
           )}
 
           <Panel
+            // La primera en bajar cuando la fila se aprieta: es la que más
+            // ancho pide y la que mejor lo aprovecha a lo ancho de la sección.
+            className={cn(
+              hasMovements && 'order-2 lg:order-3 lg:col-span-2 3xl:col-span-1',
+            )}
             title={`Detalle por ${dimensionHeader}`}
             description="Las mismas cifras del gráfico, exactas y exportables."
           >
@@ -250,10 +277,11 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
 }
 
 /**
- * Tarjeta de widget. Fuera de `xl` es una tarjeta normal que crece con su
- * contenido; a partir de ahí se estira hasta el alto de la fila y le pasa el
- * sobrante al contenido, que es quien decide si lo usa (el gráfico) o lo
- * recorta con scroll (la tabla y las listas).
+ * Tarjeta de widget. Siempre ocupa el alto de su fila de la rejilla y le pasa
+ * el sobrante al contenido, que es quien decide si lo usa (el gráfico) o lo
+ * recorta con scroll (la tabla y las listas). Cuando la fila la dimensiona el
+ * contenido —una sola columna apilada— «el alto de la fila» es el alto natural
+ * y la tarjeta se comporta como cualquier otra.
  */
 function Panel({
   className,
@@ -272,7 +300,7 @@ function Panel({
   children: ReactNode;
 }) {
   return (
-    <Card size="sm" className={cn('min-w-0 xl:h-full xl:min-h-0', className)}>
+    <Card size="sm" className={cn('h-full min-h-0 min-w-0', className)}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription className="text-xs text-pretty">{description}</CardDescription>
@@ -280,7 +308,7 @@ function Panel({
       </CardHeader>
       <CardContent
         className={cn(
-          'flex min-h-0 flex-col xl:flex-1',
+          'flex min-h-0 flex-1 flex-col',
           scroll && 'overflow-y-auto overscroll-contain',
         )}
       >

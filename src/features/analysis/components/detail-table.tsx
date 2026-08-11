@@ -138,9 +138,11 @@ export function DetailTable({
         </Button>
       </div>
 
-      {/* Tope propio mientras la página scrollea; dentro del cuadro de mando la
-          altura la marca el panel y la tabla se come lo que quede. */}
-      <div className="max-h-[24rem] overflow-auto rounded-md border xl:max-h-none xl:min-h-0 xl:flex-1">
+      {/* Tope propio mientras la página scrollea —más generoso cuando la tabla
+          baja a ocupar el ancho entero, que es cuando más filas caben de un
+          vistazo—; dentro del cuadro de mando la altura la marca el panel y la
+          tabla se come lo que quede. */}
+      <div className="max-h-96 min-h-0 flex-1 overflow-auto rounded-md border lg:max-h-[34rem] 3xl:max-h-none">
         <Table>
           <TableCaption className="sr-only">
             {metric.label} por {dimensionHeader}
