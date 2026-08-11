@@ -1,4 +1,5 @@
-import { Download } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -34,6 +35,9 @@ const MAX_ROWS = 200;
 const SHARE_COLUMN = 'hidden @xl:table-cell';
 const PREVIOUS_COLUMN = 'hidden @2xl:table-cell';
 
+type SortField = 'name' | 'value' | 'sharePct' | 'previousValue' | 'deltaPct';
+type SortOrder = 'asc' | 'desc';
+
 interface DetailTableProps {
   result: ExplorationResult;
   metric: MetricDef;
@@ -60,8 +64,49 @@ export function DetailTable({
   fileName,
   onSelect,
 }: DetailTableProps) {
+  const [sortField, setSortField] = useState<SortField>('value');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
   const hasComparison = result.previousWindow !== null;
-  const visible = result.items.slice(0, MAX_ROWS);
+
+  const effectiveSortField = useMemo(() => {
+    if (sortField === 'sharePct' && !metric.cumulative) return 'value';
+    if ((sortField === 'previousValue' || sortField === 'deltaPct') && !hasComparison) {
+      return 'value';
+    }
+    return sortField;
+  }, [sortField, metric.cumulative, hasComparison]);
+
+  const handleSort = (field: SortField) => {
+    if (effectiveSortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(field === 'name' ? 'asc' : 'desc');
+    }
+  };
+
+  const sortedItems = useMemo(() => {
+    return [...result.items].sort((a, b) => {
+      const valA = a[effectiveSortField];
+      const valB = b[effectiveSortField];
+
+      if (valA === valB) return a.name.localeCompare(b.name, 'es');
+      if (valA === null || valA === undefined) return 1;
+      if (valB === null || valB === undefined) return -1;
+
+      let comp = 0;
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        comp = valA.localeCompare(valB, 'es', { numeric: true, sensitivity: 'base' });
+      } else {
+        comp = (valA as number) < (valB as number) ? -1 : 1;
+      }
+
+      return sortOrder === 'asc' ? comp : -comp;
+    });
+  }, [result.items, effectiveSortField, sortOrder]);
+
+  const visible = sortedItems.slice(0, MAX_ROWS);
   const max = visible.reduce((peak, item) => Math.max(peak, Math.abs(item.value)), 0);
   const scale = deltaScale(visible.map((item) => item.deltaPct));
   const dimming = selected.length > 0;
@@ -105,24 +150,118 @@ export function DetailTable({
               y en tema oscuro las dos no son el mismo color. */}
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow>
-              <TableHead scope="col" className="max-w-32 truncate sm:max-w-44">
-                {dimensionHeader}
+              <TableHead
+                scope="col"
+                aria-sort={
+                  effectiveSortField === 'name'
+                    ? sortOrder === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : 'none'
+                }
+                className="max-w-32 truncate sm:max-w-44"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleSort('name')}
+                  className="inline-flex items-center gap-1 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                >
+                  <span className="truncate" title={dimensionHeader}>
+                    {dimensionHeader}
+                  </span>
+                  <SortIcon active={effectiveSortField === 'name'} order={sortOrder} />
+                </button>
               </TableHead>
-              <TableHead scope="col" className="text-right">
-                {metric.label}
+
+              <TableHead
+                scope="col"
+                aria-sort={
+                  effectiveSortField === 'value'
+                    ? sortOrder === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : 'none'
+                }
+                className="text-right"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleSort('value')}
+                  className="inline-flex w-full items-center justify-end gap-1 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                >
+                  <span>{metric.label}</span>
+                  <SortIcon active={effectiveSortField === 'value'} order={sortOrder} />
+                </button>
               </TableHead>
+
               {metric.cumulative && (
-                <TableHead scope="col" className={cn('text-right', SHARE_COLUMN)}>
-                  Participación
+                <TableHead
+                  scope="col"
+                  aria-sort={
+                    effectiveSortField === 'sharePct'
+                      ? sortOrder === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                      : 'none'
+                  }
+                  className={cn('text-right', SHARE_COLUMN)}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleSort('sharePct')}
+                    className="inline-flex w-full items-center justify-end gap-1 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                  >
+                    <span>Participación</span>
+                    <SortIcon active={effectiveSortField === 'sharePct'} order={sortOrder} />
+                  </button>
                 </TableHead>
               )}
+
               {hasComparison && (
                 <>
-                  <TableHead scope="col" className={cn('text-right', PREVIOUS_COLUMN)}>
-                    Período anterior
+                  <TableHead
+                    scope="col"
+                    aria-sort={
+                      effectiveSortField === 'previousValue'
+                        ? sortOrder === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                    }
+                    className={cn('text-right', PREVIOUS_COLUMN)}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleSort('previousValue')}
+                      className="inline-flex w-full items-center justify-end gap-1 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                    >
+                      <span>Período anterior</span>
+                      <SortIcon
+                        active={effectiveSortField === 'previousValue'}
+                        order={sortOrder}
+                      />
+                    </button>
                   </TableHead>
-                  <TableHead scope="col" className="text-right">
-                    Variación
+
+                  <TableHead
+                    scope="col"
+                    aria-sort={
+                      effectiveSortField === 'deltaPct'
+                        ? sortOrder === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                    }
+                    className="text-right"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleSort('deltaPct')}
+                      className="inline-flex w-full items-center justify-end gap-1 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                    >
+                      <span>Variación</span>
+                      <SortIcon active={effectiveSortField === 'deltaPct'} order={sortOrder} />
+                    </button>
                   </TableHead>
                 </>
               )}
@@ -233,3 +372,15 @@ export function DetailTable({
     </div>
   );
 }
+
+function SortIcon({ active, order }: { active: boolean; order: SortOrder }) {
+  if (active) {
+    return order === 'asc' ? (
+      <ArrowUp className="size-3.5 shrink-0 text-primary" aria-hidden />
+    ) : (
+      <ArrowDown className="size-3.5 shrink-0 text-primary" aria-hidden />
+    );
+  }
+  return <ArrowUpDown className="size-3 shrink-0 opacity-40 hover:opacity-75" aria-hidden />;
+}
+
