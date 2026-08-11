@@ -96,9 +96,9 @@ export function bucketOf(iso: string, grano: Granularity): string {
   }
 }
 
-const MONTH_LABEL = new Intl.DateTimeFormat('es-ES', { month: 'short', year: '2-digit' });
-const DAY_LABEL = new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short' });
-const COMPACT_DATE_LABEL = new Intl.DateTimeFormat('es-ES', {
+const MONTH_LABEL = new Intl.DateTimeFormat('es-MX', { month: 'short', year: '2-digit' });
+const DAY_LABEL = new Intl.DateTimeFormat('es-MX', { day: '2-digit', month: 'short' });
+const COMPACT_DATE_LABEL = new Intl.DateTimeFormat('es-MX', {
   day: 'numeric',
   month: 'short',
   year: '2-digit',
@@ -181,7 +181,7 @@ export function shiftByDuration(window: DateWindow): DateWindow {
 }
 
 export function formatDay(iso: string): string {
-  return fromIso(iso).toLocaleDateString('es-ES');
+  return fromIso(iso).toLocaleDateString('es-MX');
 }
 
 export function formatWindow(window: DateWindow): string {

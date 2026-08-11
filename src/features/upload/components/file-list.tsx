@@ -338,7 +338,7 @@ function FileCard({ dataset, isOmitted = false, onRemove }: FileCardProps) {
           <Rows3 className="size-3 text-muted-foreground/70" />
           <span>
             <strong className="font-medium text-foreground">
-              {dataset.rowCount.toLocaleString('es-ES')}
+              {dataset.rowCount.toLocaleString('es-MX')}
             </strong>{' '}
             filas
           </span>

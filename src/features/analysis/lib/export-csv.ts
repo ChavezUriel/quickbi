@@ -1,13 +1,13 @@
 import type { ExplorationResult } from '../types';
 
-const NUMBER = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 4 });
+const NUMBER = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 4 });
 
 /** BOM de UTF-8: sin él Excel abre el fichero como ANSI y rompe las tildes. */
 const BOM = '\u{FEFF}';
 
 /**
- * Serializa el detalle por dimensión a CSV pensado para Excel en español:
- * separador `;` (la coma es el decimal) y números en es-ES.
+ * Serializa el detalle por dimensión a CSV pensado para Excel en español (México):
+ * separador `;` (el punto es el decimal) y números en es-MX.
  */
 export function explorationToCsv(
   result: ExplorationResult,

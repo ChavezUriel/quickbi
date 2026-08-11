@@ -185,7 +185,7 @@ export function AnalysisSetup({ state }: { state: AnalysisConfigState }) {
                       </div>
 
                       <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
-                        {column.distinctCount.toLocaleString('es-ES')}
+                        {column.distinctCount.toLocaleString('es-MX')}
                         {column.distinctCountExact ? '' : '+'}
                       </span>
                     </li>

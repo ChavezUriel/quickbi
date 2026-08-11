@@ -96,16 +96,16 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
             <TriangleAlert className="size-4" />
             <AlertTitle>Filas excluidas por errores de conversión</AlertTitle>
             <AlertDescription>
-              {effectiveRowCount.toLocaleString('es-ES')} de{' '}
-              {dataset.rowCount.toLocaleString('es-ES')} filas se incluirán en el análisis.
+              {effectiveRowCount.toLocaleString('es-MX')} de{' '}
+              {dataset.rowCount.toLocaleString('es-MX')} filas se incluirán en el análisis.
             </AlertDescription>
           </Alert>
         ) : (
           <Alert role="status">
             <Info className="size-4" />
             <AlertDescription>
-              {effectiveRowCount.toLocaleString('es-ES')} de{' '}
-              {dataset.rowCount.toLocaleString('es-ES')} filas se incluirán en el análisis.
+              {effectiveRowCount.toLocaleString('es-MX')} de{' '}
+              {dataset.rowCount.toLocaleString('es-MX')} filas se incluirán en el análisis.
             </AlertDescription>
           </Alert>
         )}
@@ -255,9 +255,9 @@ function ColumnStats({ column }: { column: ColumnProfile }) {
   return (
     <div className="space-y-0.5">
       <p className="text-muted-foreground">
-        {column.distinctCount.toLocaleString('es-ES')}
+        {column.distinctCount.toLocaleString('es-MX')}
         {column.distinctCountExact ? '' : '+'} distintos
-        {column.nullCount > 0 && ` · ${column.nullCount.toLocaleString('es-ES')} vacíos`}
+        {column.nullCount > 0 && ` · ${column.nullCount.toLocaleString('es-MX')} vacíos`}
       </p>
       {format && <p className="text-muted-foreground">{format}</p>}
     </div>

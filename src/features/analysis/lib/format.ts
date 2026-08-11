@@ -12,7 +12,7 @@ function formatter(key: string, options: Intl.NumberFormatOptions): Intl.NumberF
   const existing = cache.get(key);
   if (existing !== undefined) return existing;
 
-  const created = new Intl.NumberFormat('es-ES', options);
+  const created = new Intl.NumberFormat('es-MX', options);
   cache.set(key, created);
   return created;
 }
@@ -35,7 +35,7 @@ export function formatMetric(value: number | null, options: FormatOptions): stri
   const key = `${format}:${currency}:${notation}:${minimumFractionDigits ?? 'default'}:${maximumFractionDigits}`;
 
   // En la presentación normal, las métricas con resultado decimal mantienen
-  // dos posiciones (por ejemplo, `12,50`), mientras que los enteros no ganan
+  // dos posiciones (por ejemplo, `12.50`), mientras que los enteros no ganan
   // ceros innecesarios. La notación compacta conserva su regla más corta para
   // ejes y celdas estrechas.
   const fractionOptions = {
@@ -62,7 +62,7 @@ export function formatMetric(value: number | null, options: FormatOptions): stri
   }
 }
 
-const DELTA = new Intl.NumberFormat('es-ES', {
+const DELTA = new Intl.NumberFormat('es-MX', {
   maximumFractionDigits: 1,
   signDisplay: 'exceptZero',
 });
@@ -73,7 +73,7 @@ export function formatDelta(delta: number | null): string {
   return `${DELTA.format(delta)} %`;
 }
 
-const SHARE = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 });
+const SHARE = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 1 });
 
 export function formatShare(share: number | null): string {
   if (share === null || !Number.isFinite(share)) return '—';
@@ -92,7 +92,7 @@ export function deltaScale(values: readonly (number | null)[]): number {
   );
 }
 
-const INTEGER = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 0 });
+const INTEGER = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 0 });
 
 export function formatCount(value: number): string {
   return INTEGER.format(value);

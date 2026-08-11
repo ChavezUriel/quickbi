@@ -502,7 +502,7 @@ function MembershipPopover({
                 />
                 <span className="min-w-0 truncate text-xs" title={value}>{value}</span>
                 <span className="relative text-right text-[10px] tabular-nums text-muted-foreground">
-                  <span className="group-hover:invisible">{(counts[value] ?? 0).toLocaleString('es-ES')}</span>
+                  <span className="group-hover:invisible">{(counts[value] ?? 0).toLocaleString('es-MX')}</span>
                   <button
                     type="button"
                     className="invisible absolute inset-0 w-full rounded bg-background px-1 text-[10px] font-semibold uppercase tracking-wide text-primary group-hover:visible hover:bg-primary/10 focus-visible:visible focus-visible:outline-none"

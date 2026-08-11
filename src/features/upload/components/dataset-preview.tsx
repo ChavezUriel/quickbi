@@ -46,7 +46,7 @@ export function DatasetPreview({ dataset, sourceFileCount }: DatasetPreviewProps
           {!showMultipleFilesTitle && (
             <Badge variant="secondary">{dataset.fileType.toUpperCase()}</Badge>
           )}
-          <Badge variant="outline">{dataset.rowCount.toLocaleString('es-ES')} filas</Badge>
+          <Badge variant="outline">{dataset.rowCount.toLocaleString('es-MX')} filas</Badge>
         </CardTitle>
         <CardDescription>
           {dataset.columns.length} columnas detectadas — vista previa de las primeras{' '}
@@ -120,8 +120,8 @@ export function DatasetPreview({ dataset, sourceFileCount }: DatasetPreviewProps
 
 function formatCell(value: CellValue | undefined): string {
   if (value === null || value === undefined) return '—';
-  if (value instanceof Date) return value.toLocaleDateString('es-ES');
-  if (typeof value === 'number') return value.toLocaleString('es-ES');
+  if (value instanceof Date) return value.toLocaleDateString('es-MX');
+  if (typeof value === 'number') return value.toLocaleString('es-MX');
   if (typeof value === 'boolean') return value ? 'Sí' : 'No';
   return value;
 }
