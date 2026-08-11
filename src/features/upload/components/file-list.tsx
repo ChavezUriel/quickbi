@@ -1,4 +1,5 @@
-import { FileSpreadsheet, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Columns3, FileSpreadsheet, FileText, Rows3, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,29 +36,29 @@ export function FileList({
 
   if (!isMultiGroup) {
     return (
-      <Card className="w-full">
+      <Card className="w-full h-full flex flex-col justify-between">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold">
-            Archivos cargados ({datasets.length})
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-semibold">
+              Archivos cargados
+            </CardTitle>
+            <Badge variant="secondary" className="text-xs font-normal">
+              {datasets.length} {datasets.length === 1 ? 'archivo' : 'archivos'}
+            </Badge>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {datasets.map((dataset) => (
-            <FileCard
-              key={dataset.id}
-              dataset={dataset}
-              onRemove={() => onRemoveDataset(dataset.id)}
-            />
-          ))}
+        <CardContent className="my-auto">
+          <PaginatedFileGrid
+            datasets={datasets}
+            onRemoveDataset={onRemoveDataset}
+          />
         </CardContent>
       </Card>
     );
   }
 
-  // Misma tarjeta que el caso de un solo grupo: alineada con la zona de carga
-  // que tiene al lado, y no un bloque suelto con otra tipografía.
   return (
-    <Card className="w-full">
+    <Card className="w-full h-full flex flex-col justify-between">
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-semibold">
           Estructuras de datos detectadas
@@ -69,7 +70,7 @@ export function FileList({
       </CardHeader>
 
       <CardContent
-        className="space-y-3"
+        className="space-y-4 my-auto"
         role="radiogroup"
         aria-label="Grupo de archivos a analizar"
       >
@@ -82,8 +83,6 @@ export function FileList({
           return (
             <Card
               key={group.fingerprint}
-              // Es un selector excluyente: se anuncia y se opera como tal, con
-              // teclado incluido, no solo como una tarjeta que responde al clic.
               role="radio"
               aria-checked={isSelected}
               tabIndex={0}
@@ -141,24 +140,135 @@ export function FileList({
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-2 pt-0">
-                {groupDatasets.map((dataset) => (
-                  <FileCard
-                    key={dataset.id}
-                    dataset={dataset}
-                    isOmitted={!isSelected}
-                    onRemove={(e) => {
-                      e.stopPropagation();
-                      onRemoveDataset(dataset.id);
-                    }}
-                  />
-                ))}
+              <CardContent className="pt-0">
+                <PaginatedFileGrid
+                  datasets={groupDatasets}
+                  isOmitted={!isSelected}
+                  onRemoveDataset={onRemoveDataset}
+                />
               </CardContent>
             </Card>
           );
         })}
       </CardContent>
     </Card>
+  );
+}
+
+interface PaginatedFileGridProps {
+  datasets: ParsedDataset[];
+  isOmitted?: boolean;
+  onRemoveDataset: (id: string) => void;
+}
+
+function PaginatedFileGrid({
+  datasets,
+  isOmitted = false,
+  onRemoveDataset,
+}: PaginatedFileGridProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pageSize, setPageSize] = useState(3);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const updatePageSize = () => {
+      const width = el.clientWidth;
+      if (width <= 0) return;
+      // Ancho mínimo por tarjeta (~170px) + gap de separación (12px)
+      const minCardWidth = 170;
+      const gap = 12;
+      const count = Math.max(1, Math.floor((width + gap) / (minCardWidth + gap)));
+      setPageSize(count);
+    };
+
+    updatePageSize();
+
+    const observer = new ResizeObserver(() => {
+      updatePageSize();
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const totalPages = Math.ceil(datasets.length / pageSize);
+  const validPage = Math.min(currentPage, Math.max(0, totalPages - 1));
+
+  const startIndex = validPage * pageSize;
+  const pageDatasets = datasets.slice(startIndex, startIndex + pageSize);
+
+  return (
+    <div className="space-y-3">
+      <div
+        ref={containerRef}
+        className="grid gap-3"
+        style={{
+          gridTemplateColumns: `repeat(${pageSize}, minmax(0, 1fr))`,
+        }}
+      >
+        {pageDatasets.map((dataset) => (
+          <FileCard
+            key={dataset.id}
+            dataset={dataset}
+            isOmitted={isOmitted}
+            onRemove={(e) => {
+              e.stopPropagation();
+              onRemoveDataset(dataset.id);
+            }}
+          />
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-border/40 pt-2.5 text-xs text-muted-foreground">
+          <span className="font-medium">
+            Archivos {startIndex + 1}-{Math.min(startIndex + pageSize, datasets.length)} de{' '}
+            {datasets.length}
+          </span>
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-7"
+              disabled={validPage === 0}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentPage((p) => Math.max(0, p - 1));
+              }}
+              aria-label="Página anterior"
+              title="Página anterior"
+            >
+              <ChevronLeft className="size-3.5" />
+            </Button>
+
+            <span className="px-1 text-xs font-mono font-medium text-foreground">
+              {validPage + 1} / {totalPages}
+            </span>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-7"
+              disabled={validPage >= totalPages - 1}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentPage((p) => Math.min(totalPages - 1, p + 1));
+              }}
+              aria-label="Página siguiente"
+              title="Página siguiente"
+            >
+              <ChevronRight className="size-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -169,46 +279,86 @@ interface FileCardProps {
 }
 
 function FileCard({ dataset, isOmitted = false, onRemove }: FileCardProps) {
+  const isCsv = dataset.fileType.toLowerCase() === 'csv';
+
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-3 p-3 rounded-lg border bg-card text-card-foreground transition-opacity',
-        isOmitted ? 'opacity-50' : 'opacity-100',
+        'group relative flex flex-col justify-between rounded-xl border bg-card p-3 text-card-foreground shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-md w-full',
+        isOmitted ? 'border-dashed opacity-50 grayscale-[30%] hover:opacity-80' : 'opacity-100',
       )}
     >
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <FileSpreadsheet className="size-5 text-muted-foreground shrink-0" />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-medium text-sm break-all">{dataset.fileName}</span>
-            <Badge variant="secondary" className="text-[10px] uppercase">
-              {dataset.fileType}
-            </Badge>
-            <Badge variant="outline" className="text-[10px]">
-              {dataset.rowCount.toLocaleString('es-ES')} filas
-            </Badge>
-            <Badge variant="outline" className="text-[10px]">
-              {dataset.columns.length} columnas
-            </Badge>
-            {isOmitted && (
-              <Badge variant="secondary" className="text-[10px]">
-                Omitido
-              </Badge>
+      {/* Visual Header */}
+      <div className="flex items-start justify-between gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <div
+            className={cn(
+              'flex size-7 shrink-0 items-center justify-center rounded-md border transition-colors',
+              isCsv
+                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                : 'border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400',
             )}
+          >
+            {isCsv ? <FileText className="size-3.5" /> : <FileSpreadsheet className="size-3.5" />}
           </div>
+          <Badge
+            variant="secondary"
+            className="font-mono text-[9px] px-1 py-0 font-semibold uppercase tracking-wider"
+          >
+            .{dataset.fileType}
+          </Badge>
         </div>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-6 shrink-0 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          onClick={onRemove}
+          aria-label={`Eliminar ${dataset.fileName}`}
+          title="Eliminar archivo"
+        >
+          <X className="size-3" />
+        </Button>
       </div>
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
-        onClick={onRemove}
-        aria-label={`Eliminar ${dataset.fileName}`}
-      >
-        <X className="size-4" />
-      </Button>
+      {/* File Name */}
+      <div className="my-2.5 min-w-0">
+        <h4
+          className="line-clamp-2 font-medium text-xs text-foreground leading-snug break-words"
+          title={dataset.fileName}
+        >
+          {dataset.fileName}
+        </h4>
+      </div>
+
+      {/* Footer Stats */}
+      <div className="mt-auto flex items-center justify-between border-t border-border/50 pt-2 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <Rows3 className="size-3 text-muted-foreground/70" />
+          <span>
+            <strong className="font-medium text-foreground">
+              {dataset.rowCount.toLocaleString('es-ES')}
+            </strong>{' '}
+            filas
+          </span>
+        </span>
+        <span className="flex items-center gap-1">
+          <Columns3 className="size-3 text-muted-foreground/70" />
+          <span>
+            <strong className="font-medium text-foreground">{dataset.columns.length}</strong> cols
+          </span>
+        </span>
+      </div>
+
+      {isOmitted && (
+        <div className="mt-1.5 text-center">
+          <Badge variant="outline" className="w-full justify-center text-[9px] text-muted-foreground py-0">
+            Omitido
+          </Badge>
+        </div>
+      )}
     </div>
   );
 }
+

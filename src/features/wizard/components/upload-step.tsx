@@ -24,7 +24,7 @@ export function UploadStep() {
 
   return (
     <div className="space-y-4">
-      <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+      <div className="grid items-stretch gap-4 md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr] xl:grid-cols-[260px_1fr]">
         <FileUploader onDatasetParsed={addDataset} compact />
         <FileList
           datasets={datasets}
@@ -75,18 +75,20 @@ function EmptyState({
   onDatasetParsed: React.ComponentProps<typeof FileUploader>['onDatasetParsed'];
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col justify-center gap-8 py-4 sm:py-10">
+    <div className="mx-auto flex w-full max-w-3xl flex-col justify-center gap-8 py-4 sm:py-10">
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-bold tracking-tight text-balance sm:text-3xl">
           Análisis exploratorio de tus datos, sin subirlos a ningún sitio
         </h1>
-        <p className="mx-auto max-w-2xl text-sm text-pretty text-muted-foreground sm:text-base">
+        <p className="mx-auto max-w-xl text-sm text-pretty text-muted-foreground sm:text-base">
           Sube una hoja de cálculo y QuickBI la explora al instante. Todo el
           procesamiento ocurre en esta pestaña: tus datos nunca salen de tu máquina.
         </p>
       </div>
 
-      <FileUploader onDatasetParsed={onDatasetParsed} />
+      <div className="mx-auto w-full max-w-lg">
+        <FileUploader onDatasetParsed={onDatasetParsed} />
+      </div>
 
       <ol className="grid gap-3 sm:grid-cols-3">
         {HOW_IT_WORKS.map(({ icon: Icon, title, text }, index) => (
