@@ -65,6 +65,11 @@ export function DetailTable({
   const max = visible.reduce((peak, item) => Math.max(peak, Math.abs(item.value)), 0);
   const scale = deltaScale(visible.map((item) => item.deltaPct));
   const dimming = selected.length > 0;
+  const useCompact = visible.some(
+    (item) =>
+      Math.abs(item.value) > 99999 ||
+      (item.previousValue !== null && Math.abs(item.previousValue) > 99999),
+  );
 
   const exportCsv = () => {
     downloadTextFile(
@@ -100,7 +105,9 @@ export function DetailTable({
               y en tema oscuro las dos no son el mismo color. */}
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow>
-              <TableHead scope="col">{dimensionHeader}</TableHead>
+              <TableHead scope="col" className="max-w-32 truncate sm:max-w-44">
+                {dimensionHeader}
+              </TableHead>
               <TableHead scope="col" className="text-right">
                 {metric.label}
               </TableHead>
@@ -143,14 +150,14 @@ export function DetailTable({
                   )}
                 >
                   <TableCell
-                    className="max-w-40 truncate font-medium sm:max-w-64"
+                    className="max-w-32 truncate font-medium sm:max-w-44"
                     title={item.name}
                   >
                     {selectable ? (
                       <button
                         type="button"
                         aria-pressed={isSelected}
-                        className="text-left underline-offset-2 hover:underline"
+                        className="block max-w-full truncate text-left underline-offset-2 hover:underline"
                         onClick={(event) => {
                           event.stopPropagation();
                           onSelect(item.name, event.ctrlKey || event.metaKey);
@@ -166,7 +173,11 @@ export function DetailTable({
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
                       <span className="tabular-nums">
-                        {formatMetric(item.value, { format: metric.format, currency })}
+                        {formatMetric(item.value, {
+                          format: metric.format,
+                          currency,
+                          compact: useCompact,
+                        })}
                       </span>
                       <span
                         className="hidden h-2 w-20 shrink-0 overflow-hidden rounded-full bg-muted sm:block"
@@ -205,6 +216,7 @@ export function DetailTable({
                         {formatMetric(item.previousValue, {
                           format: metric.format,
                           currency,
+                          compact: useCompact,
                         })}
                       </TableCell>
                       <TableCell className="text-right">

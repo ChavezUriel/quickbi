@@ -82,7 +82,10 @@ export function MovementsList({
                 key={item.name}
                 className="flex items-baseline justify-between gap-2 text-sm"
               >
-                <span className="min-w-0 truncate text-muted-foreground" title={item.name}>
+                <span
+                  className="max-w-32 truncate text-muted-foreground sm:max-w-44"
+                  title={item.name}
+                >
                   {item.name}
                 </span>
                 <span className="shrink-0 tabular-nums text-muted-foreground">
@@ -158,7 +161,7 @@ function Column({
                     isSelected && 'bg-muted',
                   )}
                 >
-                  <span className="min-w-0 truncate" title={item.name}>
+                  <span className="max-w-32 truncate sm:max-w-44" title={item.name}>
                     {item.name}
                   </span>
                   <span className="flex shrink-0 items-center gap-2">
