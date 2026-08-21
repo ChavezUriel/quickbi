@@ -160,7 +160,7 @@ export function ToolGallery({
         </div>
 
         {/* Pestañas de categoría y botón de solo compatibles */}
-        <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-1.5">
           <Button
             variant={activeCategory === 'all' ? 'default' : 'outline'}
             size="sm"
