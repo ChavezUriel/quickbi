@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import type { EChartsCoreOption } from 'echarts/core';
-import { ArrowDown, ArrowUp, Download, ImageDown, Sparkles, TriangleAlert } from 'lucide-react';
+import { ArrowDown, ArrowUp, Download, ImageDown, Sparkles, TriangleAlert, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -293,6 +293,18 @@ export function BasketDashboard({
               option={heatmapOption}
               ariaLabel="Matriz de afinidad de compra"
               className="min-h-80 w-full sm:min-h-96"
+              onSelect={({ value, data }) => {
+                const cell = (value ?? data) as [number, number, number] | undefined;
+                if (Array.isArray(cell) && result) {
+                  const itemX = result.matrix.topItems[cell[0]];
+                  const itemY = result.matrix.topItems[cell[1]];
+                  if (itemY && itemX && itemY !== itemX) {
+                    setSearchTerm(itemY);
+                  } else if (itemX) {
+                    setSearchTerm(itemX);
+                  }
+                }
+              }}
             />
           </CardContent>
         </Card>
@@ -301,19 +313,35 @@ export function BasketDashboard({
       {/* Association Rules Table */}
       <Card size="sm">
         <CardHeader>
-          <CardTitle>Recomendaciones de venta cruzada (Cross-Selling)</CardTitle>
-          <CardDescription className="text-xs">
-            {formatCount(sortedRules.length)} reglas identificadas
-            {sortedRules.length > TABLE_LIMIT && ` · mostrando las primeras ${formatCount(TABLE_LIMIT)}`}
-          </CardDescription>
+          <div>
+            <CardTitle>Recomendaciones de venta cruzada (Cross-Selling)</CardTitle>
+            <CardDescription className="text-xs">
+              {formatCount(sortedRules.length)} reglas identificadas
+              {sortedRules.length > TABLE_LIMIT && ` · mostrando las primeras ${formatCount(TABLE_LIMIT)}`}
+              {searchTerm.trim() !== '' && ` · Filtrado por: "${searchTerm}"`}
+            </CardDescription>
+          </div>
           <CardAction>
-            <input
-              type="search"
-              placeholder="Buscar producto..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-7 w-40 rounded-md border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring sm:w-56"
-            />
+            <div className="flex items-center gap-1.5">
+              {searchTerm.trim() !== '' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => setSearchTerm('')}
+                >
+                  <X className="size-3" />
+                  Limpiar
+                </Button>
+              )}
+              <input
+                type="search"
+                placeholder="Buscar producto..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-7 w-40 rounded-md border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring sm:w-56"
+              />
+            </div>
           </CardAction>
         </CardHeader>
         <CardContent>

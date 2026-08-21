@@ -9,6 +9,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   TriangleAlert,
+  X,
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -83,6 +84,7 @@ export function ConcentrationDashboard({
 }) {
   const chartRef = useRef<EChartHandle>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedScope, setSelectedScope] = useState<'all' | 'top1' | 'top5' | 'top20pct'>('all');
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({
     key: 'rank',
     desc: false,
@@ -109,10 +111,21 @@ export function ConcentrationDashboard({
 
   const filteredCustomers = useMemo(() => {
     if (result === null) return [];
-    if (searchTerm.trim() === '') return result.allCustomers;
-    const term = searchTerm.toLowerCase();
-    return result.allCustomers.filter((c) => c.customerId.toLowerCase().includes(term));
-  }, [result, searchTerm]);
+    let list = result.allCustomers;
+    if (selectedScope === 'top1') {
+      list = list.slice(0, 1);
+    } else if (selectedScope === 'top5') {
+      list = list.slice(0, 5);
+    } else if (selectedScope === 'top20pct') {
+      const count = Math.max(1, Math.ceil(result.customerCount * 0.2));
+      list = list.slice(0, count);
+    }
+    if (searchTerm.trim() !== '') {
+      const term = searchTerm.toLowerCase();
+      list = list.filter((c) => c.customerId.toLowerCase().includes(term));
+    }
+    return list;
+  }, [result, searchTerm, selectedScope]);
 
   const sortedCustomers = useMemo(() => {
     const list = [...filteredCustomers];
@@ -261,16 +274,26 @@ export function ConcentrationDashboard({
           value={formatCount(Math.round(result.hhi))}
           hint="<1500 Diversificada · >2500 Concentración crítica"
         />
-        <Tile
-          label="Top 1 Cliente (Mayor cuenta)"
-          value={formatShare(result.top1Share)}
-          hint={`Facturación: ${formatMetric(result.allCustomers[0]?.revenue ?? 0, money)}`}
-        />
-        <Tile
-          label="Principio de Pareto (Top 20 %)"
-          value={formatShare(result.top20PercentShare)}
-          hint={`Generado por los ${formatCount(Math.max(1, Math.ceil(result.customerCount * 0.2)))} clientes principales`}
-        />
+        <div
+          className={cn('cursor-pointer rounded-xl transition-all', selectedScope === 'top1' && 'ring-2 ring-primary')}
+          onClick={() => setSelectedScope((prev) => (prev === 'top1' ? 'all' : 'top1'))}
+        >
+          <Tile
+            label="Top 1 Cliente (Mayor cuenta)"
+            value={formatShare(result.top1Share)}
+            hint={`Facturación: ${formatMetric(result.allCustomers[0]?.revenue ?? 0, money)}`}
+          />
+        </div>
+        <div
+          className={cn('cursor-pointer rounded-xl transition-all', selectedScope === 'top20pct' && 'ring-2 ring-primary')}
+          onClick={() => setSelectedScope((prev) => (prev === 'top20pct' ? 'all' : 'top20pct'))}
+        >
+          <Tile
+            label="Principio de Pareto (Top 20 %)"
+            value={formatShare(result.top20PercentShare)}
+            hint={`Generado por los ${formatCount(Math.max(1, Math.ceil(result.customerCount * 0.2)))} clientes principales`}
+          />
+        </div>
       </div>
 
       {/* Lorenz Curve Chart */}
@@ -325,19 +348,35 @@ export function ConcentrationDashboard({
       {/* Top Customers Table */}
       <Card size="sm">
         <CardHeader>
-          <CardTitle>Ranking de concentración por cliente</CardTitle>
-          <CardDescription className="text-xs">
-            {formatCount(sortedCustomers.length)} clientes
-            {sortedCustomers.length > TABLE_LIMIT && ` · mostrando los primeros ${formatCount(TABLE_LIMIT)}`}
-          </CardDescription>
+          <div>
+            <CardTitle>Ranking de concentración por cliente</CardTitle>
+            <CardDescription className="text-xs">
+              {formatCount(sortedCustomers.length)} clientes
+              {sortedCustomers.length > TABLE_LIMIT && ` · mostrando los primeros ${formatCount(TABLE_LIMIT)}`}
+              {selectedScope === 'top1' && ' · Mostrando Top 1 Cliente'}
+              {selectedScope === 'top20pct' && ' · Mostrando Top 20% Pareto'}
+            </CardDescription>
+          </div>
           <CardAction>
-            <input
-              type="search"
-              placeholder="Buscar cliente..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-7 w-40 rounded-md border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring sm:w-56"
-            />
+            <div className="flex items-center gap-1.5">
+              {selectedScope !== 'all' && (
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer gap-1 text-xs py-1"
+                  onClick={() => setSelectedScope('all')}
+                >
+                  {selectedScope === 'top1' ? 'Top 1' : 'Top 20%'}
+                  <X className="size-3 text-muted-foreground" />
+                </Badge>
+              )}
+              <input
+                type="search"
+                placeholder="Buscar cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-7 w-40 rounded-md border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring sm:w-56"
+              />
+            </div>
           </CardAction>
         </CardHeader>
         <CardContent>

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Download, ImageDown, TrendingDown, TrendingUp, TriangleAlert } from 'lucide-react';
+import { ArrowDown, ArrowUp, Download, ImageDown, TrendingDown, TrendingUp, TriangleAlert, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,14 +31,11 @@ const TYPE_BADGE_STYLE: Record<WaterfallBucketType, { label: string; className: 
     label: 'Crecimiento',
     className: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
   },
-  nuevo: { label: 'Nuevo', className: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-400' },
-  contraccion: {
-    label: 'Contracción',
-    className: 'bg-rose-500/15 text-rose-700 dark:text-rose-400',
-  },
-  perdido: { label: 'Perdido', className: 'bg-orange-500/15 text-orange-700 dark:text-orange-400' },
+  nuevo: { label: 'Nuevo', className: 'bg-teal-500/15 text-teal-700 dark:text-teal-400' },
+  contraccion: { label: 'Caída', className: 'bg-amber-500/15 text-amber-700 dark:text-amber-400' },
+  perdido: { label: 'Perdido', className: 'bg-rose-500/15 text-rose-700 dark:text-rose-400' },
   sin_cambio: { label: 'Sin cambio', className: 'bg-muted text-muted-foreground' },
-  final: { label: 'Final', className: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400' },
+  final: { label: 'Cierre', className: 'bg-blue-500/15 text-blue-700 dark:text-blue-400' },
 };
 
 export function WaterfallDashboard({
@@ -51,6 +48,8 @@ export function WaterfallDashboard({
   state: WaterfallConfigState;
 }) {
   const chartRef = useRef<EChartHandle>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedImpact, setSelectedImpact] = useState<'positivo' | 'negativo' | 'todos'>('todos');
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({
     key: 'diff',
     desc: true,
@@ -91,8 +90,17 @@ export function WaterfallDashboard({
 
   const sortedItems = useMemo(() => {
     if (result === null) return [];
-    const list = [...result.items];
-    list.sort((a, b) => {
+    let list = result.items;
+    if (selectedCategory !== null) {
+      list = list.filter((it) => it.category === selectedCategory);
+    }
+    if (selectedImpact === 'positivo') {
+      list = list.filter((it) => it.type === 'crecimiento' || it.type === 'nuevo');
+    } else if (selectedImpact === 'negativo') {
+      list = list.filter((it) => it.type === 'contraccion' || it.type === 'perdido');
+    }
+    const sorted = [...list];
+    sorted.sort((a, b) => {
       let comparison = 0;
       if (sort.key === 'category') {
         comparison = a.category.localeCompare(b.category, 'es');
@@ -101,8 +109,8 @@ export function WaterfallDashboard({
       }
       return sort.desc ? -comparison : comparison;
     });
-    return list;
-  }, [result, sort]);
+    return sorted;
+  }, [result, sort, selectedCategory, selectedImpact]);
 
   const chartOption = useMemo(() => {
     if (result === null) return null;
@@ -146,18 +154,32 @@ export function WaterfallDashboard({
             badge={formatDelta(result.netDiffPct)}
             isPositive={result.netDiff >= 0}
           />
-          <Tile
-            label="Aportes Positivos"
-            value={`+${formatMetric(positiveGains, format)}`}
-            hint={`${result.buckets.newCount} nuevos · ${result.buckets.growthCount} crecieron`}
-            highlight="green"
-          />
-          <Tile
-            label="Aportes Negativos"
-            value={formatMetric(negativeLosses, format)}
-            hint={`${result.buckets.lostCount} perdidos · ${result.buckets.shrinkageCount} cayeron`}
-            highlight="red"
-          />
+          <div
+            className={cn('cursor-pointer rounded-lg transition-all', selectedImpact === 'positivo' && 'ring-2 ring-emerald-500')}
+            onClick={() =>
+              setSelectedImpact((prev) => (prev === 'positivo' ? 'todos' : 'positivo'))
+            }
+          >
+            <Tile
+              label="Aportes Positivos"
+              value={`+${formatMetric(positiveGains, format)}`}
+              hint={`${result.buckets.newCount} nuevos · ${result.buckets.growthCount} crecieron`}
+              highlight="green"
+            />
+          </div>
+          <div
+            className={cn('cursor-pointer rounded-lg transition-all', selectedImpact === 'negativo' && 'ring-2 ring-rose-500')}
+            onClick={() =>
+              setSelectedImpact((prev) => (prev === 'negativo' ? 'todos' : 'negativo'))
+            }
+          >
+            <Tile
+              label="Aportes Negativos"
+              value={formatMetric(negativeLosses, format)}
+              hint={`${result.buckets.lostCount} perdidos · ${result.buckets.shrinkageCount} cayeron`}
+              highlight="red"
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -207,6 +229,12 @@ export function WaterfallDashboard({
               option={chartOption}
               ariaLabel="Gráfico de cascada de variación"
               className="min-h-80 w-full sm:min-h-96"
+              onSelect={({ category, name }) => {
+                const clicked = category ?? name;
+                if (clicked && !clicked.startsWith('Período') && clicked !== 'Variación Neta') {
+                  setSelectedCategory((prev) => (prev === clicked ? null : clicked));
+                }
+              }}
             />
           )}
         </CardContent>
@@ -214,11 +242,31 @@ export function WaterfallDashboard({
 
       {/* Breakdown Table */}
       <Card size="sm">
-        <CardHeader>
-          <CardTitle>Detalle por categoría</CardTitle>
-          <CardDescription className="text-xs">
-            Aporte de cada categoría al cambio total.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Detalle por categoría</CardTitle>
+            <CardDescription className="text-xs">
+              Aporte de cada categoría al cambio total.{' '}
+              {selectedCategory !== null && `Filtrado por: ${selectedCategory}`}
+              {selectedImpact !== 'todos' && ` · Mostrando solo aportes ${selectedImpact}s`}
+            </CardDescription>
+          </div>
+          <CardAction>
+            {(selectedCategory !== null || selectedImpact !== 'todos') && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1"
+                onClick={() => {
+                  setSelectedCategory(null);
+                  setSelectedImpact('todos');
+                }}
+              >
+                <X className="size-3" />
+                Restablecer filtro
+              </Button>
+            )}
+          </CardAction>
         </CardHeader>
         <CardContent>
           <div className="max-h-96 overflow-auto rounded-md border">
@@ -241,8 +289,20 @@ export function WaterfallDashboard({
               <tbody>
                 {sortedItems.map((item) => {
                   const style = TYPE_BADGE_STYLE[item.type];
+                  const isSelected = selectedCategory === item.category;
                   return (
-                    <tr key={item.category} className="border-b last:border-0 hover:bg-muted/40">
+                    <tr
+                      key={item.category}
+                      onClick={() =>
+                        setSelectedCategory((prev) =>
+                          prev === item.category ? null : item.category,
+                        )
+                      }
+                      className={cn(
+                        'border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors',
+                        isSelected && 'bg-primary/10 font-semibold',
+                      )}
+                    >
                       <td className="max-w-56 truncate px-2 py-1.5 font-medium" title={item.category}>
                         {item.category}
                       </td>

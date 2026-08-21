@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import type { EChartsCoreOption } from 'echarts/core';
-import { ArrowDown, ArrowUp, Download, ImageDown, TriangleAlert } from 'lucide-react';
+import { ArrowDown, ArrowUp, Download, ImageDown, TriangleAlert, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -66,6 +66,7 @@ export function ChurnDashboard({
 }) {
   const chartRef = useRef<EChartHandle>(null);
   const [selectedStatus, setSelectedStatus] = useState<CustomerMovementStatus | 'todos'>('todos');
+  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({
     key: 'currentRevenue',
     desc: true,
@@ -100,9 +101,17 @@ export function ChurnDashboard({
 
   const filteredCustomers = useMemo(() => {
     if (result === null) return [];
-    if (selectedStatus === 'todos') return result.customers;
-    return result.customers.filter((c) => c.status === selectedStatus);
-  }, [result, selectedStatus]);
+    let list = result.customers;
+    if (selectedPeriod !== null) {
+      list = list.filter(
+        (c) => c.lastSeenPeriod === selectedPeriod || c.firstSeenPeriod === selectedPeriod,
+      );
+    }
+    if (selectedStatus !== 'todos') {
+      list = list.filter((c) => c.status === selectedStatus);
+    }
+    return list;
+  }, [result, selectedStatus, selectedPeriod]);
 
   const sortedCustomers = useMemo(() => {
     const list = [...filteredCustomers];
@@ -310,6 +319,21 @@ export function ChurnDashboard({
             option={chartOption}
             ariaLabel="Flujo de clientes por período"
             className="min-h-80 w-full sm:min-h-96"
+            onSelect={({ category, name, dataIndex }) => {
+              let pKey: string | null = null;
+              if (dataIndex !== undefined && result.periods[dataIndex]) {
+                pKey = result.periods[dataIndex].period;
+              } else if (category) {
+                const match = result.periods.find((p) => p.periodLabel === category || p.period === category);
+                if (match) pKey = match.period;
+              }
+              if (pKey) {
+                setSelectedPeriod((prev) => (prev === pKey ? null : pKey));
+              }
+              if (name === 'Nuevos') setSelectedStatus('nuevo');
+              else if (name === 'Reactivados') setSelectedStatus('reactivado');
+              else if (name === 'Perdidos (Churn)') setSelectedStatus('perdido');
+            }}
           />
         </CardContent>
       </Card>
@@ -319,7 +343,7 @@ export function ChurnDashboard({
         <CardHeader>
           <CardTitle>Dinámica por período</CardTitle>
           <CardDescription className="text-xs">
-            Resumen métrico de retención, pérdidas e ingresos por cada corte temporal.
+            Resumen métrico de retención, pérdidas e ingresos por cada corte temporal. Haz clic en una fila para ver sus clientes.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -343,44 +367,60 @@ export function ChurnDashboard({
                 </tr>
               </thead>
               <tbody>
-                {result.periods.map((p) => (
-                  <tr key={p.period} className="border-b last:border-0 hover:bg-muted/40">
-                    <td className="px-2.5 py-1.5 font-medium whitespace-nowrap">{p.periodLabel}</td>
-                    <td className="px-2.5 py-1.5 text-right tabular-nums">{formatCount(p.activeCustomers)}</td>
-                    <td className="px-2.5 py-1.5 text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-medium">
-                      +{formatCount(p.newCustomers)}
-                    </td>
-                    <td className="px-2.5 py-1.5 text-right tabular-nums text-sky-600 dark:text-sky-400 font-medium">
-                      {formatCount(p.returningCustomers)}
-                    </td>
-                    <td className="px-2.5 py-1.5 text-right tabular-nums text-amber-600 dark:text-amber-400 font-medium">
-                      +{formatCount(p.reactivatedCustomers)}
-                    </td>
-                    <td className="px-2.5 py-1.5 text-right tabular-nums text-rose-600 dark:text-rose-400 font-medium">
-                      -{formatCount(p.churnedCustomers)}
-                    </td>
-                    <td className={cn(
-                      'px-2.5 py-1.5 text-right tabular-nums font-semibold',
-                      p.netCustomerChange > 0 ? 'text-emerald-600 dark:text-emerald-400' : p.netCustomerChange < 0 ? 'text-rose-600 dark:text-rose-400' : ''
-                    )}>
-                      {p.netCustomerChange > 0 ? `+${formatCount(p.netCustomerChange)}` : formatCount(p.netCustomerChange)}
-                    </td>
-                    <td className="px-2.5 py-1.5 text-right tabular-nums">
-                      {p.churnRate !== null ? formatShare(p.churnRate) : '—'}
-                    </td>
-                    <td className="px-2.5 py-1.5 text-right tabular-nums">
-                      {p.retentionRate !== null ? formatShare(p.retentionRate) : '—'}
-                    </td>
-                    <td className="px-2.5 py-1.5 text-right tabular-nums font-mono text-xs">
-                      {p.quickRatio !== null ? p.quickRatio.toFixed(2) : '—'}
-                    </td>
-                    {amountColumn && (
-                      <td className="px-2.5 py-1.5 text-right tabular-nums font-medium">
-                        {formatMetric(p.totalRevenue, money)}
+                {result.periods.map((p) => {
+                  const isSelected = selectedPeriod === p.period;
+                  return (
+                    <tr
+                      key={p.period}
+                      onClick={() => setSelectedPeriod((prev) => (prev === p.period ? null : p.period))}
+                      className={cn(
+                        'border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors',
+                        isSelected && 'bg-primary/10 font-semibold',
+                      )}
+                    >
+                      <td className="px-2.5 py-1.5 font-medium whitespace-nowrap">{p.periodLabel}</td>
+                      <td className="px-2.5 py-1.5 text-right tabular-nums">{formatCount(p.activeCustomers)}</td>
+                      <td className="px-2.5 py-1.5 text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-medium">
+                        +{formatCount(p.newCustomers)}
                       </td>
-                    )}
-                  </tr>
-                ))}
+                      <td className="px-2.5 py-1.5 text-right tabular-nums text-sky-600 dark:text-sky-400 font-medium">
+                        {formatCount(p.returningCustomers)}
+                      </td>
+                      <td className="px-2.5 py-1.5 text-right tabular-nums text-amber-600 dark:text-amber-400 font-medium">
+                        +{formatCount(p.reactivatedCustomers)}
+                      </td>
+                      <td className="px-2.5 py-1.5 text-right tabular-nums text-rose-600 dark:text-rose-400 font-medium">
+                        -{formatCount(p.churnedCustomers)}
+                      </td>
+                      <td
+                        className={cn(
+                          'px-2.5 py-1.5 text-right tabular-nums font-semibold',
+                          p.netCustomerChange > 0
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : p.netCustomerChange < 0
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : '',
+                        )}
+                      >
+                        {p.netCustomerChange > 0 ? `+${formatCount(p.netCustomerChange)}` : formatCount(p.netCustomerChange)}
+                      </td>
+                      <td className="px-2.5 py-1.5 text-right tabular-nums">
+                        {p.churnRate !== null ? formatShare(p.churnRate) : '—'}
+                      </td>
+                      <td className="px-2.5 py-1.5 text-right tabular-nums">
+                        {p.retentionRate !== null ? formatShare(p.retentionRate) : '—'}
+                      </td>
+                      <td className="px-2.5 py-1.5 text-right tabular-nums font-mono text-xs">
+                        {p.quickRatio !== null ? p.quickRatio.toFixed(2) : '—'}
+                      </td>
+                      {amountColumn && (
+                        <td className="px-2.5 py-1.5 text-right tabular-nums font-medium">
+                          {formatMetric(p.totalRevenue, money)}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -390,13 +430,26 @@ export function ChurnDashboard({
       {/* Customer Detail Drill-down */}
       <Card size="sm">
         <CardHeader>
-          <CardTitle>Detalle de clientes</CardTitle>
-          <CardDescription className="text-xs">
-            {formatCount(sortedCustomers.length)} clientes
-            {sortedCustomers.length > TABLE_LIMIT && ` · mostrando los primeros ${formatCount(TABLE_LIMIT)}`}
-          </CardDescription>
+          <div>
+            <CardTitle>Detalle de clientes</CardTitle>
+            <CardDescription className="text-xs">
+              {formatCount(sortedCustomers.length)} clientes
+              {sortedCustomers.length > TABLE_LIMIT && ` · mostrando los primeros ${formatCount(TABLE_LIMIT)}`}
+              {selectedPeriod !== null && ` · Período: ${result.periods.find((p) => p.period === selectedPeriod)?.periodLabel ?? selectedPeriod}`}
+            </CardDescription>
+          </div>
           <CardAction>
             <div className="flex flex-wrap items-center gap-1.5">
+              {selectedPeriod !== null && (
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer gap-1 text-xs py-1"
+                  onClick={() => setSelectedPeriod(null)}
+                >
+                  Período: {result.periods.find((p) => p.period === selectedPeriod)?.periodLabel ?? selectedPeriod}
+                  <X className="size-3 text-muted-foreground" />
+                </Badge>
+              )}
               {(['todos', 'nuevo', 'recurrente', 'reactivado', 'perdido'] as const).map((status) => (
                 <Button
                   key={status}

@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
-import { Download, ImageDown, TriangleAlert } from 'lucide-react';
+import { Download, ImageDown, TriangleAlert, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -33,14 +34,6 @@ import { ChartKindPicker } from './chart-kind-picker';
 
 const GRAINS: Granularity[] = [...GRANULARITIES, 'anio'];
 
-/**
- * El lienzo del constructor.
- *
- * Todo lo que define el gráfico está en la barra de arriba, no en el paso
- * anterior: construir un gráfico es probar, y cada prueba no puede costar dos
- * navegaciones. La tabla de abajo enseña las mismas cifras exactas, que es lo
- * que el lienzo nunca puede dar.
- */
 export function BuilderDashboard({
   dataset,
   mapping,
@@ -51,6 +44,7 @@ export function BuilderDashboard({
   state: BuilderConfigState;
 }) {
   const [showTable, setShowTable] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const chartRef = useRef<EChartHandle>(null);
   const { settings, update, spec, metric, metricY, usesTime } = state;
 
@@ -276,6 +270,15 @@ export function BuilderDashboard({
               option={option}
               ariaLabel={title}
               className="min-h-80 w-full sm:min-h-96"
+              onSelect={({ category, name, dataIndex }) => {
+                const clicked = category ?? name;
+                if (clicked) {
+                  setSelectedCategory((prev) => (prev === clicked ? null : clicked));
+                } else if (dataIndex !== undefined && data.categories[dataIndex]) {
+                  const cat = data.categories[dataIndex].label;
+                  setSelectedCategory((prev) => (prev === cat ? null : cat));
+                }
+              }}
             />
           </CardContent>
         </Card>
@@ -283,24 +286,44 @@ export function BuilderDashboard({
 
       {showTable && !empty && (
         <Card size="sm">
-          <CardHeader>
-            <CardTitle>Datos del gráfico</CardTitle>
-            <CardDescription className="text-xs">
-              Las mismas cifras, exactas.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Datos del gráfico</CardTitle>
+              <CardDescription className="text-xs">
+                Las mismas cifras, exactas.{' '}
+                {selectedCategory !== null && `Filtrado por: ${selectedCategory}`}
+              </CardDescription>
+            </div>
             <CardAction>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7"
-                onClick={() => setShowTable(false)}
-              >
-                Ocultar
-              </Button>
+              <div className="flex items-center gap-1.5">
+                {selectedCategory !== null && (
+                  <Badge
+                    variant="secondary"
+                    className="cursor-pointer gap-1 text-xs py-1"
+                    onClick={() => setSelectedCategory(null)}
+                  >
+                    {selectedCategory}
+                    <X className="size-3 text-muted-foreground" />
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => setShowTable(false)}
+                >
+                  Ocultar
+                </Button>
+              </div>
             </CardAction>
           </CardHeader>
           <CardContent>
-            <DataTable state={state} data={data} />
+            <DataTable
+              state={state}
+              data={data}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
           </CardContent>
         </Card>
       )}
@@ -311,9 +334,13 @@ export function BuilderDashboard({
 function DataTable({
   state,
   data,
+  selectedCategory,
+  onSelectCategory,
 }: {
   state: BuilderConfigState;
   data: ReturnType<typeof buildChartData>;
+  selectedCategory: string | null;
+  onSelectCategory: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
   const { settings, metric, metricY } = state;
   const format = { format: metric.format, currency: settings.currency };
@@ -346,37 +373,61 @@ function DataTable({
         </thead>
         <tbody>
           {data.points === null
-            ? data.categories.map((category, index) => (
-                <tr key={category.key} className="border-b last:border-0">
-                  <td className="max-w-56 truncate px-2 py-1.5" title={category.label}>
-                    {category.label}
-                  </td>
-                  {data.series.map((serie) => (
-                    <td
-                      key={serie.name}
-                      className="px-2 py-1.5 text-right tabular-nums"
-                    >
-                      {formatMetric(serie.values[index] ?? null, format)}
+            ? data.categories.map((category, index) => {
+                const isSelected = selectedCategory === category.label || selectedCategory === category.key;
+                return (
+                  <tr
+                    key={category.key}
+                    onClick={() =>
+                      onSelectCategory((prev) => (prev === category.label ? null : category.label))
+                    }
+                    className={cn(
+                      'border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors',
+                      isSelected && 'bg-primary/10 font-semibold',
+                    )}
+                  >
+                    <td className="max-w-56 truncate px-2 py-1.5" title={category.label}>
+                      {category.label}
                     </td>
-                  ))}
-                </tr>
-              ))
-            : data.points.map((point) => (
-                <tr key={point.name} className="border-b last:border-0">
-                  <td className="max-w-56 truncate px-2 py-1.5" title={point.name}>
-                    {point.name}
-                  </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">
-                    {formatMetric(point.x, format)}
-                  </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">
-                    {formatMetric(point.y, {
-                      format: metricY?.format ?? metric.format,
-                      currency: settings.currency,
-                    })}
-                  </td>
-                </tr>
-              ))}
+                    {data.series.map((serie) => (
+                      <td
+                        key={serie.name}
+                        className="px-2 py-1.5 text-right tabular-nums"
+                      >
+                        {formatMetric(serie.values[index] ?? null, format)}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
+            : data.points.map((point) => {
+                const isSelected = selectedCategory === point.name;
+                return (
+                  <tr
+                    key={point.name}
+                    onClick={() =>
+                      onSelectCategory((prev) => (prev === point.name ? null : point.name))
+                    }
+                    className={cn(
+                      'border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors',
+                      isSelected && 'bg-primary/10 font-semibold',
+                    )}
+                  >
+                    <td className="max-w-56 truncate px-2 py-1.5" title={point.name}>
+                      {point.name}
+                    </td>
+                    <td className="px-2 py-1.5 text-right tabular-nums">
+                      {formatMetric(point.x, format)}
+                    </td>
+                    <td className="px-2 py-1.5 text-right tabular-nums">
+                      {formatMetric(point.y, {
+                        format: metricY?.format ?? metric.format,
+                        currency: settings.currency,
+                      })}
+                    </td>
+                  </tr>
+                );
+              })}
         </tbody>
       </table>
     </div>

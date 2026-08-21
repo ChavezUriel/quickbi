@@ -6,6 +6,7 @@ import {
   ImageDown,
   Search,
   TriangleAlert,
+  X,
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +30,7 @@ import { paretoToCsv } from '../lib/export-pareto-csv';
 import { computePareto, type ABCClass } from '../lib/pareto';
 import type { ParetoConfigState } from '../use-pareto-config';
 
-const TABLE_LIMIT = 150;
+const TABLE_LIMIT = 200;
 
 const ABC_COLOR: Record<ABCClass, string> = {
   A: '#10b981', // emerald-500
@@ -49,6 +50,7 @@ export function ParetoDashboard({
   const chartRef = useRef<EChartHandle>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClass, setSelectedClass] = useState<ABCClass | 'all'>('all');
+  const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
 
   const { entityDim, measureColumn, settings } = state;
 
@@ -76,6 +78,7 @@ export function ParetoDashboard({
   const filteredItems = useMemo(() => {
     if (!result) return [];
     return result.items.filter((item) => {
+      if (selectedEntity !== null && item.entity !== selectedEntity) return false;
       if (selectedClass !== 'all' && item.classABC !== selectedClass) return false;
       if (
         searchQuery.trim() !== '' &&
@@ -85,7 +88,7 @@ export function ParetoDashboard({
       }
       return true;
     });
-  }, [result, selectedClass, searchQuery]);
+  }, [result, selectedClass, searchQuery, selectedEntity]);
 
   // Dual-Axis Pareto EChart Option
   const paretoChartOption = useMemo<EChartsCoreOption>(() => {
@@ -95,10 +98,16 @@ export function ParetoDashboard({
     const displayItems = result.items.slice(0, maxDisplay);
 
     const categories = displayItems.map((it) => it.entity);
-    const barData = displayItems.map((it) => ({
-      value: it.value,
-      itemStyle: { color: ABC_COLOR[it.classABC] },
-    }));
+    const barData = displayItems.map((it) => {
+      const isSelected = selectedEntity === null || selectedEntity === it.entity;
+      return {
+        value: it.value,
+        itemStyle: {
+          color: ABC_COLOR[it.classABC],
+          opacity: isSelected ? 1 : 0.35,
+        },
+      };
+    });
     const lineData = displayItems.map((it) => it.cumulativeShare);
 
     return {
@@ -194,7 +203,7 @@ export function ParetoDashboard({
         },
       ],
     };
-  }, [result, numFormat]);
+  }, [result, numFormat, selectedEntity]);
 
   if (!entityDim || !measureColumn) {
     return (
@@ -359,6 +368,15 @@ export function ParetoDashboard({
             option={paretoChartOption}
             ariaLabel={`Curva de Pareto de ${entityDim}`}
             className="h-80 w-full sm:h-96"
+            onSelect={({ category, name, dataIndex }) => {
+              const clicked = category ?? name;
+              if (clicked) {
+                setSelectedEntity((prev) => (prev === clicked ? null : clicked));
+              } else if (dataIndex !== undefined && result.items[dataIndex]) {
+                const it = result.items[dataIndex];
+                setSelectedEntity((prev) => (prev === it.entity ? null : it.entity));
+              }
+            }}
           />
         </CardContent>
       </Card>
@@ -372,10 +390,21 @@ export function ParetoDashboard({
               <CardDescription className="text-xs">
                 {formatCount(filteredItems.length)} de {formatCount(result.items.length)} elementos
                 {filteredItems.length > TABLE_LIMIT && ` · mostrados los primeros ${TABLE_LIMIT}`}
+                {selectedEntity !== null && ` · Filtrado: ${selectedEntity}`}
               </CardDescription>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {selectedEntity !== null && (
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer gap-1 text-xs py-1"
+                  onClick={() => setSelectedEntity(null)}
+                >
+                  {selectedEntity}
+                  <X className="size-3 text-muted-foreground" />
+                </Badge>
+              )}
               <div className="relative">
                 <Search className="size-3.5 absolute left-2.5 top-2 text-muted-foreground" />
                 <input
@@ -446,26 +475,36 @@ export function ParetoDashboard({
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.slice(0, TABLE_LIMIT).map((item) => (
-                  <tr key={item.rank} className="border-b last:border-0 hover:bg-muted/40">
-                    <td className="px-3 py-1.5 font-mono text-xs text-muted-foreground">#{item.rank}</td>
-                    <td className="px-3 py-1.5 font-medium max-w-64 truncate" title={item.entity}>
-                      {item.entity}
-                    </td>
-                    <td className="px-3 py-1.5 text-right tabular-nums">
-                      {formatMetric(item.value, numFormat)}
-                    </td>
-                    <td className="px-3 py-1.5 text-right tabular-nums">
-                      {item.share.toFixed(2)} %
-                    </td>
-                    <td className="px-3 py-1.5 text-right tabular-nums font-medium">
-                      {item.cumulativeShare.toFixed(1)} %
-                    </td>
-                    <td className="px-3 py-1.5 text-center">
-                      <ABCBadge cls={item.classABC} />
-                    </td>
-                  </tr>
-                ))}
+                {filteredItems.slice(0, TABLE_LIMIT).map((item) => {
+                  const isSelected = selectedEntity === item.entity;
+                  return (
+                    <tr
+                      key={item.rank}
+                      onClick={() => setSelectedEntity((prev) => (prev === item.entity ? null : item.entity))}
+                      className={cn(
+                        'border-b last:border-0 hover:bg-muted/40 cursor-pointer transition-colors',
+                        isSelected && 'bg-primary/10 font-semibold',
+                      )}
+                    >
+                      <td className="px-3 py-1.5 font-mono text-xs text-muted-foreground">#{item.rank}</td>
+                      <td className="px-3 py-1.5 font-medium max-w-64 truncate" title={item.entity}>
+                        {item.entity}
+                      </td>
+                      <td className="px-3 py-1.5 text-right tabular-nums">
+                        {formatMetric(item.value, numFormat)}
+                      </td>
+                      <td className="px-3 py-1.5 text-right tabular-nums">
+                        {item.share.toFixed(2)} %
+                      </td>
+                      <td className="px-3 py-1.5 text-right tabular-nums font-medium">
+                        {item.cumulativeShare.toFixed(1)} %
+                      </td>
+                      <td className="px-3 py-1.5 text-center">
+                        <ABCBadge cls={item.classABC} />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

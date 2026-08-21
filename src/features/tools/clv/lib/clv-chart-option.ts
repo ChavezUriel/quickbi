@@ -6,12 +6,13 @@ import type { ClvDecile } from './clv';
 export function buildClvDecilesChartOption({
   deciles,
   currency,
+  selectedDecile,
 }: {
   deciles: ClvDecile[];
   currency: Currency;
+  selectedDecile?: number | null;
 }): EChartsCoreOption {
   const categories = deciles.map((d) => `D${d.decile}`);
-  const shares = deciles.map((d) => d.revenueShare);
   const avgSpends = deciles.map((d) => d.avgSpend);
   const format = { format: 'moneda' as const, currency };
 
@@ -75,11 +76,16 @@ export function buildClvDecilesChartOption({
         name: '% de Ingresos de la cartera',
         type: 'bar',
         yAxisIndex: 0,
-        itemStyle: {
-          color: '#3b82f6',
-          borderRadius: [4, 4, 0, 0],
-        },
-        data: shares.map((s) => Number(s.toFixed(1))),
+        data: deciles.map((d) => {
+          const isSelected = selectedDecile == null || selectedDecile === d.decile;
+          return {
+            value: Number(d.revenueShare.toFixed(1)),
+            itemStyle: {
+              color: isSelected ? '#3b82f6' : 'rgba(59, 130, 246, 0.35)',
+              borderRadius: [4, 4, 0, 0],
+            },
+          };
+        }),
       },
       {
         name: 'Gasto medio por cliente',

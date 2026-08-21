@@ -331,6 +331,17 @@ export function CorrelationsDashboard({
               option={heatmapOption}
               ariaLabel="Matriz de correlación"
               className="h-80 w-full"
+              onSelect={({ value, data }) => {
+                const val = (value ?? data) as [number, number, number | null] | undefined;
+                if (Array.isArray(val) && matrix) {
+                  const xMeasure = matrix.measures[val[0]];
+                  const yMeasure = matrix.measures[val[1]];
+                  if (xMeasure && yMeasure && xMeasure !== yMeasure) {
+                    setActiveX(xMeasure);
+                    setActiveY(yMeasure);
+                  }
+                }
+              }}
             />
           </CardContent>
         </Card>

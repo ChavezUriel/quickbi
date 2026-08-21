@@ -64,6 +64,12 @@ export interface EChartSelection {
   category: string | null;
   /** Ctrl/Cmd pulsado: la selección se acumula en vez de sustituirse. */
   additive: boolean;
+  /** Índice del punto/barra/celda dentro del dataset o serie. */
+  dataIndex?: number;
+  /** Valor del punto/celda pulsada (ej. `[x, y, v]` en mapas de calor). */
+  value?: unknown;
+  /** Objeto de datos asociado al punto pulsado. */
+  data?: unknown;
 }
 
 interface EChartProps {
@@ -78,6 +84,9 @@ interface EChartProps {
 interface ClickParams {
   seriesName?: string;
   name?: string;
+  dataIndex?: number;
+  value?: unknown;
+  data?: unknown;
   event?: { event?: { ctrlKey?: boolean; metaKey?: boolean } };
 }
 
@@ -122,12 +131,15 @@ export const EChart = forwardRef<EChartHandle, EChartProps>(function EChart(
       chartRef.current = chart;
 
       chart.on('click', (params) => {
-        const { seriesName, name, event } = params as ClickParams;
-        if (seriesName === undefined) return;
+        const { seriesName, name, event, dataIndex, value, data } = params as ClickParams;
+        const resolvedName = seriesName ?? name ?? '';
         onSelectRef.current?.({
-          name: seriesName,
+          name: resolvedName,
           category: name ?? null,
           additive: event?.event?.ctrlKey === true || event?.event?.metaKey === true,
+          dataIndex,
+          value,
+          data,
         });
       });
 

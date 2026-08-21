@@ -121,7 +121,10 @@ export function ReconciliationDashboard({
         return {
           name: b.label,
           value: b.count,
-          itemStyle: { color },
+          itemStyle: {
+            color,
+            opacity: activeFilter === 'todos' || activeFilter === b.status ? 1 : 0.35,
+          },
         };
       });
 
@@ -163,7 +166,7 @@ export function ReconciliationDashboard({
         },
       ],
     };
-  }, [summary, empty, currency]);
+  }, [summary, empty, currency, activeFilter]);
 
   if (empty || summary == null) {
     return (
@@ -313,6 +316,13 @@ export function ReconciliationDashboard({
                 ref={chartRef}
                 option={chartOption}
                 ariaLabel="Distribución de estados de conciliación"
+                onSelect={({ category, name }) => {
+                  const clickedLabel = category ?? name;
+                  const item = summary.statusBreakdown.find((b) => b.label === clickedLabel);
+                  if (item) {
+                    setActiveFilter((curr) => (curr === item.status ? 'todos' : item.status));
+                  }
+                }}
               />
             </div>
           </CardContent>

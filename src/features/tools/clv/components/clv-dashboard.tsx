@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Crown, Download, ImageDown, TriangleAlert } from 'lucide-react';
+import { ArrowDown, ArrowUp, Crown, Download, ImageDown, TriangleAlert, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,7 @@ export function ClvDashboard({
 }) {
   const chartRef = useRef<EChartHandle>(null);
   const [filter, setFilter] = useState<CustomerFilter>('todos');
+  const [selectedDecile, setSelectedDecile] = useState<number | null>(null);
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({
     key: 'rank',
     desc: false,
@@ -88,13 +89,16 @@ export function ClvDashboard({
   const filteredCustomers = useMemo(() => {
     if (result === null) return [];
     let list = result.customers;
+    if (selectedDecile !== null) {
+      list = list.filter((c) => c.decile === selectedDecile);
+    }
     if (filter === 'd10') {
       list = list.filter((c) => c.decile === 10);
     } else if (filter === 'activo' || filter === 'en_riesgo' || filter === 'inactivo') {
       list = list.filter((c) => c.status === filter);
     }
     return list;
-  }, [result, filter]);
+  }, [result, filter, selectedDecile]);
 
   const sortedCustomers = useMemo(() => {
     const list = [...filteredCustomers];
@@ -109,8 +113,12 @@ export function ClvDashboard({
 
   const chartOption = useMemo(() => {
     if (result === null) return null;
-    return buildClvDecilesChartOption({ deciles: result.deciles, currency });
-  }, [result, currency]);
+    return buildClvDecilesChartOption({
+      deciles: result.deciles,
+      currency,
+      selectedDecile,
+    });
+  }, [result, currency, selectedDecile]);
 
   if (result === null) {
     return (
@@ -208,6 +216,18 @@ export function ClvDashboard({
               option={chartOption}
               ariaLabel="Gráfico de distribución por deciles CLV"
               className="min-h-80 w-full sm:min-h-96"
+              onSelect={({ category, name, dataIndex }) => {
+                const clickedLabel = category ?? name;
+                let dNum: number | null = null;
+                if (clickedLabel && /^D\d+$/.test(clickedLabel)) {
+                  dNum = parseInt(clickedLabel.slice(1), 10);
+                } else if (dataIndex !== undefined && result.deciles[dataIndex]) {
+                  dNum = result.deciles[dataIndex].decile;
+                }
+                if (dNum !== null) {
+                  setSelectedDecile((prev) => (prev === dNum ? null : dNum));
+                }
+              }}
             />
           )}
         </CardContent>
@@ -216,14 +236,27 @@ export function ClvDashboard({
       {/* Customer Ranking Table */}
       <Card size="sm">
         <CardHeader>
-          <CardTitle>Ranking de clientes por valor monetario</CardTitle>
-          <CardDescription className="text-xs">
-            {formatCount(sortedCustomers.length)} clientes
-            {sortedCustomers.length > TABLE_LIMIT &&
-              ` · se muestran los ${formatCount(TABLE_LIMIT)} primeros`}
-          </CardDescription>
+          <div>
+            <CardTitle>Ranking de clientes por valor monetario</CardTitle>
+            <CardDescription className="text-xs">
+              {formatCount(sortedCustomers.length)} clientes
+              {sortedCustomers.length > TABLE_LIMIT &&
+                ` · se muestran los ${formatCount(TABLE_LIMIT)} primeros`}
+              {selectedDecile !== null && ` · Filtrado por Decil D${selectedDecile}`}
+            </CardDescription>
+          </div>
           <CardAction>
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {selectedDecile !== null && (
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer gap-1 text-xs py-1"
+                  onClick={() => setSelectedDecile(null)}
+                >
+                  Decil D{selectedDecile}
+                  <X className="size-3 text-muted-foreground" />
+                </Badge>
+              )}
               {(
                 [
                   { id: 'todos', label: 'Todos' },
@@ -235,10 +268,15 @@ export function ClvDashboard({
               ).map((item) => (
                 <Button
                   key={item.id}
-                  variant={filter === item.id ? 'secondary' : 'ghost'}
+                  variant={filter === item.id && selectedDecile === null ? 'secondary' : 'ghost'}
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => setFilter(item.id)}
+                  onClick={() => {
+                    setFilter(item.id);
+                    if (item.id === 'd10') {
+                      setSelectedDecile(10);
+                    }
+                  }}
                 >
                   {item.label}
                 </Button>

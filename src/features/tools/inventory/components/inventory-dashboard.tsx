@@ -108,7 +108,10 @@ export function InventoryDashboard({
     const bucketData = summary.agingDistribution.map((b, idx) => ({
       value: b.stockValue,
       name: b.label,
-      itemStyle: { color: colors[idx % colors.length] },
+      itemStyle: {
+        color: colors[idx % colors.length],
+        opacity: activeBucket === 'todos' || activeBucket === b.id ? 1 : 0.35,
+      },
     }));
 
     return {
@@ -150,7 +153,7 @@ export function InventoryDashboard({
         },
       ],
     };
-  }, [summary, empty, currency]);
+  }, [summary, empty, currency, activeBucket]);
 
   if (empty || summary == null) {
     return (
@@ -286,6 +289,13 @@ export function InventoryDashboard({
                 ref={chartRef}
                 option={chartOption}
                 ariaLabel="Distribución de antigüedad de stock"
+                onSelect={({ category, name }) => {
+                  const clickedLabel = category ?? name;
+                  const bucket = summary.agingDistribution.find((b) => b.label === clickedLabel);
+                  if (bucket) {
+                    setActiveBucket((curr) => (curr === bucket.id ? 'todos' : bucket.id));
+                  }
+                }}
               />
             </div>
           </CardContent>

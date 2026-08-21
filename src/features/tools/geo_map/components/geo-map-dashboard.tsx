@@ -6,6 +6,7 @@ import {
   Globe,
   ImageDown,
   LayoutGrid,
+  X,
 } from 'lucide-react';
 import { EChart, type EChartHandle } from '@/components/echart';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -19,6 +20,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { downloadDataUrl, downloadTextFile } from '@/lib/download';
+import { cn } from '@/lib/utils';
 import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
@@ -39,6 +41,7 @@ export function GeoMapDashboard({
   const chartRef = useRef<EChartHandle>(null);
   const [visualMode, setVisualMode] = useState<'bar' | 'treemap'>('bar');
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
+  const [selectedTerritory, setSelectedTerritory] = useState<string | null>(null);
 
   const { assignments } = state.slots;
   const territoryDim = assignments.territorio ?? null;
@@ -66,11 +69,17 @@ export function GeoMapDashboard({
   const summary = result?.summary;
   const empty = territories.length === 0;
 
-  // Filtrado por zona seleccionada
+  // Filtrado por zona y territorio seleccionados
   const filteredTerritories = useMemo(() => {
-    if (selectedZone === null) return territories;
-    return territories.filter((t) => t.zone === selectedZone);
-  }, [territories, selectedZone]);
+    let list = territories;
+    if (selectedZone !== null) {
+      list = list.filter((t) => t.zone === selectedZone);
+    }
+    if (selectedTerritory !== null) {
+      list = list.filter((t) => t.territory === selectedTerritory || t.normalizedName === selectedTerritory);
+    }
+    return list;
+  }, [territories, selectedZone, selectedTerritory]);
 
   // Lista de zonas únicas
   const zones = useMemo(() => {
@@ -88,10 +97,21 @@ export function GeoMapDashboard({
     const topItems = territories.slice(0, 15);
 
     if (visualMode === 'treemap') {
-      const treemapData = topItems.map((item) => ({
-        name: `${item.normalizedName}\n(${item.share}%)`,
-        value: item.value,
-      }));
+      const treemapData = topItems.map((item) => {
+        const isSelected =
+          selectedTerritory === null ||
+          selectedTerritory === item.territory ||
+          selectedTerritory === item.normalizedName;
+        return {
+          name: `${item.normalizedName}\n(${item.share}%)`,
+          value: item.value,
+          territoryKey: item.territory,
+          normalizedName: item.normalizedName,
+          itemStyle: {
+            opacity: isSelected ? 1 : 0.35,
+          },
+        };
+      });
 
       return {
         tooltip: {
@@ -160,11 +180,20 @@ export function GeoMapDashboard({
         {
           name: 'Valor',
           type: 'bar',
-          data: reversed.map((t) => t.value),
-          itemStyle: {
-            borderRadius: [0, 4, 4, 0],
-            color: '#3b82f6',
-          },
+          data: reversed.map((t) => {
+            const isSelected =
+              selectedTerritory === null ||
+              selectedTerritory === t.territory ||
+              selectedTerritory === t.normalizedName;
+            return {
+              value: t.value,
+              territoryKey: t.territory,
+              itemStyle: {
+                borderRadius: [0, 4, 4, 0],
+                color: isSelected ? '#3b82f6' : 'rgba(59, 130, 246, 0.35)',
+              },
+            };
+          }),
           label: {
             show: true,
             position: 'right',
@@ -175,7 +204,7 @@ export function GeoMapDashboard({
         },
       ],
     };
-  }, [territories, visualMode, empty, format, currency]);
+  }, [territories, visualMode, empty, format, currency, selectedTerritory]);
 
   if (empty || summary == null) {
     return (
@@ -322,6 +351,23 @@ export function GeoMapDashboard({
                 ref={chartRef}
                 option={chartOption}
                 ariaLabel="Gráfico territorial"
+                onSelect={({ category, name, data }) => {
+                  const dataObj = data as { territoryKey?: string; normalizedName?: string } | undefined;
+                  const clicked = dataObj?.territoryKey ?? dataObj?.normalizedName ?? category ?? name;
+                  if (clicked) {
+                    const cleanName = (clicked.split('\n')[0] ?? '').trim();
+                    const matched = territories.find(
+                      (t) =>
+                        t.territory === cleanName ||
+                        t.normalizedName === cleanName ||
+                        t.territory === clicked ||
+                        t.normalizedName === clicked,
+                    );
+                    if (matched) {
+                      setSelectedTerritory((prev) => (prev === matched.territory ? null : matched.territory));
+                    }
+                  }
+                }}
               />
             </div>
           </CardContent>
@@ -388,11 +434,27 @@ export function GeoMapDashboard({
 
       {/* Tabla detallada de territorios */}
       <Card>
-        <CardHeader>
-          <CardTitle>Desglose por territorio</CardTitle>
-          <CardDescription>
-            Ranking y métricas detalladas para cada territorio registrado.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Desglose por territorio</CardTitle>
+            <CardDescription>
+              Haz clic en cualquier fila o en el gráfico para aislar ese territorio.
+            </CardDescription>
+          </div>
+          {(selectedTerritory !== null || selectedZone !== null) && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => {
+                setSelectedTerritory(null);
+                setSelectedZone(null);
+              }}
+            >
+              <X className="size-3.5" />
+              Restablecer filtro
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -409,41 +471,54 @@ export function GeoMapDashboard({
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
-              {filteredTerritories.map((t) => (
-                <tr key={t.territory} className="hover:bg-muted/40 transition-colors">
-                  <td className="py-2 pl-3 pr-2 font-mono text-xs text-muted-foreground">
-                    #{t.rank}
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="font-medium">{t.normalizedName}</div>
-                    {t.territory !== t.normalizedName && (
-                      <div className="text-[11px] text-muted-foreground">({t.territory})</div>
+              {filteredTerritories.map((t) => {
+                const isSelected =
+                  selectedTerritory === t.territory || selectedTerritory === t.normalizedName;
+                return (
+                  <tr
+                    key={t.territory}
+                    onClick={() =>
+                      setSelectedTerritory((prev) => (prev === t.territory ? null : t.territory))
+                    }
+                    className={cn(
+                      'hover:bg-muted/40 cursor-pointer transition-colors',
+                      isSelected && 'bg-primary/10 font-medium',
                     )}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">
-                    <Badge variant="outline" className="text-[11px]">
-                      {t.zone}
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono font-medium">
-                    {formatMetric(t.value, { format, currency })}
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono">
-                    <span className="inline-block rounded px-1.5 py-0.5 bg-primary/10 text-primary">
-                      {t.share} %
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono text-muted-foreground">
-                    {t.cumulativeShare} %
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono text-muted-foreground">
-                    {formatCount(t.rowCount)}
-                  </td>
-                  <td className="py-2 pl-3 pr-4 text-right font-mono text-muted-foreground">
-                    {formatMetric(t.avgPerRecord, { format, currency })}
-                  </td>
-                </tr>
-              ))}
+                  >
+                    <td className="py-2 pl-3 pr-2 font-mono text-xs text-muted-foreground">
+                      #{t.rank}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="font-medium">{t.normalizedName}</div>
+                      {t.territory !== t.normalizedName && (
+                        <div className="text-[11px] text-muted-foreground">({t.territory})</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">
+                      <Badge variant="outline" className="text-[11px]">
+                        {t.zone}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono font-medium">
+                      {formatMetric(t.value, { format, currency })}
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono">
+                      <span className="inline-block rounded px-1.5 py-0.5 bg-primary/10 text-primary">
+                        {t.share} %
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-muted-foreground">
+                      {t.cumulativeShare} %
+                    </td>
+                    <td className="px-3 py-2 text-right font-mono text-muted-foreground">
+                      {formatCount(t.rowCount)}
+                    </td>
+                    <td className="py-2 pl-3 pr-4 text-right font-mono text-muted-foreground">
+                      {formatMetric(t.avgPerRecord, { format, currency })}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </CardContent>
