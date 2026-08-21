@@ -181,13 +181,6 @@ export function lastPeriodsWithMode(
   return { op: 'ultimos_periodos', column, n, unit, modo };
 }
 
-/** Filtros de dimensión activos, para pintarlos y poder quitarlos uno a uno. */
-export function activeSelections(filters: FilterSet): { column: string; values: string[] }[] {
-  return filters.conditions
-    .filter((condition): condition is Extract<Condition, { op: 'in' }> => condition.op === 'in')
-    .map(({ column, values }) => ({ column, values }));
-}
-
 export function hasSelections(filters: FilterSet): boolean {
   return filters.conditions.some(
     (condition) => condition.op === 'in' || condition.op === 'not_in',
