@@ -84,6 +84,8 @@ export function StepNavigation() {
             size="sm"
             onClick={goNext}
             disabled={!canAdvance}
+            title={canAdvance ? 'Avanzar al siguiente paso (Presiona Enter)' : 'Completa el paso actual para continuar'}
+            aria-label={canAdvance ? 'Avanzar al siguiente paso (Enter)' : 'Siguiente paso desactivado'}
             className={cn(
               'group h-9 rounded-full px-4 text-xs sm:text-sm font-medium transition-all duration-200',
               canAdvance
@@ -92,6 +94,11 @@ export function StepNavigation() {
             )}
           >
             <span>Siguiente</span>
+            {canAdvance && (
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-primary-foreground/30 bg-primary-foreground/15 px-1 font-mono text-[10px] font-semibold text-primary-foreground/90">
+                ↵
+              </kbd>
+            )}
             <ChevronRight className="ml-0.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Button>
         ) : null}
