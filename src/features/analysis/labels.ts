@@ -70,6 +70,10 @@ export const RANGE_PRESETS: RangePreset[] = [
   { id: '3a', label: 'Últimos 3 años', n: 3, unit: 'anio' },
 ];
 
+export const RANGE_PRESETS_BY_ID: Record<string, RangePreset> = Object.fromEntries(
+  RANGE_PRESETS.map((preset) => [preset.id, preset]),
+);
+
 export const RANGE_ALL = '__todo__';
 export const RANGE_CUSTOM = '__personalizado__';
 
