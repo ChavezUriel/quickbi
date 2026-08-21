@@ -15,7 +15,7 @@ import {
   GRANULARITY_LABEL,
   RANGE_ALL,
   RANGE_CUSTOM,
-  RANGE_PRESETS,
+  RANGE_PRESETS_BY_ID,
 } from '../labels';
 import {
   getMembership,
@@ -649,7 +649,7 @@ function DatePopover({ state, onClose }: { state: ExplorationState; onClose: () 
       </div>
       <div className="mt-3 grid grid-cols-3 gap-1.5">
         {DATE_PRESET_IDS.map((id) => {
-          const preset = RANGE_PRESETS.find((item) => item.id === id);
+          const preset = RANGE_PRESETS_BY_ID[id];
           if (preset === undefined) return null;
           const active = state.rangeId === id;
           return (
@@ -749,7 +749,7 @@ function GranularityPill({ state, open, onOpen, onClose }: { state: ExplorationS
 function dateSummary(state: ExplorationState): string {
   if (state.rangeId === RANGE_ALL) return 'Todo';
   if (state.rangeId === RANGE_CUSTOM && state.customRange !== null) return `${state.customRange.desde} – ${state.customRange.hasta}`;
-  const preset = RANGE_PRESETS.find((item) => item.id === state.rangeId);
+  const preset = RANGE_PRESETS_BY_ID[state.rangeId];
   if (preset === undefined) return 'Seleccionada';
   return `${shortPresetLabel(preset.id)} · ${dateModeLabel(state.dateMode)}`;
 }
