@@ -6,6 +6,7 @@ import {
   seriesValue,
   valueOf,
 } from './aggregate';
+import { columnMetric, countMetric } from './metrics';
 import type { AnalysisRow, MetricDef } from '../types';
 
 describe('valueOf', () => {
@@ -66,13 +67,7 @@ describe('accumulate', () => {
 
   it('incrementa recuento y suma en 1 si la columna de la métrica es null', () => {
     const acc = newAccumulator();
-    const metric: MetricDef = {
-      id: 'count',
-      label: 'Recuento',
-      column: null,
-      agg: 'count',
-      format: 'numero',
-    };
+    const metric = countMetric();
 
     accumulate(acc, row, metric);
     expect(acc).toEqual({ sum: 1, count: 1 });
@@ -80,13 +75,7 @@ describe('accumulate', () => {
 
   it('acumula el valor de la columna cuando no es nulo', () => {
     const acc = newAccumulator();
-    const metric: MetricDef = {
-      id: 'ventas',
-      label: 'Ventas',
-      column: 'ventas',
-      agg: 'sum',
-      format: 'moneda',
-    };
+    const metric = columnMetric('ventas', 'sum', 'moneda');
 
     accumulate(acc, row, metric);
     expect(acc).toEqual({ sum: 100, count: 1 });
@@ -94,20 +83,8 @@ describe('accumulate', () => {
 
   it('ignora filas con valor nulo o indefinido', () => {
     const acc = newAccumulator();
-    const metricNull: MetricDef = {
-      id: 'devoluciones',
-      label: 'Devoluciones',
-      column: 'devoluciones',
-      agg: 'sum',
-      format: 'moneda',
-    };
-    const metricMissing: MetricDef = {
-      id: 'inexistente',
-      label: 'Inexistente',
-      column: 'inexistente',
-      agg: 'sum',
-      format: 'moneda',
-    };
+    const metricNull = columnMetric('devoluciones', 'sum', 'moneda');
+    const metricMissing = columnMetric('inexistente', 'sum', 'moneda');
 
     accumulate(acc, row, metricNull);
     expect(acc).toEqual({ sum: 0, count: 0 });
@@ -118,22 +95,15 @@ describe('accumulate', () => {
 });
 
 describe('seriesValue', () => {
-  const metricSum: MetricDef = {
-    id: 'ventas',
-    label: 'Ventas',
-    column: 'ventas',
-    agg: 'sum',
-    format: 'moneda',
-    cumulative: false,
-  };
-
+  const metricSum: MetricDef = columnMetric('ventas', 'sum', 'moneda');
   const metricCumulative: MetricDef = {
     ...metricSum,
     cumulative: true,
   };
 
   it('devuelve null para recuento 0 en métricas no acumulativas', () => {
-    expect(seriesValue({ sum: 0, count: 0 }, metricSum)).toBeNull();
+    const metricNonCumulative = columnMetric('ventas', 'avg', 'moneda');
+    expect(seriesValue({ sum: 0, count: 0 }, metricNonCumulative)).toBeNull();
   });
 
   it('devuelve 0 para recuento 0 en métricas acumulativas', () => {
