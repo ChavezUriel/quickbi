@@ -1,6 +1,6 @@
 import { ShoppingBag } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { BasketDashboard } from './components/basket-dashboard';
 import { BasketSetup } from './components/basket-setup';
@@ -35,7 +35,16 @@ export const basketTool: ToolDefinition = {
     if (capabilities.dimensions < 2 && capabilities.identifiers === 0) {
       return missing('Hacen falta al menos dos columnas de texto (producto y pedido/ticket).');
     }
-    return AVAILABLE;
+    if (capabilities.semantics.hasOrder && capabilities.semantics.hasProduct) {
+      return recommended('Pedido/ticket y producto detectados para minería de cesta.', [
+        capabilities.semantics.orderColumn!,
+        capabilities.semantics.productColumn!,
+      ]);
+    }
+    if (capabilities.dimensions >= 2 || (capabilities.dimensions >= 1 && capabilities.identifiers >= 1)) {
+      return compatible('Dos dimensiones disponibles para analizar afinidades.', capabilities.dimensionNames.slice(0, 2));
+    }
+    return missing('Hacen falta columnas de pedido y producto para asociar elementos en la cesta.');
   },
   Workspace: BasketWorkspace,
 };

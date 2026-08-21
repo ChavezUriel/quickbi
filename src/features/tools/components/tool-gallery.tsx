@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import {
-  ArrowRight,
   Check,
   CircleAlert,
   Search,
@@ -119,8 +118,17 @@ export function ToolGallery({
             <h2 className="text-xl font-semibold tracking-tight">
               Elige tu herramienta de análisis
             </h2>
-            <Badge variant="secondary" className="text-xs font-normal">
-              {compatibleCount} compatibles
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-xs font-medium border transition-colors',
+                compatibleCount > 0
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                  : 'border-muted text-muted-foreground',
+              )}
+            >
+              <Sparkles className="size-3 mr-1 text-emerald-500" />
+              {compatibleCount} de {toolsWithAvailability.length} compatibles
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground text-pretty">
@@ -172,11 +180,14 @@ export function ToolGallery({
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            Todas ({toolsWithAvailability.length})
+            Todas ({onlyCompatible ? compatibleCount : toolsWithAvailability.length})
           </Button>
 
           {CATEGORY_ORDER.map((cat) => {
-            const count = toolsWithAvailability.filter((t) => t.tool.category === cat).length;
+            const categoryTools = toolsWithAvailability.filter((t) => t.tool.category === cat);
+            const count = onlyCompatible
+              ? categoryTools.filter((t) => t.availability.available).length
+              : categoryTools.length;
             const isCurrent = activeCategory === cat;
 
             return (
@@ -198,18 +209,23 @@ export function ToolGallery({
           })}
 
           <Button
-            variant={onlyCompatible ? 'secondary' : 'ghost'}
+            variant={onlyCompatible ? 'default' : 'outline'}
             size="sm"
             onClick={() => setOnlyCompatible((prev) => !prev)}
+            aria-pressed={onlyCompatible}
             className={cn(
-              'h-8 rounded-lg text-xs font-medium cursor-pointer ml-auto sm:ml-1 border transition-all',
+              'h-8 rounded-lg text-xs font-semibold cursor-pointer ml-auto sm:ml-1 border transition-all',
               onlyCompatible
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                : 'border-dashed border-border text-muted-foreground hover:text-foreground',
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs ring-2 ring-emerald-500/25'
+                : 'border-border text-muted-foreground hover:text-foreground hover:border-border/80',
             )}
           >
-            <Sparkles className="size-3 mr-1 text-emerald-500" />
-            Solo compatibles
+            {onlyCompatible ? (
+              <Check className="size-3.5 mr-1 text-emerald-100" />
+            ) : (
+              <Sparkles className="size-3.5 mr-1 text-emerald-500" />
+            )}
+            Solo compatibles ({compatibleCount})
           </Button>
         </div>
       </div>
@@ -222,7 +238,9 @@ export function ToolGallery({
           </div>
           <h3 className="text-sm font-semibold">No se encontraron herramientas</h3>
           <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-4 text-pretty">
-            No hay herramientas que coincidan con los criterios seleccionados. Prueba a cambiar el texto o restablecer los filtros.
+            {onlyCompatible
+              ? 'No hay herramientas compatibles con tu dataset en esta categoría o búsqueda. Prueba a desactivar el filtro de compatibilidad.'
+              : 'No hay herramientas que coincidan con los criterios seleccionados. Prueba a cambiar el texto o restablecer los filtros.'}
           </p>
           <Button variant="outline" size="sm" onClick={clearFilters} className="rounded-xl cursor-pointer">
             Restablecer filtros
@@ -259,6 +277,7 @@ export function ToolGallery({
         <div className="space-y-3">
           <div className="text-xs text-muted-foreground font-medium">
             Mostrando {filteredTools.length} {filteredTools.length === 1 ? 'herramienta' : 'herramientas'}
+            {onlyCompatible && ' compatibles'}
           </div>
           <div className="grid gap-3.5 md:grid-cols-2 xl:grid-cols-3">
             {filteredTools.map(({ tool, availability }) => (
@@ -290,6 +309,7 @@ function ToolCard({
 }) {
   const Icon = tool.icon;
   const isAvailable = availability.available;
+  const isRecommended = availability.score === 'recommended';
 
   return (
     <button
@@ -304,8 +324,10 @@ function ToolCard({
         'group relative flex h-full w-full min-w-0 flex-col gap-2.5 text-left rounded-2xl p-4 sm:p-4.5 transition-all duration-200 overflow-hidden',
         'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
         isAvailable
-          ? 'cursor-pointer bg-card border border-border/80 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 active:scale-[0.99] active:translate-y-0'
-          : 'cursor-not-allowed bg-muted/20 border border-border/40 opacity-65 grayscale-[30%]',
+          ? isRecommended
+            ? 'cursor-pointer bg-card border border-emerald-500/30 hover:border-emerald-500/60 hover:shadow-lg hover:shadow-emerald-500/5 hover:-translate-y-0.5 active:scale-[0.99] active:translate-y-0'
+            : 'cursor-pointer bg-card border border-border/80 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 active:scale-[0.99] active:translate-y-0'
+          : 'cursor-not-allowed bg-muted/15 border border-border/40 opacity-60 grayscale-[35%]',
         selected &&
           'bg-primary/[0.04] border-primary ring-2 ring-primary/20 shadow-md shadow-primary/10 hover:border-primary',
       )}
@@ -319,7 +341,9 @@ function ToolCard({
               selected
                 ? 'bg-primary text-primary-foreground shadow-xs'
                 : isAvailable
-                  ? 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
+                  ? isRecommended
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white'
+                    : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
                   : 'bg-muted text-muted-foreground',
             )}
           >
@@ -333,7 +357,11 @@ function ToolCard({
           <h4
             className={cn(
               'text-sm font-semibold tracking-tight truncate',
-              selected ? 'text-primary' : 'text-foreground group-hover:text-primary transition-colors',
+              selected
+                ? 'text-primary'
+                : isRecommended
+                  ? 'text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors'
+                  : 'text-foreground group-hover:text-primary transition-colors',
             )}
           >
             {tool.label}
@@ -347,12 +375,29 @@ function ToolCard({
               En uso
             </Badge>
           )}
-          {!tool.hasSetup && isAvailable && !selected && (
+          {isRecommended && !selected && (
             <Badge
               variant="outline"
-              className="text-[0.65rem] px-1.5 py-0 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 font-medium"
+              className="text-[0.65rem] px-1.5 py-0 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 font-semibold shadow-2xs"
             >
-              <Zap className="size-2.5 mr-0.5 text-emerald-500" />
+              <Sparkles className="size-2.5 mr-0.5 text-emerald-500" />
+              Recomendada
+            </Badge>
+          )}
+          {!isAvailable && (
+            <Badge
+              variant="outline"
+              className="text-[0.65rem] px-1.5 py-0 border-amber-500/30 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium"
+            >
+              Faltan datos
+            </Badge>
+          )}
+          {!tool.hasSetup && isAvailable && !selected && !isRecommended && (
+            <Badge
+              variant="outline"
+              className="text-[0.65rem] px-1.5 py-0 border-border text-muted-foreground bg-muted/40 font-medium"
+            >
+              <Zap className="size-2.5 mr-0.5 text-amber-500" />
               Directo
             </Badge>
           )}
@@ -369,57 +414,37 @@ function ToolCard({
         {tool.description}
       </p>
 
-      {/* Requisitos de columnas (Needs) */}
-      <div className="mt-auto space-y-2.5 pt-1.5 w-full min-w-0">
+      {/* Requisitos de columnas y columnas detectadas */}
+      <div className="mt-auto space-y-2 pt-1.5 w-full min-w-0">
         <div className="flex flex-wrap items-center gap-1.5 w-full min-w-0">
           {isAvailable ? (
-            tool.needs.map((need) => (
-              <span
-                key={need}
-                className="inline-flex max-w-full items-center rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-[0.68rem] text-muted-foreground font-normal leading-normal whitespace-normal break-words"
-              >
-                {need}
-              </span>
-            ))
+            <>
+              {tool.needs.map((need) => (
+                <span
+                  key={need}
+                  className="inline-flex max-w-full items-center rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-[0.68rem] text-muted-foreground font-normal leading-normal whitespace-normal break-words"
+                >
+                  {need}
+                </span>
+              ))}
+              {availability.matchedColumns && availability.matchedColumns.length > 0 && (
+                <div className="w-full flex items-center gap-1 text-[0.68rem] text-emerald-600 dark:text-emerald-400 font-medium pt-0.5">
+                  <span className="text-muted-foreground/80 font-normal">Detectadas:</span>
+                  <span className="truncate font-mono bg-emerald-500/10 dark:bg-emerald-500/15 px-1 rounded border border-emerald-500/20">
+                    {availability.matchedColumns.join(', ')}
+                  </span>
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex items-start gap-1.5 text-amber-600 dark:text-amber-400 text-xs py-0.5 max-w-full min-w-0">
-              <CircleAlert className="size-3.5 shrink-0 mt-0.5" aria-hidden />
+              <CircleAlert className="size-3.5 shrink-0 mt-0.5 text-amber-500" aria-hidden />
               <span className="text-[0.72rem] font-medium leading-tight">
                 {availability.reason}
               </span>
             </div>
           )}
         </div>
-
-        {/* Barra de acción directa inferior */}
-        {isAvailable && (
-          <div className="flex items-center justify-between gap-2 border-t border-border/50 pt-2 text-xs w-full min-w-0">
-            <span
-              className={cn(
-                'truncate font-medium text-[0.75rem] transition-colors',
-                selected
-                  ? 'text-primary'
-                  : 'text-muted-foreground group-hover:text-foreground',
-              )}
-            >
-              {selected
-                ? 'Continuar con esta herramienta'
-                : tool.hasSetup
-                  ? 'Configurar y ver análisis'
-                  : 'Ver análisis directo'}
-            </span>
-            <span
-              className={cn(
-                'flex size-5.5 shrink-0 items-center justify-center rounded-full transition-all duration-200',
-                selected
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-muted/70 text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:translate-x-0.5',
-              )}
-            >
-              <ArrowRight className="size-3" aria-hidden />
-            </span>
-          </div>
-        )}
       </div>
     </button>
   );

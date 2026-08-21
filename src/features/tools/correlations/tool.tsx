@@ -1,6 +1,6 @@
 import { Activity } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { CorrelationsDashboard } from './components/correlations-dashboard';
 import { CorrelationsSetup } from './components/correlations-setup';
@@ -42,6 +42,9 @@ export const correlationsTool: ToolDefinition = {
   requires: (capabilities) =>
     capabilities.measures < 2
       ? missing('Hacen falta al menos dos columnas numéricas para calcular correlaciones.')
-      : AVAILABLE,
+      : recommended(
+          `${capabilities.measures} columnas numéricas para matriz de Pearson y dispersión.`,
+          capabilities.measureNames.slice(0, 3),
+        ),
   Workspace: CorrelationsWorkspace,
 };

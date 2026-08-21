@@ -1,6 +1,6 @@
 import { Globe } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { GeoMapDashboard } from './components/geo-map-dashboard';
 import { GeoMapSetup } from './components/geo-map-setup';
@@ -38,7 +38,13 @@ export const geoMapTool: ToolDefinition = {
     if (capabilities.measures === 0) {
       return missing('Hace falta al menos una columna numérica para agregar.');
     }
-    return AVAILABLE;
+    if (!capabilities.semantics.hasGeo) {
+      return missing('No se detectaron columnas geográficas (país, provincia, región, ciudad o coordenadas).');
+    }
+    return recommended(
+      `Desglose geográfico detectado en "${capabilities.semantics.geoColumn}".`,
+      [capabilities.semantics.geoColumn!, ...capabilities.measureNames.slice(0, 1)],
+    );
   },
   Workspace: GeoMapWorkspace,
 };

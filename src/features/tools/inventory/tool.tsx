@@ -1,6 +1,6 @@
 import { Boxes } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { InventoryDashboard } from './components/inventory-dashboard';
 import { InventorySetup } from './components/inventory-setup';
@@ -38,7 +38,13 @@ export const inventoryTool: ToolDefinition = {
     if (capabilities.measures === 0) {
       return missing('Hace falta al menos una columna numérica con el stock o existencias.');
     }
-    return AVAILABLE;
+    if (!capabilities.semantics.hasInventory) {
+      return missing('No se encontraron columnas de existencias, stock o almacén.');
+    }
+    return recommended(
+      `Existencias y almacén detectados en "${capabilities.semantics.inventoryColumn}".`,
+      [capabilities.semantics.inventoryColumn!, capabilities.semantics.productColumn ?? capabilities.dimensionNames[0]].filter(Boolean) as string[],
+    );
   },
   Workspace: InventoryWorkspace,
 };

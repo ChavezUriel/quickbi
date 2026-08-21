@@ -1,6 +1,6 @@
 import { SlidersHorizontal } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { PriceVolumeDashboard } from './components/price-volume-dashboard';
 import { PriceVolumeSetup } from './components/price-volume-setup';
@@ -50,7 +50,23 @@ export const priceVolumeTool: ToolDefinition = {
     if (capabilities.dimensions === 0 && capabilities.identifiers === 0) {
       return missing('Hace falta una columna que clasifique el producto o concepto.');
     }
-    return AVAILABLE;
+    if (capabilities.semantics.hasPrice && capabilities.semantics.hasVolume) {
+      return recommended(
+        'Columnas de precio y volumen/cantidad detectadas.',
+        [
+          capabilities.semantics.productColumn ?? capabilities.dimensionNames[0],
+          capabilities.semantics.priceColumn!,
+          capabilities.semantics.volumeColumn!,
+        ].filter(Boolean) as string[],
+      );
+    }
+    if (capabilities.measures >= 2) {
+      return compatible(
+        'Dispersión disponible con métricas numéricas.',
+        capabilities.measureNames.slice(0, 2),
+      );
+    }
+    return missing('Requiere columnas numéricas de precio y volumen o cantidad vendida.');
   },
   Workspace: PriceVolumeWorkspace,
 };

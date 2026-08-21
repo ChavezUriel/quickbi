@@ -1,6 +1,6 @@
 import { Users } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { CohortsDashboard } from './components/cohorts-dashboard';
 import { CohortsSetup } from './components/cohorts-setup';
@@ -34,10 +34,19 @@ export const cohortsTool: ToolDefinition = {
   requires: (capabilities) => {
     if (capabilities.dates === 0) return missing('Hace falta una columna de fecha de compra.');
     if (capabilities.measures === 0) return missing('Hace falta una columna de importe.');
-    if (capabilities.identifiers === 0 && capabilities.dimensions === 0) {
+    if (capabilities.identifiers === 0 && !capabilities.semantics.hasCustomer) {
       return missing('Hace falta una columna que identifique al cliente.');
     }
-    return AVAILABLE;
+    const matched = [
+      capabilities.semantics.customerColumn ?? capabilities.identifierNames[0] ?? capabilities.dimensionNames[0],
+      capabilities.dateColumnNames[0],
+      capabilities.measureNames[0],
+    ].filter(Boolean) as string[];
+
+    if (capabilities.semantics.hasCustomer) {
+      return recommended('Cliente, fecha de primera compra e importe detectados.', matched);
+    }
+    return compatible('Estructura apta para análisis de cohortes.', matched);
   },
   Workspace: CohortsWorkspace,
 };

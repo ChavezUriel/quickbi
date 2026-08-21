@@ -13,6 +13,29 @@ import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
  * qué le piden al usuario y qué le enseñan.
  */
 
+export type CompatibilityScore = 'recommended' | 'compatible' | 'incompatible';
+
+export interface DatasetSemantics {
+  hasCustomer: boolean;
+  customerColumn: string | null;
+  hasProduct: boolean;
+  productColumn: string | null;
+  hasOrder: boolean;
+  orderColumn: string | null;
+  hasGeo: boolean;
+  geoColumn: string | null;
+  hasInventory: boolean;
+  inventoryColumn: string | null;
+  hasFunnelStage: boolean;
+  funnelColumn: string | null;
+  hasPrice: boolean;
+  priceColumn: string | null;
+  hasVolume: boolean;
+  volumeColumn: string | null;
+  hasReconciliation: boolean;
+  reconciliationColumns: string[];
+}
+
 /** Qué le pide una herramienta al dataset para poder funcionar. */
 export interface DatasetCapabilities {
   rowCount: number;
@@ -28,19 +51,43 @@ export interface DatasetCapabilities {
    * (cliente, pedido, producto) y no a clasificarla.
    */
   identifiers: number;
+
+  /** Nombres de columnas clasificadas */
+  dateColumnNames: string[];
+  dimensionNames: string[];
+  measureNames: string[];
+  identifierNames: string[];
+
+  /** Detección semántica de entidades */
+  semantics: DatasetSemantics;
 }
 
 /** Veredicto de si el dataset da para una herramienta, y por qué no. */
 export interface ToolAvailability {
   available: boolean;
-  /** Qué falta, en una frase. `null` cuando la herramienta está disponible. */
+  score: CompatibilityScore;
+  /** Qué falta cuando no está disponible, o por qué es recomendada cuando lo está. */
   reason: string | null;
+  /** Nombres de columnas clave detectadas que encajan con la herramienta */
+  matchedColumns?: string[];
 }
 
-export const AVAILABLE: ToolAvailability = { available: true, reason: null };
+export const AVAILABLE: ToolAvailability = {
+  available: true,
+  score: 'compatible',
+  reason: null,
+};
+
+export function recommended(reason: string, matchedColumns?: string[]): ToolAvailability {
+  return { available: true, score: 'recommended', reason, matchedColumns };
+}
+
+export function compatible(reason?: string | null, matchedColumns?: string[]): ToolAvailability {
+  return { available: true, score: 'compatible', reason: reason ?? null, matchedColumns };
+}
 
 export function missing(reason: string): ToolAvailability {
-  return { available: false, reason };
+  return { available: false, score: 'incompatible', reason };
 }
 
 /** Los dos paneles de una herramienta: su configuración y su resultado. */

@@ -1,6 +1,6 @@
 import { Filter } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { FunnelDashboard } from './components/funnel-dashboard';
 import { FunnelSetup } from './components/funnel-setup';
@@ -35,7 +35,13 @@ export const funnelTool: ToolDefinition = {
     if (capabilities.dimensions === 0) {
       return missing('Hace falta al menos una columna de texto con las etapas.');
     }
-    return AVAILABLE;
+    if (!capabilities.semantics.hasFunnelStage) {
+      return missing('No se detectaron columnas de etapas, fases o estados de conversión (ej. etapa, fase, status, embudo).');
+    }
+    return recommended(
+      `Etapas de embudo detectadas en "${capabilities.semantics.funnelColumn}".`,
+      [capabilities.semantics.funnelColumn!],
+    );
   },
   Workspace: FunnelWorkspace,
 };
