@@ -222,7 +222,3 @@ export function matchesSelections(row: AnalysisRow, filters: FilterSet): boolean
 
   return true;
 }
-
-export function serializeFilters(filters: FilterSet): string {
-  return JSON.stringify(filters);
-}
