@@ -188,12 +188,6 @@ export function activeSelections(filters: FilterSet): { column: string; values: 
     .map(({ column, values }) => ({ column, values }));
 }
 
-export function hasSelections(filters: FilterSet): boolean {
-  return filters.conditions.some(
-    (condition) => condition.op === 'in' || condition.op === 'not_in',
-  );
-}
-
 export function clearSelections(filters: FilterSet): FilterSet {
   return {
     conditions: filters.conditions.filter(
