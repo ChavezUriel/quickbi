@@ -13,11 +13,17 @@
  * `["total", "total", "total_2"]` → `["total", "total_2", "total_2_2"]`.
  * Un contador ciego habría producido `total_2` dos veces.
  */
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 export function normalizeHeaders(headerRow: readonly unknown[]): string[] {
   const used = new Set<string>();
 
   return headerRow.map((cell, index) => {
-    const base = String(cell ?? '').trim() || `columna_${index + 1}`;
+    let base = String(cell ?? '').trim() || `columna_${index + 1}`;
+
+    if (DANGEROUS_KEYS.has(base)) {
+      base = `${base}_col`;
+    }
 
     if (!used.has(base)) {
       used.add(base);
