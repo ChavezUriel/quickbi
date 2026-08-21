@@ -10,7 +10,7 @@ import {
   type ToolDefinition,
 } from '../types';
 
-const ORDER: ToolCategory[] = ['general', 'temporal', 'clientes'];
+const ORDER: ToolCategory[] = ['general', 'temporal', 'clientes', 'situacional'];
 
 /**
  * La galería de herramientas: el paso que decide qué se hace con los datos.

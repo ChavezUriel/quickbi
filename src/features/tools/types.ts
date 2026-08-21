@@ -60,12 +60,13 @@ export interface ToolWorkspaceProps {
   onReady: (ready: boolean) => void;
 }
 
-export type ToolCategory = 'general' | 'temporal' | 'clientes';
+export type ToolCategory = 'general' | 'temporal' | 'clientes' | 'situacional';
 
 export const TOOL_CATEGORY_LABEL: Record<ToolCategory, string> = {
   general: 'Para cualquier tabla',
   temporal: 'Series de tiempo',
   clientes: 'Clientes y ventas',
+  situacional: 'Herramientas situacionales',
 };
 
 export interface ToolDefinition {
