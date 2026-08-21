@@ -32,6 +32,7 @@ export function WizardShell() {
         className={cn(
           SHELL_CONTAINER,
           'flex-1 py-4 sm:py-6',
+          step !== 'cuadro' && 'pb-24 sm:pb-28',
           fill && '3xl:flex 3xl:min-h-0 3xl:flex-col 3xl:py-3',
         )}
       >
