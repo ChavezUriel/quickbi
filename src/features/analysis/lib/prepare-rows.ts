@@ -27,7 +27,7 @@ export interface PreparedData {
 export function prepareRows(
   sourceRows: readonly DataRow[],
   columns: readonly ColumnProfile[],
-  config: AnalysisConfig,
+  config: Pick<AnalysisConfig, 'dateColumn'>,
   preserveInvalid: Readonly<Record<string, boolean>> = {},
 ): PreparedData {
   const byName = new Map(columns.map((column) => [column.name, column]));

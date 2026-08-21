@@ -4,9 +4,9 @@ import { useResolvedTheme } from '@/lib/use-resolved-theme';
 
 /**
  * ECharts pesa ~1 MB: se carga bajo demanda, igual que SheetJS. Solo se
- * registra el tipo de gráfico que la app usa —la evolución es de líneas; las
- * barras del detalle son CSS, no lienzo— y el tema oscuro se registra como
- * efecto lateral de su propio módulo.
+ * registran los tipos de gráfico que las herramientas usan —las barras de la
+ * tabla de detalle y el mapa de calor de la tabla dinámica son CSS, no
+ * lienzo— y el tema oscuro se registra como efecto lateral de su módulo.
  */
 let echartsModule: Promise<typeof import('echarts/core')> | null = null;
 
@@ -19,7 +19,10 @@ function loadECharts(): Promise<typeof import('echarts/core')> {
     import('echarts/theme/dark.js'),
   ]).then(([echarts, charts, components, renderers]) => {
     echarts.use([
+      charts.BarChart,
       charts.LineChart,
+      charts.PieChart,
+      charts.ScatterChart,
       components.AriaComponent,
       components.GridComponent,
       components.LegendComponent,
@@ -40,6 +43,12 @@ export interface EChartHandle {
 export interface EChartSelection {
   /** Nombre de la serie pulsada, o de la entrada de leyenda. */
   name: string;
+  /**
+   * Categoría del punto pulsado (el valor del eje X, o la porción del
+   * circular). `null` cuando el gesto viene de la leyenda, que nombra series
+   * y no categorías.
+   */
+  category: string | null;
   /** Ctrl/Cmd pulsado: la selección se acumula en vez de sustituirse. */
   additive: boolean;
 }
@@ -100,10 +109,11 @@ export const EChart = forwardRef<EChartHandle, EChartProps>(function EChart(
       chartRef.current = chart;
 
       chart.on('click', (params) => {
-        const { seriesName, event } = params as ClickParams;
+        const { seriesName, name, event } = params as ClickParams;
         if (seriesName === undefined) return;
         onSelectRef.current?.({
           name: seriesName,
+          category: name ?? null,
           additive: event?.event?.ctrlKey === true || event?.event?.metaKey === true,
         });
       });
@@ -122,7 +132,7 @@ export const EChart = forwardRef<EChartHandle, EChartProps>(function EChart(
           });
         }
 
-        onSelectRef.current?.({ name, additive: false });
+        onSelectRef.current?.({ name, category: null, additive: false });
       });
 
       observer = new ResizeObserver(() => chart.resize());

@@ -11,7 +11,6 @@ import {
   type ExplorationSeries,
   type FilterSet,
   type Granularity,
-  type MetricAgg,
   type MetricDef,
 } from '../types';
 import {
@@ -25,6 +24,14 @@ import {
   startOfUnit,
 } from './dates';
 import { getDateCondition, matchesSelections } from './filters';
+import {
+  accumulate,
+  bucketFor,
+  newAccumulator,
+  seriesValue,
+  valueOf,
+  type Accumulator,
+} from './aggregate';
 
 /** Series con nombre propio en la evolución; el resto se pliega en «Otros». */
 const TOP_SERIES = 10;
@@ -357,60 +364,6 @@ function previousSeries(input: SerieInput, length: number): ExplorationSeries | 
   const aligned = Array.from({ length }, (_, position) => values[position] ?? null);
 
   return { name: 'Período anterior', values: aligned, isOthers: false };
-}
-
-interface Accumulator {
-  sum: number;
-  count: number;
-}
-
-function newAccumulator(): Accumulator {
-  return { sum: 0, count: 0 };
-}
-
-function bucketFor(map: Map<string, Accumulator>, key: string): Accumulator {
-  const existing = map.get(key);
-  if (existing !== undefined) return existing;
-
-  const created = newAccumulator();
-  map.set(key, created);
-  return created;
-}
-
-function accumulate(accumulator: Accumulator, row: AnalysisRow, metric: MetricDef): void {
-  if (metric.column === null) {
-    // Recuento: toda fila cuenta uno y no mira ninguna columna.
-    accumulator.sum += 1;
-    accumulator.count += 1;
-    return;
-  }
-
-  const value = row.values[metric.column];
-  if (value === null || value === undefined) return;
-
-  accumulator.sum += value;
-  accumulator.count += 1;
-}
-
-function valueOf(accumulator: Accumulator, agg: MetricAgg): number {
-  switch (agg) {
-    case 'sum':
-      return accumulator.sum;
-    case 'count':
-      return accumulator.count;
-    case 'avg':
-      // Como AVG en SQL: dividen solo las filas que aportaron valor.
-      return accumulator.count === 0 ? 0 : accumulator.sum / accumulator.count;
-  }
-}
-
-/**
- * En una métrica acumulativa un período sin filas vale cero; en una media no
- * vale nada, y dibujar un cero fingiría un desplome. De ahí el hueco.
- */
-function seriesValue(accumulator: Accumulator, metric: MetricDef): number | null {
-  if (accumulator.count === 0) return metric.cumulative ? 0 : null;
-  return valueOf(accumulator, metric.agg);
 }
 
 function deltaOf(value: number, previousValue: number | null): number | null {

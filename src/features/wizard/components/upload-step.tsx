@@ -1,4 +1,4 @@
-import { Columns3, FileUp, Rows3 } from 'lucide-react';
+import { Columns3, FileUp, LayoutGrid } from 'lucide-react';
 import { useWizard } from '../use-wizard';
 import { FileUploader } from '@/features/upload/components/file-uploader';
 import { FileList } from '@/features/upload/components/file-list';
@@ -59,13 +59,13 @@ const HOW_IT_WORKS = [
   },
   {
     icon: Columns3,
-    title: 'Confirma los campos',
-    text: 'Revisa los tipos detectados y elige qué medir y por qué agrupar.',
+    title: 'Confirma los tipos',
+    text: 'Revisa qué es número, qué es fecha y qué es categoría.',
   },
   {
-    icon: Rows3,
-    title: 'Cruza y compara',
-    text: 'Evolución, subidas y caídas, y el detalle exacto, todo filtrado a la vez.',
+    icon: LayoutGrid,
+    title: 'Elige la herramienta',
+    text: 'Perfil, tabla dinámica, análisis cruzado, RFM o un gráfico a medida.',
   },
 ];
 

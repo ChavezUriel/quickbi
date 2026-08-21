@@ -7,7 +7,7 @@ import { formatMetric } from './format';
  * de grises y no distinguen diez series. Estos tonos mantienen contraste tanto
  * sobre fondo claro como oscuro.
  */
-const PALETTE = [
+export const PALETTE = [
   '#4e79a7',
   '#f28e2b',
   '#59a14f',
@@ -20,7 +20,7 @@ const PALETTE = [
   '#8cd17d',
 ];
 
-const OTHERS_COLOR = '#9aa0a6';
+export const OTHERS_COLOR = '#9aa0a6';
 
 /** A partir de aquí el color repite matiz: el trazo discontinuo desempata. */
 const DASHED_FROM = 8;

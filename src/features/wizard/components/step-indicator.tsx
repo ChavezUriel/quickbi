@@ -1,17 +1,17 @@
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWizard } from '../use-wizard';
-import { STEP_LABELS, type WizardStep } from '../wizard-context';
-
-const STEPS: WizardStep[] = [1, 2, 3];
 
 /**
  * Progreso del asistente, en dos formas.
  *
  * En una barra superior fija el espacio horizontal es el recurso escaso: por
  * debajo de `sm` los círculos y sus rótulos no caben junto a la marca y el
- * conmutador de tema, así que se sustituyen por «2/3 · Rótulo» más tres
- * segmentos. Es la misma información, contada con una décima parte del ancho.
+ * conmutador de tema, así que se sustituyen por «2/4 · Rótulo» más un segmento
+ * por paso. Es la misma información, contada con una décima parte del ancho.
+ *
+ * La secuencia no es fija —depende de la herramienta elegida—, así que tanto
+ * el número como los segmentos salen de la lista vigente y no de una constante.
  */
 export function StepIndicator() {
   return (
@@ -23,50 +23,52 @@ export function StepIndicator() {
 }
 
 function CompactIndicator() {
-  const { step } = useWizard();
+  const { step, steps, stepLabels } = useWizard();
+  const position = steps.indexOf(step) + 1;
 
   return (
     <div className="flex min-w-0 items-center gap-2 sm:hidden" aria-hidden>
       <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
-        {step}/{STEPS.length}
+        {position}/{steps.length}
       </span>
-      <span className="truncate text-xs font-medium">{STEP_LABELS[step]}</span>
+      <span className="truncate text-xs font-medium">{stepLabels[step]}</span>
       <span className="flex shrink-0 gap-1">
-        {STEPS.map((s) => (
+        {steps.map((id, index) => (
           <span
-            key={s}
+            key={id}
             className={cn(
               'h-1 w-4 rounded-full transition-colors',
-              s <= step ? 'bg-primary' : 'bg-muted-foreground/25',
+              index < position ? 'bg-primary' : 'bg-muted-foreground/25',
             )}
           />
         ))}
       </span>
       {/* El lector de pantalla recibe la frase entera, no los trozos sueltos. */}
       <span className="sr-only">
-        Paso {step} de {STEPS.length}: {STEP_LABELS[step]}
+        Paso {position} de {steps.length}: {stepLabels[step]}
       </span>
     </div>
   );
 }
 
 function FullIndicator() {
-  const { step, goToStep } = useWizard();
+  const { step, steps, stepLabels, goToStep } = useWizard();
+  const currentIndex = steps.indexOf(step);
 
   return (
     <nav aria-label="Progreso del asistente" className="hidden sm:block">
       <ol className="flex items-center">
-        {STEPS.map((s, index) => {
-          const isCompleted = s < step;
-          const isCurrent = s === step;
-          const isFuture = s > step;
+        {steps.map((id, index) => {
+          const isCompleted = index < currentIndex;
+          const isCurrent = index === currentIndex;
+          const isFuture = index > currentIndex;
 
           return (
-            <li key={s} className="flex items-center">
+            <li key={id} className="flex items-center">
               <button
                 type="button"
                 disabled={isFuture}
-                onClick={() => goToStep(s)}
+                onClick={() => goToStep(id)}
                 aria-current={isCurrent ? 'step' : undefined}
                 className={cn(
                   'group flex items-center gap-2 rounded-full px-1 py-1 transition-colors',
@@ -83,25 +85,25 @@ function FullIndicator() {
                     isFuture && 'border-muted-foreground/30 text-muted-foreground',
                   )}
                 >
-                  {isCompleted ? <Check className="size-3.5" /> : s}
+                  {isCompleted ? <Check className="size-3.5" /> : index + 1}
                 </span>
                 <span
                   className={cn(
-                    'hidden text-xs font-medium whitespace-nowrap lg:block',
+                    'hidden max-w-40 truncate text-xs font-medium whitespace-nowrap lg:block',
                     isCurrent && 'text-foreground',
                     isCompleted && 'text-muted-foreground group-hover:text-foreground',
                     isFuture && 'text-muted-foreground/50',
                   )}
                 >
-                  {STEP_LABELS[s]}
+                  {stepLabels[id]}
                 </span>
               </button>
 
-              {index < STEPS.length - 1 && (
+              {index < steps.length - 1 && (
                 <div
                   className={cn(
-                    'mx-2 h-0.5 w-6 rounded-full transition-colors duration-200 lg:w-10',
-                    s < step ? 'bg-primary' : 'bg-muted-foreground/20',
+                    'mx-2 h-0.5 w-6 rounded-full transition-colors duration-200 lg:w-8',
+                    index < currentIndex ? 'bg-primary' : 'bg-muted-foreground/20',
                   )}
                 />
               )}

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
+  STEP_LABELS,
   WizardContext,
   type SchemaGroup,
-  type WizardStep,
+  type WizardStepId,
   type WizardStore,
 } from './wizard-context';
 import type { ParsedDataset } from '@/features/dataset/types';
@@ -10,11 +11,17 @@ import {
   getSchemaFingerprint,
   mergeDatasets,
 } from '@/features/upload/lib/merge-datasets';
+import { getTool } from '@/features/tools/registry';
+
+/** Los pasos que existen siempre, antes de saber qué herramienta se elige. */
+const BASE_STEPS: WizardStepId[] = ['carga', 'tipos', 'herramienta'];
 
 export function WizardProvider({ children }: { children: ReactNode }) {
-  const [step, setStep] = useState<WizardStep>(1);
+  const [step, setStep] = useState<WizardStepId>('carga');
   const [datasets, setDatasets] = useState<ParsedDataset[]>([]);
   const [selectedFingerprint, setSelectedFingerprint] = useState<string | null>(null);
+  const [toolId, setToolIdState] = useState<string | null>(null);
+  const [toolReady, setToolReady] = useState(false);
 
   // Derive schema groups from datasets
   const schemaGroups = useMemo<SchemaGroup[]>(() => {
@@ -69,32 +76,73 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     return mergeDatasets(matchingDatasets);
   }, [datasets, selectedFingerprint, schemaGroups]);
 
+  const tool = getTool(toolId);
+
+  // La secuencia depende de la herramienta: la que no pregunta nada no gana un
+  // paso de configuración vacío.
+  const steps = useMemo<WizardStepId[]>(() => {
+    if (tool === null) return BASE_STEPS;
+    return tool.hasSetup
+      ? [...BASE_STEPS, 'configuracion', 'cuadro']
+      : [...BASE_STEPS, 'cuadro'];
+  }, [tool]);
+
+  const stepLabels = useMemo<Record<WizardStepId, string>>(
+    () => ({ ...STEP_LABELS, cuadro: tool?.label ?? STEP_LABELS.cuadro }),
+    [tool],
+  );
+
   const canAdvance = useMemo<boolean>(() => {
     switch (step) {
-      case 1:
+      case 'carga':
         return selectedFingerprint !== null && composedDataset !== null;
-      case 2:
+      case 'tipos':
         return composedDataset !== null;
-      case 3:
+      case 'herramienta':
+        return tool !== null;
+      case 'configuracion':
+        return toolReady;
+      case 'cuadro':
         return false;
     }
-  }, [step, selectedFingerprint, composedDataset]);
+  }, [step, selectedFingerprint, composedDataset, tool, toolReady]);
+
+  // Cambiar de herramienta puede acortar la secuencia por debajo del paso
+  // actual; si eso pasa, el asistente retrocede al último paso que sigue
+  // existiendo en vez de quedarse en un paso que ya no está.
+  useEffect(() => {
+    if (!steps.includes(step)) {
+      setStep(steps[steps.length - 1] ?? 'carga');
+    }
+  }, [steps, step]);
 
   const goNext = useCallback(() => {
-    setStep((s) => (s < 3 ? ((s + 1) as WizardStep) : s));
-  }, []);
+    setStep((current) => {
+      const index = steps.indexOf(current);
+      return steps[index + 1] ?? current;
+    });
+  }, [steps]);
 
   const goBack = useCallback(() => {
-    setStep((s) => (s > 1 ? ((s - 1) as WizardStep) : s));
-  }, []);
+    setStep((current) => {
+      const index = steps.indexOf(current);
+      return index > 0 ? (steps[index - 1] ?? current) : current;
+    });
+  }, [steps]);
 
   const goToStep = useCallback(
-    (target: WizardStep) => {
-      if (target < step || (target === step + 1 && canAdvance)) {
+    (target: WizardStepId) => {
+      const targetIndex = steps.indexOf(target);
+      const currentIndex = steps.indexOf(step);
+      if (targetIndex < 0 || currentIndex < 0) return;
+
+      // Se puede volver a cualquier paso ya visitado, y avanzar solo al
+      // siguiente, y solo si el actual está resuelto.
+      if (targetIndex < currentIndex || (targetIndex === currentIndex + 1 && canAdvance)) {
         setStep(target);
       }
     },
-    [step, canAdvance],
+    [steps, step, canAdvance],
   );
 
   const addDataset = useCallback((dataset: ParsedDataset) => {
@@ -105,9 +153,18 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     setDatasets((prev) => prev.filter((d) => d.id !== id));
   }, []);
 
+  const setToolId = useCallback((id: string | null) => {
+    setToolIdState(id);
+    // La validez es de la herramienta anterior: la nueva la comunicará al
+    // montarse, y hasta entonces no hay nada resuelto que dar por bueno.
+    setToolReady(false);
+  }, []);
+
   const store = useMemo<WizardStore>(
     () => ({
       step,
+      steps,
+      stepLabels,
       goNext,
       goBack,
       goToStep,
@@ -119,9 +176,15 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       addDataset,
       removeDataset,
       setSelectedFingerprint,
+      toolId,
+      setToolId,
+      toolReady,
+      setToolReady,
     }),
     [
       step,
+      steps,
+      stepLabels,
       goNext,
       goBack,
       goToStep,
@@ -132,6 +195,9 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       canAdvance,
       addDataset,
       removeDataset,
+      toolId,
+      setToolId,
+      toolReady,
     ],
   );
 
