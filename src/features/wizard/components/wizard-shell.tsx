@@ -66,7 +66,7 @@ export function WizardShell() {
  * permanecen montados, ocultos por CSS, para que ir y volver no pierda nada.
  */
 function DataWorkspace({ dataset, fill }: { dataset: ParsedDataset; fill: boolean }) {
-  const { step, toolId, setToolId, setToolReady } = useWizard();
+  const { step, toolId, selectTool, setToolReady } = useWizard();
   const mapping = useColumnMapping(dataset);
   const tool = getTool(toolId);
 
@@ -85,7 +85,7 @@ function DataWorkspace({ dataset, fill }: { dataset: ParsedDataset; fill: boolea
         <ToolGallery
           capabilities={capabilities}
           selected={toolId}
-          onSelect={setToolId}
+          onSelect={selectTool}
         />
       </div>
 

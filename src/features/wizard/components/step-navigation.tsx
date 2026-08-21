@@ -132,7 +132,7 @@ function hintFor(step: WizardStepId, canAdvance: boolean): string | null {
     return 'Carga un archivo CSV o Excel para continuar.';
   }
   if (step === 'herramienta' && !canAdvance) {
-    return 'Elige qué análisis quieres hacer con estos datos.';
+    return 'Haz clic en una herramienta para iniciar el análisis.';
   }
   if (step === 'configuracion' && !canAdvance) {
     return 'Falta asignar alguna columna obligatoria.';

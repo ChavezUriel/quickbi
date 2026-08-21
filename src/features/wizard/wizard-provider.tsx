@@ -160,6 +160,16 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     setToolReady(false);
   }, []);
 
+  const selectTool = useCallback((id: string) => {
+    const targetTool = getTool(id);
+    setToolIdState(id);
+    setToolReady(false);
+    if (targetTool) {
+      const nextStep: WizardStepId = targetTool.hasSetup ? 'configuracion' : 'cuadro';
+      setStep(nextStep);
+    }
+  }, []);
+
   const store = useMemo<WizardStore>(
     () => ({
       step,
@@ -178,6 +188,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       setSelectedFingerprint,
       toolId,
       setToolId,
+      selectTool,
       toolReady,
       setToolReady,
     }),
@@ -197,6 +208,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       removeDataset,
       toolId,
       setToolId,
+      selectTool,
       toolReady,
     ],
   );

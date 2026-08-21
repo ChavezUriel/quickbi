@@ -52,6 +52,8 @@ export interface WizardStore {
   /** Herramienta de análisis elegida en el paso 3. */
   toolId: string | null;
   setToolId: (id: string | null) => void;
+  /** Selecciona una herramienta y avanza directamente al siguiente paso (configuración o cuadro). */
+  selectTool: (id: string) => void;
   /**
    * La herramienta dice si su configuración basta para pintar el cuadro de
    * mando. Es lo único que el asistente no puede saber por sí mismo: cada
