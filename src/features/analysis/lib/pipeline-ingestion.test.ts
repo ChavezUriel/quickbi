@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { profileColumns, profileColumn } from '../../dataset/lib/infer-columns';
+import { profileColumns } from '../../dataset/lib/infer-columns';
 import { prepareRows } from './prepare-rows';
 import { buildSyntheticParsedDataset, generateSyntheticRows } from './synthetic-data';
 

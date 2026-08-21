@@ -1,15 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { computeExploration, resolveWindows } from './explore';
-import { columnMetric, countMetric } from './metrics';
-import { formatMetric, formatDelta, formatShare } from './format';
+import { columnMetric } from './metrics';
+import { formatMetric, formatDelta } from './format';
 import { EMPTY_FILTERS, lastPeriods, setDateCondition, setSelected } from './filters';
 import { buildSyntheticAnalysisRows } from './synthetic-data';
-import type { AnalysisRow, DateWindow } from '../types';
+import type { DateWindow } from '../types';
 
 const ventasSum = columnMetric('ventas', 'sum', 'moneda');
 const ventasAvg = columnMetric('ventas', 'avg', 'moneda');
-const unidadesSum = columnMetric('unidades', 'sum', 'numero');
-const filasCount = countMetric('Filas');
 
 describe('Synthetic Exploration Analysis Engine Tests', () => {
   const rows = buildSyntheticAnalysisRows();

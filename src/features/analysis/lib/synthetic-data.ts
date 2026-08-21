@@ -1,4 +1,4 @@
-import type { CellValue, DataRow, ParsedDataset } from '../../dataset/types';
+import type { DataRow, ParsedDataset } from '../../dataset/types';
 import type { AnalysisRow } from '../types';
 
 export interface SyntheticRowSpec {
@@ -82,13 +82,13 @@ export function buildSyntheticParsedDataset(specs = generateSyntheticRows()): Pa
     fileName: 'synthetic_transactions.csv',
     fileType: 'csv',
     columns: [
-      { name: 'Fecha', type: 'date', format: { kind: 'date', order: 'iso' }, role: 'dimension', nullCount: 1, invalidCount: 0, distinctCount: 14, distinctCountExact: true, sampleValues: ['2026-07-01'] } as any,
-      { name: 'Categoría', type: 'text', format: { kind: 'none' }, role: 'dimension', nullCount: 0, invalidCount: 0, distinctCount: 5, distinctCountExact: true, sampleValues: ['Electrónica'] } as any,
-      { name: 'Región', type: 'text', format: { kind: 'none' }, role: 'dimension', nullCount: 0, invalidCount: 0, distinctCount: 4, distinctCountExact: true, sampleValues: ['Norte'] } as any,
-      { name: 'ClienteID', type: 'text', format: { kind: 'none' }, role: 'dimension', nullCount: 0, invalidCount: 0, distinctCount: 8, distinctCountExact: true, sampleValues: ['C001'] } as any,
-      { name: 'Ventas', type: 'number', format: { kind: 'number', decimal: '.' }, role: 'measure', nullCount: 1, invalidCount: 0, distinctCount: 12, distinctCountExact: true, sampleValues: ['100'] } as any,
-      { name: 'Unidades', type: 'number', format: { kind: 'number', decimal: '.' }, role: 'measure', nullCount: 1, invalidCount: 0, distinctCount: 5, distinctCountExact: true, sampleValues: ['2'] } as any,
-      { name: 'Descuento', type: 'number', format: { kind: 'number', decimal: '.' }, role: 'measure', nullCount: 2, invalidCount: 0, distinctCount: 5, distinctCountExact: true, sampleValues: ['10'] } as any,
+      { name: 'Fecha', type: 'date', format: { kind: 'date', order: 'iso' }, role: 'dimension', nullCount: 1, invalidCount: 0, distinctCount: 14, distinctCountExact: true, samples: ['2026-07-01'] },
+      { name: 'Categoría', type: 'text', format: { kind: 'none' }, role: 'dimension', nullCount: 0, invalidCount: 0, distinctCount: 5, distinctCountExact: true, samples: ['Electrónica'] },
+      { name: 'Región', type: 'text', format: { kind: 'none' }, role: 'dimension', nullCount: 0, invalidCount: 0, distinctCount: 4, distinctCountExact: true, samples: ['Norte'] },
+      { name: 'ClienteID', type: 'text', format: { kind: 'none' }, role: 'dimension', nullCount: 0, invalidCount: 0, distinctCount: 8, distinctCountExact: true, samples: ['C001'] },
+      { name: 'Ventas', type: 'number', format: { kind: 'number', decimal: '.' }, role: 'measure', nullCount: 1, invalidCount: 0, distinctCount: 12, distinctCountExact: true, samples: ['100'] },
+      { name: 'Unidades', type: 'number', format: { kind: 'number', decimal: '.' }, role: 'measure', nullCount: 1, invalidCount: 0, distinctCount: 5, distinctCountExact: true, samples: ['2'] },
+      { name: 'Descuento', type: 'number', format: { kind: 'number', decimal: '.' }, role: 'measure', nullCount: 2, invalidCount: 0, distinctCount: 5, distinctCountExact: true, samples: ['10'] },
     ],
     rows,
     rowCount: rows.length,

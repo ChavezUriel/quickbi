@@ -6,7 +6,6 @@ import { columnMetric } from './metrics';
 import { buildSyntheticAnalysisRows, buildSyntheticParsedDataset, generateSyntheticRows } from './synthetic-data';
 
 const ventasSum = columnMetric('ventas', 'sum', 'moneda');
-const ventasAvg = columnMetric('ventas', 'avg', 'moneda');
 
 describe('Synthetic Analytical Tools Pipeline Tests', () => {
   const analysisRows = buildSyntheticAnalysisRows();
