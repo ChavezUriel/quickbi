@@ -3,7 +3,6 @@ import { ToolPanes } from '../components/tool-panes';
 import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { SegmentsDashboard } from './components/segments-dashboard';
-import { SegmentsSetup } from './components/segments-setup';
 import { useSegmentsConfig } from './use-segments-config';
 
 function SegmentsWorkspace({
@@ -14,13 +13,13 @@ function SegmentsWorkspace({
   onReady,
 }: ToolWorkspaceProps) {
   const state = useSegmentsConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<SegmentsSetup state={state} />}
+      setup={null}
       dashboard={
         <SegmentsDashboard dataset={dataset} mapping={mapping} state={state} />
       }
@@ -37,7 +36,7 @@ export const segmentsTool: ToolDefinition = {
   icon: GitCompare,
   category: 'general',
   needs: ['Al menos una columna de categorías', 'Al menos una columna numérica'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0) {

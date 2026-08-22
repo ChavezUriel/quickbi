@@ -25,6 +25,7 @@ import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { spcToCsv } from '../lib/export-spc-csv';
 import { computeSpc } from '../lib/spc';
 import type { SpcConfigState } from '../use-spc-config';
@@ -239,6 +240,56 @@ export function SpcDashboard({
 
   return (
     <div className="space-y-4">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Variable de control (Métrica)</span>
+            <OptionSelect
+              value={measureCol ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Variable de control"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('metrica', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Orden cronológico / Lote</span>
+            <OptionSelect
+              value={orderCol ?? '__sin_orden__'}
+              options={[
+                { value: '__sin_orden__', label: 'Orden natural de filas' },
+                ...mapping.columns.map((c) => ({ value: c.name, label: c.name })),
+              ]}
+              ariaLabel="Orden cronológico o lote"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('orden', value === '__sin_orden__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-36">
+            <span>Estimación de Sigma</span>
+            <OptionSelect
+              value={state.settings.sigmaMethod}
+              options={[
+                { value: 'moving-range', label: 'Rango móvil (MR)' },
+                { value: 'sample-stddev', label: 'Desviación estándar (S)' },
+              ]}
+              ariaLabel="Método de estimación de sigma"
+              size="sm"
+              onChange={(value) => {
+                state.update({ sigmaMethod: value as any });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Barra de Estado y Exportación */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">

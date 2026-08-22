@@ -18,6 +18,7 @@ import { formatDelta, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { waterfallToCsv } from '../lib/export-waterfall-csv';
 import { computeWaterfall, type WaterfallBucketType } from '../lib/waterfall';
 import { buildWaterfallChartOption } from '../lib/waterfall-chart-option';
@@ -137,6 +138,83 @@ export function WaterfallDashboard({
 
   return (
     <div className="space-y-3">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Dimensión a descomponer</span>
+            <OptionSelect
+              value={dimension ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Dimensión a descomponer"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('dimension', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Métrica o importe</span>
+            <OptionSelect
+              value={measure ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Métrica o importe"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('measure', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Columna de fecha</span>
+            <OptionSelect
+              value={dateColumn ?? ''}
+              options={mapping.dateColumns.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Columna de fecha"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('date', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-36">
+            <span>División temporal</span>
+            <OptionSelect
+              value={state.settings.splitMode}
+              options={[
+                { value: 'mitades', label: 'Dos mitades del histórico' },
+                { value: 'por_grano', label: 'Últimos 2 períodos consecutivos' },
+              ]}
+              ariaLabel="Modo de división temporal"
+              size="sm"
+              onChange={(value) => {
+                state.update({ splitMode: value as any });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Unidad de período</span>
+            <OptionSelect
+              value={state.settings.periodUnit}
+              options={[
+                { value: 'mes', label: 'Mensual' },
+                { value: 'trimestre', label: 'Trimestral' },
+                { value: 'anio', label: 'Anual' },
+              ]}
+              ariaLabel="Unidad de período"
+              size="sm"
+              onChange={(value) => {
+                state.update({ periodUnit: value as any });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* KPI Cards */}
       <Card size="sm">
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

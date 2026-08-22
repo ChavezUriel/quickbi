@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { SpcDashboard } from './components/spc-dashboard';
-import { SpcSetup } from './components/spc-setup';
 import { useSpcConfig } from './use-spc-config';
 
 function SpcWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = useSpcConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<SpcSetup state={state} />}
+      setup={null}
       dashboard={<SpcDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const spcTool: ToolDefinition = {
   icon: Activity,
   category: 'situacional',
   needs: ['Una columna numérica a monitorear', 'Opcional: orden cronológico o lote'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.measures === 0) {

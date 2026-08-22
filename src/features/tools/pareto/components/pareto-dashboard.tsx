@@ -26,6 +26,7 @@ import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { paretoToCsv } from '../lib/export-pareto-csv';
 import { computePareto, type ABCClass } from '../lib/pareto';
 import type { ParetoConfigState } from '../use-pareto-config';
@@ -241,6 +242,72 @@ export function ParetoDashboard({
 
   return (
     <div className="space-y-3">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Entidad a clasificar</span>
+            <OptionSelect
+              value={entityDim ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Entidad a clasificar"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('entidad', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Métrica de volumen / valor</span>
+            <OptionSelect
+              value={measureColumn ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Métrica de volumen o valor"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('metrica', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Umbral Clase A</span>
+            <OptionSelect
+              value={String(settings.thresholdA)}
+              options={[
+                { value: '70', label: 'Top 70%' },
+                { value: '75', label: 'Top 75%' },
+                { value: '80', label: 'Top 80% (Estándar)' },
+                { value: '85', label: 'Top 85%' },
+              ]}
+              ariaLabel="Umbral de Clase A"
+              size="sm"
+              onChange={(value) => {
+                state.update({ thresholdA: Number(value) });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Umbral Clase B</span>
+            <OptionSelect
+              value={String(settings.thresholdB)}
+              options={[
+                { value: '90', label: 'Hasta 90%' },
+                { value: '95', label: 'Hasta 95% (Estándar)' },
+                { value: '98', label: 'Hasta 98%' },
+              ]}
+              ariaLabel="Umbral de Clase B"
+              size="sm"
+              onChange={(value) => {
+                state.update({ thresholdB: Number(value) });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Top Concentration KPI Cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Tile

@@ -20,6 +20,7 @@ import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { Currency } from '@/features/analysis/types';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import {
   computeChurn,
   type ChurnAnalysisResult,
@@ -244,6 +245,70 @@ export function ChurnDashboard({
 
   return (
     <div className="space-y-4">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Identificador de cliente</span>
+            <OptionSelect
+              value={state.slots.assignments.cliente ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Identificador de cliente"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('cliente', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Fecha de compra</span>
+            <OptionSelect
+              value={state.slots.assignments.fecha ?? ''}
+              options={mapping.dateColumns.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Fecha de compra"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('fecha', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Importe (opcional)</span>
+            <OptionSelect
+              value={state.slots.assignments.importe ?? '__sin_importe__'}
+              options={[
+                { value: '__sin_importe__', label: 'Sin importe (solo conteo)' },
+                ...mapping.measures.map((m) => ({ value: m.name, label: m.name })),
+              ]}
+              ariaLabel="Importe de compras"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('importe', value === '__sin_importe__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Grano de período</span>
+            <OptionSelect
+              value={state.settings.grain}
+              options={[
+                { value: 'mes', label: 'Mensual' },
+                { value: 'trimestre', label: 'Trimestral' },
+                { value: 'anio', label: 'Anual' },
+              ]}
+              ariaLabel="Grano de período"
+              size="sm"
+              onChange={(value) => {
+                state.update({ grain: value as any });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* KPI Cards */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Tile

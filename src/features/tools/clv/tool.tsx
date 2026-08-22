@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ClvDashboard } from './components/clv-dashboard';
-import { ClvSetup } from './components/clv-setup';
 import { useClvConfig } from './use-clv-config';
 
 function ClvWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = useClvConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<ClvSetup state={state} />}
+      setup={null}
       dashboard={<ClvDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const clvTool: ToolDefinition = {
   icon: UserCheck,
   category: 'clientes',
   needs: ['Una columna de cliente', 'Una fecha de compra', 'Un importe'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dates === 0) return missing('Hace falta una columna de fecha de compra.');

@@ -3,7 +3,6 @@ import { ToolPanes } from '../components/tool-panes';
 import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { PriceVolumeDashboard } from './components/price-volume-dashboard';
-import { PriceVolumeSetup } from './components/price-volume-setup';
 import { usePriceVolumeConfig } from './use-price-volume-config';
 
 function PriceVolumeWorkspace({
@@ -14,13 +13,13 @@ function PriceVolumeWorkspace({
   onReady,
 }: ToolWorkspaceProps) {
   const state = usePriceVolumeConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<PriceVolumeSetup state={state} />}
+      setup={null}
       dashboard={
         <PriceVolumeDashboard dataset={dataset} mapping={mapping} state={state} />
       }
@@ -41,7 +40,7 @@ export const priceVolumeTool: ToolDefinition = {
     'Columna de volumen / cantidad',
     'Columna de precio o importe',
   ],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.measures < 1) {

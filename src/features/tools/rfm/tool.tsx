@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { RfmDashboard } from './components/rfm-dashboard';
-import { RfmSetup } from './components/rfm-setup';
 import { useRfmConfig } from './use-rfm-config';
 
 function RfmWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = useRfmConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<RfmSetup state={state} />}
+      setup={null}
       dashboard={<RfmDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const rfmTool: ToolDefinition = {
   icon: Grid3x3,
   category: 'clientes',
   needs: ['Una columna de cliente', 'Una fecha', 'Un importe'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dates === 0) return missing('Hace falta una columna de fecha.');

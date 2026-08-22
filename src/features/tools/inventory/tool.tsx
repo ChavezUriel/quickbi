@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { compatible, missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { InventoryDashboard } from './components/inventory-dashboard';
-import { InventorySetup } from './components/inventory-setup';
 import { useInventoryConfig } from './use-inventory-config';
 
 function InventoryWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = useInventoryConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<InventorySetup state={state} />}
+      setup={null}
       dashboard={<InventoryDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const inventoryTool: ToolDefinition = {
   icon: Boxes,
   category: 'situacional',
   needs: ['Una columna de producto o SKU', 'Una columna de stock o existencias'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0) {

@@ -3,7 +3,6 @@ import { ToolPanes } from '../components/tool-panes';
 import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ParetoDashboard } from './components/pareto-dashboard';
-import { ParetoSetup } from './components/pareto-setup';
 import { useParetoConfig } from './use-pareto-config';
 
 function ParetoWorkspace({
@@ -14,13 +13,13 @@ function ParetoWorkspace({
   onReady,
 }: ToolWorkspaceProps) {
   const state = useParetoConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<ParetoSetup state={state} />}
+      setup={null}
       dashboard={
         <ParetoDashboard dataset={dataset} mapping={mapping} state={state} />
       }
@@ -37,7 +36,7 @@ export const paretoTool: ToolDefinition = {
   icon: Percent,
   category: 'general',
   needs: ['Una columna de entidades o productos', 'Una columna numérica'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0) {

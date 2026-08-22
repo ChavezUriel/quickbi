@@ -28,6 +28,7 @@ import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { computeExecutiveSummary } from '../lib/executive';
 import { executiveToCsv } from '../lib/export-executive-csv';
 import type { ExecutiveConfigState } from '../use-executive-config';
@@ -243,6 +244,94 @@ export function ExecutiveDashboard({
           </Button>
         </div>
       </div>
+
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Métrica principal</span>
+            <OptionSelect
+              value={measureCol ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Métrica principal"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('metrica', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Fecha (opcional)</span>
+            <OptionSelect
+              value={dateCol ?? '__sin_fecha__'}
+              options={[
+                { value: '__sin_fecha__', label: 'Sin eje temporal' },
+                ...mapping.dateColumns.map((d) => ({ value: d.name, label: d.name })),
+              ]}
+              ariaLabel="Columna de fecha"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('fecha', value === '__sin_fecha__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Dimensión / Categoría</span>
+            <OptionSelect
+              value={dimensionCol ?? '__sin_dim__'}
+              options={[
+                { value: '__sin_dim__', label: 'Sin categoría (Total)' },
+                ...mapping.dimensions.map((d) => ({ value: d.name, label: d.name })),
+              ]}
+              ariaLabel="Dimensión / Categoría"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('dimension', value === '__sin_dim__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Agregación</span>
+            <OptionSelect
+              value={state.settings.agg}
+              options={[
+                { value: 'sum', label: 'Suma total' },
+                { value: 'avg', label: 'Promedio / Media' },
+                { value: 'count', label: 'Conteo de filas' },
+              ]}
+              ariaLabel="Tipo de agregación"
+              size="sm"
+              onChange={(value) => {
+                state.update({ agg: value as 'sum' | 'avg' | 'count' });
+              }}
+            />
+          </div>
+
+          {dateCol && (
+            <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+              <span>Grano temporal</span>
+              <OptionSelect
+                value={state.settings.grain}
+                options={[
+                  { value: 'dia', label: 'Día a día' },
+                  { value: 'semana', label: 'Semanal' },
+                  { value: 'mes', label: 'Mensual' },
+                  { value: 'trimestre', label: 'Trimestral' },
+                  { value: 'anio', label: 'Anual' },
+                ]}
+                ariaLabel="Grano temporal"
+                size="sm"
+                onChange={(value) => {
+                  state.update({ grain: value as any });
+                }}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Tarjeta de Síntesis Narrativa Ejecutiva */}
       <Card className="border-primary/20 bg-primary/5">

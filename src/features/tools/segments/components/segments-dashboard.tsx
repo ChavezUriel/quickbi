@@ -25,6 +25,7 @@ import { formatCount, formatDelta, formatMetric, formatShare } from '@/features/
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { segmentsToCsv } from '../lib/export-segments-csv';
 import { computeSegmentComparison } from '../lib/segments';
 import type { SegmentsConfigState } from '../use-segments-config';
@@ -274,6 +275,55 @@ export function SegmentsDashboard({
 
   return (
     <div className="space-y-3">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Dimensión a segmentar</span>
+            <OptionSelect
+              value={segmentDim ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Dimensión a segmentar"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('dimension_segmento', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Métrica principal</span>
+            <OptionSelect
+              value={primaryMeasure ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Métrica principal"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('metrica_principal', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Desglose Mix-Shift (opcional)</span>
+            <OptionSelect
+              value={breakdownDim ?? '__sin_desglose__'}
+              options={[
+                { value: '__sin_desglose__', label: 'Sin desglose adicional' },
+                ...mapping.dimensions
+                  .filter((d) => d.name !== segmentDim)
+                  .map((d) => ({ value: d.name, label: d.name })),
+              ]}
+              ariaLabel="Dimensión de desglose Mix-Shift"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('dimension_desglose', value === '__sin_desglose__' ? null : value);
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Category Selectors for Segment A and B */}
       <Card size="sm">
         <CardHeader>

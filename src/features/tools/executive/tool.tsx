@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ExecutiveDashboard } from './components/executive-dashboard';
-import { ExecutiveSetup } from './components/executive-setup';
 import { useExecutiveConfig } from './use-executive-config';
 
 function ExecutiveWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = useExecutiveConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<ExecutiveSetup state={state} />}
+      setup={null}
       dashboard={<ExecutiveDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const executiveTool: ToolDefinition = {
   icon: Sparkles,
   category: 'general',
   needs: ['Una métrica numérica', 'Opcional: columna de fecha y categoría'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.measures === 0) {

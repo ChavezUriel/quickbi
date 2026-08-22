@@ -3,7 +3,6 @@ import { ToolPanes } from '../components/tool-panes';
 import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ReconciliationDashboard } from './components/reconciliation-dashboard';
-import { ReconciliationSetup } from './components/reconciliation-setup';
 import { useReconciliationConfig } from './use-reconciliation-config';
 
 function ReconciliationWorkspace({
@@ -14,13 +13,13 @@ function ReconciliationWorkspace({
   onReady,
 }: ToolWorkspaceProps) {
   const state = useReconciliationConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<ReconciliationSetup state={state} />}
+      setup={null}
       dashboard={
         <ReconciliationDashboard
           dataset={dataset}
@@ -41,7 +40,7 @@ export const reconciliationTool: ToolDefinition = {
   icon: Scale,
   category: 'situacional',
   needs: ['Una clave identificadora', 'Uno o dos importes numéricos'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0) {

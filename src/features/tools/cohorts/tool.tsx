@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { CohortsDashboard } from './components/cohorts-dashboard';
-import { CohortsSetup } from './components/cohorts-setup';
 import { useCohortsConfig } from './use-cohorts-config';
 
 function CohortsWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = useCohortsConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<CohortsSetup state={state} />}
+      setup={null}
       dashboard={<CohortsDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const cohortsTool: ToolDefinition = {
   icon: Users,
   category: 'clientes',
   needs: ['Una columna de cliente', 'Una fecha de compra', 'Un importe'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dates === 0) return missing('Hace falta una columna de fecha de compra.');

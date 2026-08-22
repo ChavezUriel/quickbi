@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ChurnDashboard } from './components/churn-dashboard';
-import { ChurnSetup } from './components/churn-setup';
 import { useChurnConfig } from './use-churn-config';
 
 function ChurnWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = useChurnConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<ChurnSetup state={state} />}
+      setup={null}
       dashboard={<ChurnDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const churnTool: ToolDefinition = {
   icon: Repeat,
   category: 'clientes',
   needs: ['Una columna de cliente', 'Una fecha', 'Un importe (opcional)'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dates === 0) return missing('Hace falta una columna de fecha.');

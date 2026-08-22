@@ -27,6 +27,7 @@ import { formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { forecastToCsv } from '../lib/export-forecast-csv';
 import { computeForecast } from '../lib/forecast';
 import type { ForecastConfigState } from '../use-forecast-config';
@@ -236,6 +237,107 @@ export function ForecastDashboard({
 
   return (
     <div className="space-y-4">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Columna de fecha</span>
+            <OptionSelect
+              value={dateCol ?? ''}
+              options={mapping.dateColumns.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Columna de fecha"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('fecha', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Métrica a proyectar</span>
+            <OptionSelect
+              value={measureCol ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Métrica a proyectar"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('metrica', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Grano temporal</span>
+            <OptionSelect
+              value={state.settings.grain}
+              options={[
+                { value: 'dia', label: 'Día a día' },
+                { value: 'semana', label: 'Semanal' },
+                { value: 'mes', label: 'Mensual' },
+                { value: 'trimestre', label: 'Trimestral' },
+                { value: 'anio', label: 'Anual' },
+              ]}
+              ariaLabel="Grano temporal"
+              size="sm"
+              onChange={(value) => {
+                state.update({ grain: value as any });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Horizonte</span>
+            <OptionSelect
+              value={String(state.settings.horizon)}
+              options={[
+                { value: '3', label: '3 períodos' },
+                { value: '6', label: '6 períodos' },
+                { value: '12', label: '12 períodos' },
+                { value: '24', label: '24 períodos' },
+              ]}
+              ariaLabel="Horizonte de pronóstico"
+              size="sm"
+              onChange={(value) => {
+                state.update({ horizon: Number(value) });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-36">
+            <span>Modelo predictivo</span>
+            <OptionSelect
+              value={state.settings.model}
+              options={[
+                { value: 'auto', label: 'Automático (Mejor MAPE)' },
+                { value: 'holt-winters', label: 'Holt-Winters' },
+                { value: 'linear-seasonal', label: 'Lineal Estacional' },
+              ]}
+              ariaLabel="Modelo predictivo"
+              size="sm"
+              onChange={(value) => {
+                state.update({ model: value as any });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Confianza</span>
+            <OptionSelect
+              value={String(state.settings.confidenceLevel)}
+              options={[
+                { value: '80', label: 'Banda 80%' },
+                { value: '95', label: 'Banda 95%' },
+              ]}
+              ariaLabel="Intervalo de confianza"
+              size="sm"
+              onChange={(value) => {
+                state.update({ confidenceLevel: Number(value) as 80 | 95 });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Botonera y Selectores Rápidos */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">

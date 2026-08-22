@@ -30,6 +30,7 @@ import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { Currency } from '@/features/analysis/types';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import {
   computeConcentration,
   type ConcentrationAnalysisResult,
@@ -248,6 +249,71 @@ export function ConcentrationDashboard({
 
   return (
     <div className="space-y-4">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Cliente / Entidad</span>
+            <OptionSelect
+              value={state.slots.assignments.cliente ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Cliente o entidad"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('cliente', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Importe / Facturación</span>
+            <OptionSelect
+              value={state.slots.assignments.importe ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Importe o facturación"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('importe', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Segmento (opcional)</span>
+            <OptionSelect
+              value={state.slots.assignments.segmento ?? '__sin_seg__'}
+              options={[
+                { value: '__sin_seg__', label: 'Sin desglose por segmento' },
+                ...mapping.dimensions.map((d) => ({ value: d.name, label: d.name })),
+              ]}
+              ariaLabel="Segmento de clientes"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('segmento', value === '__sin_seg__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Límite Top Clientes</span>
+            <OptionSelect
+              value={String(state.settings.topLimit)}
+              options={[
+                { value: '10', label: 'Top 10' },
+                { value: '20', label: 'Top 20' },
+                { value: '50', label: 'Top 50' },
+                { value: '100', label: 'Top 100' },
+              ]}
+              ariaLabel="Límite de clientes mostrados"
+              size="sm"
+              onChange={(value) => {
+                state.update({ topLimit: Number(value) });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Risk Diagnosis Banner */}
       <div className={cn('flex items-start gap-3 rounded-xl border p-4 text-sm', risk.className)}>
         <RiskIcon className="mt-0.5 size-5 shrink-0" />

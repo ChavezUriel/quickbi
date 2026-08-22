@@ -24,6 +24,7 @@ import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { seasonalityToCsv } from '../lib/export-seasonality-csv';
 import { computeSeasonality } from '../lib/seasonality';
 import type { SeasonalityConfigState } from '../use-seasonality-config';
@@ -263,6 +264,70 @@ export function SeasonalityDashboard({
 
   return (
     <div className="space-y-4">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Columna de fecha</span>
+            <OptionSelect
+              value={dateCol ?? ''}
+              options={mapping.dateColumns.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Columna de fecha"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('fecha', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Métrica</span>
+            <OptionSelect
+              value={measureCol ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Métrica"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('metrica', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Agregación</span>
+            <OptionSelect
+              value={state.settings.agg}
+              options={[
+                { value: 'sum', label: 'Suma total' },
+                { value: 'avg', label: 'Promedio' },
+              ]}
+              ariaLabel="Tipo de agregación"
+              size="sm"
+              onChange={(value) => {
+                state.update({ agg: value as 'sum' | 'avg' });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-36">
+            <span>Ventana Media Móvil</span>
+            <OptionSelect
+              value={String(state.settings.movingAvgWindow)}
+              options={[
+                { value: '7', label: '7 días (Semanal)' },
+                { value: '14', label: '14 días (Quincenal)' },
+                { value: '30', label: '30 días (Mensual)' },
+              ]}
+              ariaLabel="Ventana de media móvil"
+              size="sm"
+              onChange={(value) => {
+                state.update({ movingAvgWindow: Number(value) });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Barra de exportación */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">

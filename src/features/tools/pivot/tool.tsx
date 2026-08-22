@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { PivotDashboard } from './components/pivot-dashboard';
-import { PivotSetup } from './components/pivot-setup';
 import { usePivotConfig } from './use-pivot-config';
 
 function PivotWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = usePivotConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<PivotSetup state={state} />}
+      setup={null}
       dashboard={<PivotDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const pivotTool: ToolDefinition = {
   icon: Table2,
   category: 'general',
   needs: ['Al menos una columna de categorías'],
-  hasSetup: true,
+  hasSetup: false,
   // La tabla pone su propio scroll interno y no necesita la ventana entera.
   fill: false,
   requires: (capabilities) =>

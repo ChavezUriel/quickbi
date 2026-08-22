@@ -25,6 +25,7 @@ import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { geoMapToCsv } from '../lib/export-geo-map-csv';
 import { computeGeoMap, type GeoMapResult } from '../lib/geo_map';
 import type { GeoMapConfigState } from '../use-geo-map-config';
@@ -222,7 +223,89 @@ export function GeoMapDashboard({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Territorio / Región</span>
+            <OptionSelect
+              value={territoryDim ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Territorio o región"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('territorio', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Métrica principal</span>
+            <OptionSelect
+              value={metricColumn ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Métrica principal"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('metrica', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Métrica secundaria (opcional)</span>
+            <OptionSelect
+              value={secondaryColumn ?? '__sin_sec__'}
+              options={[
+                { value: '__sin_sec__', label: 'Sin métrica secundaria' },
+                ...mapping.measures.map((m) => ({ value: m.name, label: m.name })),
+              ]}
+              ariaLabel="Métrica secundaria"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('secundaria', value === '__sin_sec__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Agregación</span>
+            <OptionSelect
+              value={state.settings.aggregation}
+              options={[
+                { value: 'sum', label: 'Suma total' },
+                { value: 'avg', label: 'Promedio' },
+                { value: 'count', label: 'Conteo registros' },
+              ]}
+              ariaLabel="Tipo de agregación"
+              size="sm"
+              onChange={(value) => {
+                state.update({ aggregation: value as any });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Límite Top</span>
+            <OptionSelect
+              value={String(state.settings.topN)}
+              options={[
+                { value: '10', label: 'Top 10' },
+                { value: '20', label: 'Top 20' },
+                { value: '50', label: 'Top 50' },
+                { value: '100', label: 'Top 100' },
+              ]}
+              ariaLabel="Límite Top territorios"
+              size="sm"
+              onChange={(value) => {
+                state.update({ topN: Number(value) });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Barra de herramientas */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">

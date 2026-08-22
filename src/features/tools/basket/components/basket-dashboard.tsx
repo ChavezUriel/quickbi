@@ -19,6 +19,7 @@ import { formatCount, formatShare } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import {
   computeBasket,
   type AssociationRule,
@@ -219,6 +220,107 @@ export function BasketDashboard({
 
   return (
     <div className="space-y-4">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Producto / Ítem</span>
+            <OptionSelect
+              value={itemDim ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Producto o ítem"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('producto', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>ID Ticket / Cesta</span>
+            <OptionSelect
+              value={basketDim ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="ID Ticket o cesta"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('pedido', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Cantidad (opcional)</span>
+            <OptionSelect
+              value={quantityColumn ?? '__sin_cant__'}
+              options={[
+                { value: '__sin_cant__', label: 'Sin columna cantidad' },
+                ...mapping.measures.map((m) => ({ value: m.name, label: m.name })),
+              ]}
+              ariaLabel="Cantidad de unidades"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('cantidad', value === '__sin_cant__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Soporte mín.</span>
+            <OptionSelect
+              value={String(minSupport * 100)}
+              options={[
+                { value: '0.5', label: '0.5% (Más reglas)' },
+                { value: '1', label: '1% (Equilibrado)' },
+                { value: '2', label: '2%' },
+                { value: '5', label: '5% (Muy frecuentes)' },
+              ]}
+              ariaLabel="Soporte mínimo"
+              size="sm"
+              onChange={(value) => {
+                state.update({ minSupport: Number(value) / 100 });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Confianza mín.</span>
+            <OptionSelect
+              value={String(minConfidence * 100)}
+              options={[
+                { value: '10', label: '10%' },
+                { value: '20', label: '20% (Estándar)' },
+                { value: '30', label: '30%' },
+                { value: '50', label: '50% (Alta certeza)' },
+              ]}
+              ariaLabel="Confianza mínima"
+              size="sm"
+              onChange={(value) => {
+                state.update({ minConfidence: Number(value) / 100 });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Lift mínimo</span>
+            <OptionSelect
+              value={String(minLift)}
+              options={[
+                { value: '1', label: '1.0x (Cualquier afinidad)' },
+                { value: '1.2', label: '1.2x (Moderada)' },
+                { value: '1.5', label: '1.5x (Fuerte)' },
+                { value: '2', label: '2.0x (Muy fuerte)' },
+              ]}
+              ariaLabel="Lift mínimo"
+              size="sm"
+              onChange={(value) => {
+                state.update({ minLift: Number(value) });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* KPI Cards */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Tile

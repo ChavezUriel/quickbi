@@ -26,6 +26,7 @@ import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { Currency } from '@/features/analysis/types';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import {
   computePriceVolume,
   type PriceVolumePoint,
@@ -276,6 +277,66 @@ export function PriceVolumeDashboard({
 
   return (
     <div className="space-y-4">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Producto / Servicio</span>
+            <OptionSelect
+              value={productDim ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Producto o servicio"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('producto', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Volumen / Cantidad</span>
+            <OptionSelect
+              value={volumeColumn ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Volumen o cantidad vendida"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('volumen', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Importe o Precio</span>
+            <OptionSelect
+              value={amountColumn ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Importe o precio"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('importe', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-36">
+            <span>Tipo de columna</span>
+            <OptionSelect
+              value={state.settings.priceInputType}
+              options={[
+                { value: 'importe_total', label: 'Importe Total (calculará P = $/Q)' },
+                { value: 'precio_unitario', label: 'Precio Unitario Directo' },
+              ]}
+              ariaLabel="Tipo de columna monetaria"
+              size="sm"
+              onChange={(value) => {
+                state.update({ priceInputType: value as any });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Elasticity Diagnosis Alert */}
       <div className="flex items-start gap-3 rounded-xl border bg-muted/40 p-4 text-sm">
         <LineChart className="mt-0.5 size-5 shrink-0 text-primary" />

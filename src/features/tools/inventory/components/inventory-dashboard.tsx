@@ -23,6 +23,7 @@ import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { inventoryToCsv } from '../lib/export-inventory-csv';
 import {
   computeInventory,
@@ -214,6 +215,84 @@ export function InventoryDashboard({
           </Button>
         </div>
       </div>
+
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>SKU / Producto</span>
+            <OptionSelect
+              value={productDim ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="SKU o Producto"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('producto', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Stock / Existencias</span>
+            <OptionSelect
+              value={stockColumn ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Stock o existencias"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('stock', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Ventas / Salidas</span>
+            <OptionSelect
+              value={salesColumn ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Ventas o salidas"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('ventas', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Antigüedad (días/fecha opcional)</span>
+            <OptionSelect
+              value={daysOrDateColumn ?? '__sin_dias__'}
+              options={[
+                { value: '__sin_dias__', label: 'Sin columna de antigüedad' },
+                ...mapping.columns.map((c) => ({ value: c.name, label: c.name })),
+              ]}
+              ariaLabel="Columna de antigüedad o fecha"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('dias_o_fecha', value === '__sin_dias__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Período de ventas</span>
+            <OptionSelect
+              value={String(state.settings.periodDays)}
+              options={[
+                { value: '30', label: '30 días' },
+                { value: '90', label: '90 días (Trimestre)' },
+                { value: '180', label: '180 días (Semestre)' },
+                { value: '365', label: '365 días (Anual)' },
+              ]}
+              ariaLabel="Período de cálculo de ventas"
+              size="sm"
+              onChange={(value) => {
+                state.update({ periodDays: Number(value) });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tarjetas de Resumen KPI */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

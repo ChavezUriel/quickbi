@@ -25,6 +25,7 @@ import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { funnelToCsv } from '../lib/export-funnel-csv';
 import { computeFunnel, type FunnelResult } from '../lib/funnel';
 import type { FunnelConfigState } from '../use-funnel-config';
@@ -206,6 +207,73 @@ export function FunnelDashboard({
           </Button>
         </div>
       </div>
+
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Etapa / Fase del embudo</span>
+            <OptionSelect
+              value={stageDim ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Etapa o fase del embudo"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('etapa', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Métrica o Importe (opcional)</span>
+            <OptionSelect
+              value={valueColumn ?? '__sin_valor__'}
+              options={[
+                { value: '__sin_valor__', label: 'Sin importe (contar ocurrencias)' },
+                ...mapping.measures.map((m) => ({ value: m.name, label: m.name })),
+              ]}
+              ariaLabel="Métrica de valor"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('valor', value === '__sin_valor__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>ID Entidad / Lead (opcional)</span>
+            <OptionSelect
+              value={idDim ?? '__sin_id__'}
+              options={[
+                { value: '__sin_id__', label: 'Sin ID (una fila = un evento)' },
+                ...mapping.dimensions.map((d) => ({ value: d.name, label: d.name })),
+              ]}
+              ariaLabel="ID de entidad o lead"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('id', value === '__sin_id__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-36">
+            <span>Métrica de volumen</span>
+            <OptionSelect
+              value={state.settings.aggregation}
+              options={[
+                { value: 'count', label: 'Conteo de registros' },
+                { value: 'distinct', label: 'IDs únicos (leads/usuarios)' },
+                { value: 'sum', label: 'Suma de valor monetario' },
+              ]}
+              ariaLabel="Tipo de métrica"
+              size="sm"
+              onChange={(value) => {
+                state.update({ aggregation: value as any });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tarjetas de Resumen KPI */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

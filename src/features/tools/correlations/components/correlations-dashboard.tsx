@@ -19,6 +19,7 @@ import { formatCount } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import {
   computeCorrelationMatrix,
   computePairDetails,
@@ -254,6 +255,55 @@ export function CorrelationsDashboard({
 
   return (
     <div className="space-y-3">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-36">
+            <span>Variable X</span>
+            <OptionSelect
+              value={currentX}
+              options={measures.map((m) => ({ value: m, label: m }))}
+              ariaLabel="Variable X"
+              size="sm"
+              onChange={(value) => {
+                setActiveX(value);
+                state.update({ selectedX: value });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-36">
+            <span>Variable Y</span>
+            <OptionSelect
+              value={currentY}
+              options={measures.map((m) => ({ value: m, label: m }))}
+              ariaLabel="Variable Y"
+              size="sm"
+              onChange={(value) => {
+                setActiveY(value);
+                state.update({ selectedY: value });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Etiqueta de puntos (opcional)</span>
+            <OptionSelect
+              value={state.labelDim ?? '__sin_etiqueta__'}
+              options={[
+                { value: '__sin_etiqueta__', label: 'Sin etiqueta' },
+                ...mapping.dimensions.map((d) => ({ value: d.name, label: d.name })),
+              ]}
+              ariaLabel="Dimensión de etiqueta"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('etiqueta', value === '__sin_etiqueta__' ? null : value);
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Top KPI Cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Tile

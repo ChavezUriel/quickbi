@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { compatible, missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { FunnelDashboard } from './components/funnel-dashboard';
-import { FunnelSetup } from './components/funnel-setup';
 import { useFunnelConfig } from './use-funnel-config';
 
 function FunnelWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = useFunnelConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<FunnelSetup state={state} />}
+      setup={null}
       dashboard={<FunnelDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const funnelTool: ToolDefinition = {
   icon: Filter,
   category: 'situacional',
   needs: ['Una columna de etapa o fase', 'Una métrica de importe o conteo (opcional)'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0) {

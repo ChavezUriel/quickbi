@@ -22,6 +22,7 @@ import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { reconciliationToCsv } from '../lib/export-reconciliation-csv';
 import {
   computeReconciliation,
@@ -181,7 +182,69 @@ export function ReconciliationDashboard({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Clave de conciliación</span>
+            <OptionSelect
+              value={keyDim ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Clave de conciliación"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('clave', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Importe Fuente A</span>
+            <OptionSelect
+              value={valueAColumn ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Importe Fuente A"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('valorA', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Importe Fuente B</span>
+            <OptionSelect
+              value={valueBColumn ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Importe Fuente B"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('valorB', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Tolerancia descuadre</span>
+            <OptionSelect
+              value={String(state.settings.tolerance)}
+              options={[
+                { value: '0', label: '0.00 (Exacta)' },
+                { value: '0.05', label: '±0.05 (Céntimos/Redondeos)' },
+                { value: '1', label: '±1.00 (Unidad entera)' },
+                { value: '10', label: '±10.00 (Margen amplio)' },
+              ]}
+              ariaLabel="Tolerancia para considerar descuadre"
+              size="sm"
+              onChange={(value) => {
+                state.update({ tolerance: Number(value) });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Toolbar y exportación */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">

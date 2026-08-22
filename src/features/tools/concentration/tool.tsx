@@ -3,7 +3,6 @@ import { ToolPanes } from '../components/tool-panes';
 import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ConcentrationDashboard } from './components/concentration-dashboard';
-import { ConcentrationSetup } from './components/concentration-setup';
 import { useConcentrationConfig } from './use-concentration-config';
 
 function ConcentrationWorkspace({
@@ -14,13 +13,13 @@ function ConcentrationWorkspace({
   onReady,
 }: ToolWorkspaceProps) {
   const state = useConcentrationConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<ConcentrationSetup state={state} />}
+      setup={null}
       dashboard={
         <ConcentrationDashboard dataset={dataset} mapping={mapping} state={state} />
       }
@@ -37,7 +36,7 @@ export const concentrationTool: ToolDefinition = {
   icon: Scale,
   category: 'clientes',
   needs: ['Columna de cliente', 'Columna de importe / facturación'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.measures === 0) {

@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { WaterfallDashboard } from './components/waterfall-dashboard';
-import { WaterfallSetup } from './components/waterfall-setup';
 import { useWaterfallConfig } from './use-waterfall-config';
 
 function WaterfallWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = useWaterfallConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<WaterfallSetup state={state} />}
+      setup={null}
       dashboard={<WaterfallDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const waterfallTool: ToolDefinition = {
   icon: GitCompareArrows,
   category: 'situacional',
   needs: ['Una categoría', 'Una métrica numérica', 'Una columna de fecha'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dates === 0) return missing('Hace falta una columna de fecha para definir los períodos.');

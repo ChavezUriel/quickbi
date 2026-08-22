@@ -18,6 +18,7 @@ import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { rfmToCsv } from '../lib/export-rfm-csv';
 import {
   computeRfm,
@@ -149,6 +150,66 @@ export function RfmDashboard({
 
   return (
     <div className="space-y-3">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Identificador de cliente</span>
+            <OptionSelect
+              value={customerDim ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Identificador de cliente"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('cliente', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Fecha de compra</span>
+            <OptionSelect
+              value={dateColumn ?? ''}
+              options={mapping.dateColumns.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Fecha de compra"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('fecha', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Importe</span>
+            <OptionSelect
+              value={amountColumn ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Importe"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('importe', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>ID Pedido / Transacción (opcional)</span>
+            <OptionSelect
+              value={orderDim ?? '__sin_pedido__'}
+              options={[
+                { value: '__sin_pedido__', label: 'Una fila = una compra' },
+                ...mapping.dimensions.map((d) => ({ value: d.name, label: d.name })),
+              ]}
+              ariaLabel="ID Pedido"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('pedido', value === '__sin_pedido__' ? null : value);
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card size="sm">
         <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Tile label="Clientes" value={formatCount(result.customers.length)} />

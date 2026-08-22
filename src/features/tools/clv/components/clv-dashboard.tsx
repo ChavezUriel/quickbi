@@ -18,6 +18,7 @@ import { formatCount, formatMetric, formatShare } from '@/features/analysis/lib/
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { computeClv, type CustomerStatus } from '../lib/clv';
 import { buildClvDecilesChartOption } from '../lib/clv-chart-option';
 import { clvToCsv } from '../lib/export-clv-csv';
@@ -138,6 +139,87 @@ export function ClvDashboard({
 
   return (
     <div className="space-y-3">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Identificador de cliente</span>
+            <OptionSelect
+              value={customerDim ?? ''}
+              options={mapping.dimensions.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Identificador de cliente"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('cliente', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Fecha de compra</span>
+            <OptionSelect
+              value={dateColumn ?? ''}
+              options={mapping.dateColumns.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Fecha de compra"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('fecha', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Importe</span>
+            <OptionSelect
+              value={amountColumn ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Importe"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('importe', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Inactividad (Churn)</span>
+            <OptionSelect
+              value={String(state.settings.churnDays)}
+              options={[
+                { value: '60', label: '60 días' },
+                { value: '90', label: '90 días' },
+                { value: '180', label: '180 días' },
+                { value: '365', label: '365 días' },
+              ]}
+              ariaLabel="Días de inactividad para considerar baja"
+              size="sm"
+              onChange={(value) => {
+                state.update({ churnDays: Number(value) });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Margen (%)</span>
+            <OptionSelect
+              value={String(Math.round(state.settings.marginRate * 100))}
+              options={[
+                { value: '10', label: '10%' },
+                { value: '20', label: '20%' },
+                { value: '30', label: '30%' },
+                { value: '50', label: '50%' },
+                { value: '100', label: '100% (Bruto)' },
+              ]}
+              ariaLabel="Margen de contribución estimado"
+              size="sm"
+              onChange={(value) => {
+                state.update({ marginRate: Number(value) / 100 });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* KPI Cards */}
       <Card size="sm">
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

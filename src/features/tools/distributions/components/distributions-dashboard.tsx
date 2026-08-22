@@ -26,6 +26,7 @@ import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
+import { OptionSelect } from '../../components/option-select';
 import { computeDistributions } from '../lib/distributions';
 import { distributionToCsv } from '../lib/export-distributions-csv';
 import type { DistributionsConfigState } from '../use-distributions-config';
@@ -272,6 +273,78 @@ export function DistributionsDashboard({
 
   return (
     <div className="space-y-3">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Métrica a analizar</span>
+            <OptionSelect
+              value={measureColumn ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Métrica a analizar"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('medida', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Agrupar por (opcional)</span>
+            <OptionSelect
+              value={groupDim ?? '__sin_grupo__'}
+              options={[
+                { value: '__sin_grupo__', label: 'Sin agrupación (Total)' },
+                ...mapping.dimensions.map((d) => ({ value: d.name, label: d.name })),
+              ]}
+              ariaLabel="Dimensión de agrupación"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('grupo', value === '__sin_grupo__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Intervalos (Bins)</span>
+            <OptionSelect
+              value={settings.binCount}
+              options={[
+                { value: 'auto', label: 'Automático (F-D)' },
+                { value: '5', label: '5 intervalos' },
+                { value: '10', label: '10 intervalos' },
+                { value: '15', label: '15 intervalos' },
+                { value: '20', label: '20 intervalos' },
+                { value: '30', label: '30 intervalos' },
+                { value: '50', label: '50 intervalos' },
+              ]}
+              ariaLabel="Número de intervalos"
+              size="sm"
+              onChange={(value) => {
+                state.update({ binCount: value });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Gráficos</span>
+            <OptionSelect
+              value={visualMode}
+              options={[
+                { value: 'ambos', label: 'Histograma + Cajas' },
+                { value: 'histograma', label: 'Solo Histograma' },
+                { value: 'cajas', label: 'Solo Cajas (Boxplot)' },
+              ]}
+              ariaLabel="Modo visual"
+              size="sm"
+              onChange={(value) => {
+                setVisualMode(value as VisualMode);
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Top KPI Cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Tile

@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { compatible, missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { GeoMapDashboard } from './components/geo-map-dashboard';
-import { GeoMapSetup } from './components/geo-map-setup';
 import { useGeoMapConfig } from './use-geo-map-config';
 
 function GeoMapWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = useGeoMapConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<GeoMapSetup state={state} />}
+      setup={null}
       dashboard={<GeoMapDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const geoMapTool: ToolDefinition = {
   icon: Globe,
   category: 'general',
   needs: ['Una columna de territorio o país', 'Una columna de importe o métrica'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0) {

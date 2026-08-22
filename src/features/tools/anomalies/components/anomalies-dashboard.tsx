@@ -151,6 +151,104 @@ export function AnomaliesDashboard({
 
   return (
     <div className="space-y-3">
+      {/* Barra de controles interactivos */}
+      <Card size="sm" className="relative z-20 overflow-visible">
+        <CardContent className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Columna de fecha</span>
+            <OptionSelect
+              value={dateColumn ?? ''}
+              options={mapping.dateColumns.map((d) => ({ value: d.name, label: d.name }))}
+              ariaLabel="Columna de fecha"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('fecha', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Métrica a supervisar</span>
+            <OptionSelect
+              value={measure ?? ''}
+              options={mapping.measures.map((m) => ({ value: m.name, label: m.name }))}
+              ariaLabel="Métrica a supervisar"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('metrica', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-40">
+            <span>Dimensión de filtro</span>
+            <OptionSelect
+              value={dimension ?? '__sin_dim__'}
+              options={[
+                { value: '__sin_dim__', label: 'Sin filtro de dimensión' },
+                ...mapping.dimensions.map((d) => ({ value: d.name, label: d.name })),
+              ]}
+              ariaLabel="Dimensión de filtro"
+              size="sm"
+              onChange={(value) => {
+                state.slots.setSlot('dimension', value === '__sin_dim__' ? null : value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-36">
+            <span>Método de detección</span>
+            <OptionSelect
+              value={state.settings.method}
+              options={[
+                { value: 'rolling_zscore', label: 'Z-Score móvil (Bandas 3σ)' },
+                { value: 'iqr', label: 'Rango Intercuartílico (IQR)' },
+                { value: 'moving_average', label: 'Desvío Media Móvil' },
+              ]}
+              ariaLabel="Método de detección"
+              size="sm"
+              onChange={(value) => {
+                state.update({ method: value as any });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Sensibilidad</span>
+            <OptionSelect
+              value={state.settings.sensitivity}
+              options={[
+                { value: 'alta', label: 'Alta (detecta leves)' },
+                { value: 'media', label: 'Media (moderadas)' },
+                { value: 'baja', label: 'Baja (solo extremas)' },
+              ]}
+              ariaLabel="Sensibilidad"
+              size="sm"
+              onChange={(value) => {
+                state.update({ sensitivity: value as any });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Grano temporal</span>
+            <OptionSelect
+              value={state.settings.grain}
+              options={[
+                { value: 'dia', label: 'Diario' },
+                { value: 'semana', label: 'Semanal' },
+                { value: 'mes', label: 'Mensual' },
+              ]}
+              ariaLabel="Grano temporal"
+              size="sm"
+              onChange={(value) => {
+                state.update({ grain: value as any });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* KPI Cards */}
       <Card size="sm">
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

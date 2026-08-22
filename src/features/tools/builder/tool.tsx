@@ -3,18 +3,17 @@ import { ToolPanes } from '../components/tool-panes';
 import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { BuilderDashboard } from './components/builder-dashboard';
-import { BuilderSetup } from './components/builder-setup';
 import { useBuilderConfig } from './use-builder-config';
 
 function BuilderWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
   const state = useBuilderConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<BuilderSetup state={state} />}
+      setup={null}
       dashboard={<BuilderDashboard dataset={dataset} mapping={mapping} state={state} />}
     />
   );
@@ -29,7 +28,7 @@ export const builderTool: ToolDefinition = {
   icon: ChartColumn,
   category: 'general',
   needs: ['Una categoría o una fecha'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) =>
     capabilities.dimensions === 0 && capabilities.dates === 0

@@ -3,7 +3,6 @@ import { ToolPanes } from '../components/tool-panes';
 import { missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { CorrelationsDashboard } from './components/correlations-dashboard';
-import { CorrelationsSetup } from './components/correlations-setup';
 import { useCorrelationsConfig } from './use-correlations-config';
 
 function CorrelationsWorkspace({
@@ -14,13 +13,13 @@ function CorrelationsWorkspace({
   onReady,
 }: ToolWorkspaceProps) {
   const state = useCorrelationsConfig(mapping);
-  useToolReady(onReady, state.ready);
+  useToolReady(onReady, true);
 
   return (
     <ToolPanes
       view={view}
       fill={fill}
-      setup={<CorrelationsSetup state={state} />}
+      setup={null}
       dashboard={
         <CorrelationsDashboard dataset={dataset} mapping={mapping} state={state} />
       }
@@ -37,7 +36,7 @@ export const correlationsTool: ToolDefinition = {
   icon: Activity,
   category: 'general',
   needs: ['Al menos dos columnas numéricas'],
-  hasSetup: true,
+  hasSetup: false,
   fill: false,
   requires: (capabilities) =>
     capabilities.measures < 2
