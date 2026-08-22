@@ -11,6 +11,6 @@ export default defineConfig({
     // La lógica de parsing no toca el DOM: `File`, `Blob` y `TextDecoder` son
     // globales en Node 20+, así que no hace falta simular un navegador.
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 })

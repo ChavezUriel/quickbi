@@ -27,26 +27,28 @@ function CompactIndicator() {
   const position = steps.indexOf(step) + 1;
 
   return (
-    <div className="flex min-w-0 items-center gap-2 sm:hidden" aria-hidden>
-      <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
-        {position}/{steps.length}
-      </span>
-      <span className="truncate text-xs font-medium">{stepLabels[step]}</span>
-      <span className="flex shrink-0 gap-1">
-        {steps.map((id, index) => (
-          <span
-            key={id}
-            className={cn(
-              'h-1 w-4 rounded-full transition-colors',
-              index < position ? 'bg-primary' : 'bg-muted-foreground/25',
-            )}
-          />
-        ))}
-      </span>
+    <div className="flex min-w-0 items-center gap-2 sm:hidden">
       {/* El lector de pantalla recibe la frase entera, no los trozos sueltos. */}
       <span className="sr-only">
         Paso {position} de {steps.length}: {stepLabels[step]}
       </span>
+      <div className="flex min-w-0 items-center gap-2" aria-hidden="true">
+        <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
+          {position}/{steps.length}
+        </span>
+        <span className="truncate text-xs font-medium">{stepLabels[step]}</span>
+        <span className="flex shrink-0 gap-1">
+          {steps.map((id, index) => (
+            <span
+              key={id}
+              className={cn(
+                'h-1 w-4 rounded-full transition-colors',
+                index < position ? 'bg-primary' : 'bg-muted-foreground/25',
+              )}
+            />
+          ))}
+        </span>
+      </div>
     </div>
   );
 }
