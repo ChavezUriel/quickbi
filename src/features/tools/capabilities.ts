@@ -72,17 +72,23 @@ const ORDER_KEYWORDS = [
 const GEO_KEYWORDS = [
   'pais', 'country', 'nacion', 'nation', 'region', 'provincia', 'province',
   'ciudad', 'city', 'municipio', 'poblacion', 'estado', 'state',
-  'comunidad', 'cca', 'territorio', 'territory', 'ubicacion', 'location',
+  'comunidad', 'ccaa', 'cca', 'territorio', 'territory', 'ubicacion', 'location',
   'zona', 'zone', 'distrito', 'district', 'lat', 'lon', 'latitude', 'longitude',
   'cp', 'zip', 'codigo_postal', 'postal_code', 'iso', 'continente', 'continent',
+  'sucursal', 'sede', 'tienda', 'delegacion', 'mercado', 'market', 'destino', 'origen',
+  'localidad', 'area', 'poblado', 'pais_destino', 'pais_origen', 'pais_cliente',
+  'billing_country', 'shipping_country', 'country_code', 'state_code', 'geo',
+  'geografia', 'geography', 'address', 'direccion',
 ] as const;
 
 const GEO_SAMPLE_ENTITIES = [
   'espana', 'spain', 'francia', 'france', 'mexico', 'colombia', 'argentina',
-  'chile', 'peru', 'usa', 'estados unidos', 'united states', 'brasil', 'brazil',
+  'chile', 'peru', 'usa', 'eeuu', 'estados unidos', 'united states', 'brasil', 'brazil',
   'italia', 'italy', 'alemania', 'germany', 'uk', 'reino unido', 'portugal',
   'canada', 'madrid', 'barcelona', 'valencia', 'sevilla', 'cdmx', 'bogota',
   'buenos aires', 'santiago', 'lima', 'andalucia', 'cataluna', 'galicia',
+  'japon', 'japan', 'china', 'india', 'australia', 'ecuador', 'venezuela',
+  'uruguay', 'paraguay', 'bolivia', 'panama', 'costa rica', 'guatemala',
 ] as const;
 
 const INVENTORY_KEYWORDS = [

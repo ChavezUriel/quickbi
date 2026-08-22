@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { ColumnProfile } from '@/features/dataset/lib/column-types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
 import { datasetCapabilities, detectSemantics } from '../capabilities';
@@ -108,8 +108,27 @@ describe('Intelligent Capability & Semantic Detection', () => {
 });
 
 describe('Tool Compatibility Matrix', () => {
-  it('correctly rejects situational tools when dataset lacks relevant domains', () => {
-    // Dataset of pure department budgets: [Departamento, Presupuesto]
+  it('correctly rejects tools when dataset lacks basic required column types', () => {
+    // Dataset with ONLY measures: [Presupuesto, Gasto] (0 dimensions)
+    const mappingOnlyMeasures = makeMapping([
+      makeColumn('Presupuesto', 'number', 8),
+      makeColumn('Gasto', 'number', 8),
+    ]);
+    const capsMeasuresOnly = datasetCapabilities(mappingOnlyMeasures);
+
+    const geoTool = TOOLS.find((t) => t.id === 'geo_map')!;
+    const invTool = TOOLS.find((t) => t.id === 'inventory')!;
+    const funnelTool = TOOLS.find((t) => t.id === 'funnel')!;
+    const rfmTool = TOOLS.find((t) => t.id === 'rfm')!;
+
+    expect(availabilityOf(geoTool, capsMeasuresOnly).available).toBe(false); // Needs dimensions
+    expect(availabilityOf(invTool, capsMeasuresOnly).available).toBe(false); // Needs dimensions
+    expect(availabilityOf(funnelTool, capsMeasuresOnly).available).toBe(false); // Needs dimensions
+    expect(availabilityOf(rfmTool, capsMeasuresOnly).available).toBe(false); // Needs dates
+  });
+
+  it('marks tools as compatible when column types exist but domain is generic', () => {
+    // Dataset with generic dimensions and measures: [Departamento, Presupuesto]
     const mapping = makeMapping([
       makeColumn('Departamento', 'text', 8),
       makeColumn('Presupuesto', 'number', 8),
@@ -119,16 +138,15 @@ describe('Tool Compatibility Matrix', () => {
     const geoTool = TOOLS.find((t) => t.id === 'geo_map')!;
     const invTool = TOOLS.find((t) => t.id === 'inventory')!;
     const funnelTool = TOOLS.find((t) => t.id === 'funnel')!;
-    const corrTool = TOOLS.find((t) => t.id === 'correlaciones')!;
-    const rfmTool = TOOLS.find((t) => t.id === 'rfm')!;
     const pivotTool = TOOLS.find((t) => t.id === 'tabla-dinamica')!;
 
-    expect(availabilityOf(geoTool, caps).available).toBe(false);
-    expect(availabilityOf(invTool, caps).available).toBe(false);
-    expect(availabilityOf(funnelTool, caps).available).toBe(false);
-    expect(availabilityOf(corrTool, caps).available).toBe(false); // Needs 2 measures
-    expect(availabilityOf(rfmTool, caps).available).toBe(false); // Needs dates
-    expect(availabilityOf(pivotTool, caps).available).toBe(true); // General tool is available
+    expect(availabilityOf(geoTool, caps).available).toBe(true);
+    expect(availabilityOf(geoTool, caps).score).toBe('compatible');
+    expect(availabilityOf(invTool, caps).available).toBe(true);
+    expect(availabilityOf(invTool, caps).score).toBe('compatible');
+    expect(availabilityOf(funnelTool, caps).available).toBe(true);
+    expect(availabilityOf(funnelTool, caps).score).toBe('compatible');
+    expect(availabilityOf(pivotTool, caps).available).toBe(true);
   });
 
   it('recommends specialized tools when domain columns match', () => {

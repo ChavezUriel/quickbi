@@ -94,7 +94,10 @@ export function GeoMapDashboard({
   const chartOption = useMemo(() => {
     if (empty) return {};
 
-    const topItems = territories.slice(0, 15);
+    const zoneFiltered = selectedZone !== null
+      ? territories.filter((t) => t.zone === selectedZone)
+      : territories;
+    const topItems = zoneFiltered.slice(0, 15);
 
     if (visualMode === 'treemap') {
       const treemapData = topItems.map((item) => {
@@ -204,7 +207,7 @@ export function GeoMapDashboard({
         },
       ],
     };
-  }, [territories, visualMode, empty, format, currency, selectedTerritory]);
+  }, [territories, visualMode, empty, format, currency, selectedTerritory, selectedZone]);
 
   if (empty || summary == null) {
     return (
@@ -364,7 +367,11 @@ export function GeoMapDashboard({
                         t.normalizedName === clicked,
                     );
                     if (matched) {
-                      setSelectedTerritory((prev) => (prev === matched.territory ? null : matched.territory));
+                      setSelectedTerritory((prev) =>
+                        prev === matched.territory || prev === matched.normalizedName
+                          ? null
+                          : matched.territory,
+                      );
                     }
                   }
                 }}

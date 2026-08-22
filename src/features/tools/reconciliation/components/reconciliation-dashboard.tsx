@@ -417,10 +417,10 @@ export function ReconciliationDashboard({
                     </Badge>
                   </td>
                   <td className="px-3 py-2 text-right font-mono">
-                    {r.valueA > 0 ? formatMetric(r.valueA, { format: 'moneda', currency }) : '—'}
+                    {r.status === 'solo_b' ? '—' : formatMetric(r.valueA, { format: 'moneda', currency })}
                   </td>
                   <td className="px-3 py-2 text-right font-mono">
-                    {r.valueB > 0 ? formatMetric(r.valueB, { format: 'moneda', currency }) : '—'}
+                    {r.status === 'solo_a' ? '—' : formatMetric(r.valueB, { format: 'moneda', currency })}
                   </td>
                   <td className="px-3 py-2 text-right font-mono font-medium">
                     {r.delta === 0 ? (

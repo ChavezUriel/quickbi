@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AnalysisRow } from '@/features/analysis/types';
-import { computeGeoMap } from './geo_map';
+import { computeGeoMap, lookupGeo } from './geo_map';
 
 function makeRow(dims: Record<string, string>, values: Record<string, number> = {}): AnalysisRow {
   return {
@@ -9,6 +9,42 @@ function makeRow(dims: Record<string, string>, values: Record<string, number> = 
     day: '2024-01-01',
   };
 }
+
+describe('lookupGeo', () => {
+  it('normalizes country and region names with and without accents and in different cases', () => {
+    expect(lookupGeo('ESPAÑA').normalized).toBe('España');
+    expect(lookupGeo('espana').normalized).toBe('España');
+    expect(lookupGeo('spain').normalized).toBe('España');
+    expect(lookupGeo('es').normalized).toBe('España');
+    expect(lookupGeo('MÉXICO').normalized).toBe('México');
+    expect(lookupGeo('mexico').normalized).toBe('México');
+    expect(lookupGeo('mx').normalized).toBe('México');
+    expect(lookupGeo('EEUU').normalized).toBe('Estados Unidos');
+    expect(lookupGeo('USA').normalized).toBe('Estados Unidos');
+    expect(lookupGeo('Bogotá').normalized).toBe('Bogotá');
+    expect(lookupGeo('bogota').normalized).toBe('Bogotá');
+    expect(lookupGeo('panamá').normalized).toBe('Panamá');
+    expect(lookupGeo('panama').normalized).toBe('Panamá');
+    expect(lookupGeo('alemania').normalized).toBe('Alemania');
+    expect(lookupGeo('germany').normalized).toBe('Alemania');
+    expect(lookupGeo('japon').normalized).toBe('Japón');
+  });
+
+  it('assigns proper zones to recognized territories and falls back to general for unknown', () => {
+    expect(lookupGeo('España').zone).toBe('España');
+    expect(lookupGeo('Madrid').zone).toBe('España (Centro)');
+    expect(lookupGeo('Cataluña').zone).toBe('España (Noreste)');
+    expect(lookupGeo('México').zone).toBe('América Latina');
+    expect(lookupGeo('Francia').zone).toBe('Europa');
+    expect(lookupGeo('Estados Unidos').zone).toBe('Norteamérica');
+    expect(lookupGeo('Japón').zone).toBe('Asia-Pacífico');
+
+    // Unknown category/territory
+    const unknown = lookupGeo('sucursal norte central');
+    expect(unknown.normalized).toBe('Sucursal Norte Central');
+    expect(unknown.zone).toBe('Territorio general');
+  });
+});
 
 describe('computeGeoMap', () => {
   it('returns empty result when no rows given', () => {
@@ -23,6 +59,7 @@ describe('computeGeoMap', () => {
     const rows: AnalysisRow[] = [
       makeRow({ pais: 'es' }, { ventas: 100 }),
       makeRow({ pais: 'España' }, { ventas: 200 }),
+      makeRow({ pais: 'espana' }, { ventas: 50 }),
       makeRow({ pais: 'mx' }, { ventas: 150 }),
       makeRow({ pais: 'Francia' }, { ventas: 50 }),
     ];
@@ -33,15 +70,15 @@ describe('computeGeoMap', () => {
       aggregation: 'sum',
     });
 
-    // 3 distinct territories: España (300), México (150), Francia (50) -> Total: 500
-    expect(res.summary.totalValue).toBe(500);
+    // 3 distinct territories: España (350), México (150), Francia (50) -> Total: 550
+    expect(res.summary.totalValue).toBe(550);
     expect(res.summary.territoryCount).toBe(3);
     expect(res.summary.topTerritory?.normalizedName).toBe('España');
-    expect(res.summary.topTerritory?.value).toBe(300);
+    expect(res.summary.topTerritory?.value).toBe(350);
 
     const esp = res.territories.find((t) => t.normalizedName === 'España');
-    expect(esp?.value).toBe(300);
-    expect(esp?.share).toBe(60);
+    expect(esp?.value).toBe(350);
+    expect(esp?.share).toBe(63.64);
 
     expect(res.summary.top3Concentration).toBe(100);
   });
@@ -67,17 +104,17 @@ describe('computeGeoMap', () => {
     expect(madrid?.avgPerRecord).toBe(200);
   });
 
-  it('calculates count aggregation and HHI concentration index', () => {
+  it('calculates count aggregation and HHI concentration index even without metricColumn', () => {
     const rows: AnalysisRow[] = [
-      makeRow({ ciudad: 'Madrid' }, { pedidos: 1 }),
-      makeRow({ ciudad: 'Madrid' }, { pedidos: 1 }),
-      makeRow({ ciudad: 'Madrid' }, { pedidos: 1 }),
-      makeRow({ ciudad: 'Barcelona' }, { pedidos: 1 }),
+      makeRow({ ciudad: 'Madrid' }),
+      makeRow({ ciudad: 'Madrid' }),
+      makeRow({ ciudad: 'Madrid' }),
+      makeRow({ ciudad: 'Barcelona' }),
     ];
 
     const res = computeGeoMap(rows, {
       territoryDim: 'ciudad',
-      metricColumn: 'pedidos',
+      metricColumn: '',
       aggregation: 'count',
     });
 
