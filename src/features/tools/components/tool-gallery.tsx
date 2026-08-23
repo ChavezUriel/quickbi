@@ -5,7 +5,6 @@ import {
   Search,
   Sparkles,
   X,
-  Zap,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -391,15 +390,6 @@ function ToolCard({
                 className="text-[0.65rem] px-1.5 py-0 border-amber-500/30 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium"
               >
                 Faltan datos
-              </Badge>
-            )}
-            {!tool.hasSetup && isAvailable && !selected && !isRecommended && (
-              <Badge
-                variant="outline"
-                className="text-[0.65rem] px-1.5 py-0 border-border text-muted-foreground bg-muted/40 font-medium"
-              >
-                <Zap className="size-2.5 mr-0.5 text-amber-500" />
-                Directo
               </Badge>
             )}
           </div>
