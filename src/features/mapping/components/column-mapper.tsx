@@ -1,6 +1,8 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Info, TriangleAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -52,14 +54,17 @@ const SAMPLE_COLUMN = 'hidden lg:table-cell';
 interface RowProps {
   column: ColumnProfile;
   dataset: ParsedDataset;
+  isSelected: boolean;
   preserveInvalid: boolean;
   setColumnType: (name: string, type: ColumnType) => void;
   setPreserveInvalid: (columnName: string, preserve: boolean) => void;
+  setColumnSelected: (columnName: string, selected: boolean) => void;
 }
 
 /**
  * Paso intermedio entre la vista previa y el gráfico: el usuario confirma los
- * tipos inferidos y gestiona posibles errores de conversión.
+ * tipos inferidos, selecciona/deselecciona campos para las visualizaciones y gestiona
+ * posibles errores de conversión.
  *
  * Se dibuja de dos maneras. Con sitio, una tabla: cuatro datos por columna
  * comparados en vertical de un vistazo. Sin él, una lista de fichas, porque
@@ -67,38 +72,115 @@ interface RowProps {
  * convierte en un carrusel horizontal que nadie quiere manejar.
  */
 export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
-  const { columns, preserveInvalid, effectiveRowCount, setColumnType, setPreserveInvalid } =
-    state;
+  const {
+    columns,
+    allColumns,
+    preserveInvalid,
+    effectiveRowCount,
+    setColumnType,
+    setPreserveInvalid,
+    setColumnSelected,
+    selectAllColumns,
+    deselectAllColumns,
+    isColumnSelected,
+  } = state;
 
   const isWide = useMediaQuery('(min-width: 40rem)');
   const isFiltered = effectiveRowCount < dataset.rowCount;
 
+  const allSelected = allColumns.length > 0 && columns.length === allColumns.length;
+  const someSelected = columns.length > 0 && columns.length < allColumns.length;
+
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = someSelected;
+    }
+  }, [someSelected]);
+
+  const handleToggleAll = () => {
+    if (allSelected) {
+      deselectAllColumns();
+    } else {
+      selectAllColumns();
+    }
+  };
+
   const rowProps = (column: ColumnProfile): RowProps => ({
     column,
     dataset,
+    isSelected: isColumnSelected(column.name),
     preserveInvalid: !!preserveInvalid[column.name],
     setColumnType,
     setPreserveInvalid,
+    setColumnSelected,
   });
 
   return (
     <Card className="mx-auto w-full max-w-5xl shadow-xs">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold tracking-tight">Tipos de columna</CardTitle>
-        <CardDescription className="text-sm text-pretty text-muted-foreground">
-          Detectados automáticamente a partir de los datos. Corrige el que no encaje: de ello depende
-          qué columnas puedes medir y por cuáles puedes agrupar.
-        </CardDescription>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold tracking-tight">
+                Tipos y selección de campos
+              </CardTitle>
+              <Badge
+                variant={columns.length > 0 ? 'secondary' : 'destructive'}
+                className="text-xs font-normal"
+              >
+                {columns.length} de {allColumns.length} seleccionados
+              </Badge>
+            </div>
+            <CardDescription className="text-sm text-pretty text-muted-foreground">
+              Detectados automáticamente a partir de los datos. Deselecciona los campos que no quieras
+              usar en las herramientas de visualización y ajusta los tipos si es necesario.
+            </CardDescription>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={selectAllColumns}
+              disabled={allSelected}
+              className="h-8 text-xs cursor-pointer"
+            >
+              Seleccionar todos
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={deselectAllColumns}
+              disabled={columns.length === 0}
+              className="h-8 text-xs cursor-pointer"
+            >
+              Deseleccionar todos
+            </Button>
+          </div>
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {isFiltered ? (
+        {columns.length === 0 ? (
+          <Alert variant="destructive" role="status" className="rounded-xl">
+            <TriangleAlert className="size-4" />
+            <AlertTitle className="font-semibold">No hay ningún campo seleccionado</AlertTitle>
+            <AlertDescription className="text-xs">
+              Debes seleccionar al menos un campo para poder avanzar y utilizar las herramientas de
+              visualización.
+            </AlertDescription>
+          </Alert>
+        ) : isFiltered ? (
           <Alert variant="destructive" role="status" className="rounded-xl">
             <TriangleAlert className="size-4" />
             <AlertTitle className="font-semibold">Filas excluidas por errores de conversión</AlertTitle>
             <AlertDescription className="text-xs">
               {effectiveRowCount.toLocaleString('es-MX')} de{' '}
-              {dataset.rowCount.toLocaleString('es-MX')} filas se incluirán en el análisis.
+              {dataset.rowCount.toLocaleString('es-MX')} filas y {columns.length} de{' '}
+              {allColumns.length} campos seleccionados se incluirán en el análisis.
             </AlertDescription>
           </Alert>
         ) : (
@@ -106,7 +188,8 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
             <Info className="size-4 text-primary" />
             <AlertDescription className="text-xs">
               {effectiveRowCount.toLocaleString('es-MX')} de{' '}
-              {dataset.rowCount.toLocaleString('es-MX')} filas se incluirán en el análisis.
+              {dataset.rowCount.toLocaleString('es-MX')} filas y {columns.length} de{' '}
+              {allColumns.length} campos se incluirán en el análisis.
             </AlertDescription>
           </Alert>
         )}
@@ -118,6 +201,16 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-muted/40 backdrop-blur-xs border-b border-border/80">
                 <TableRow className="hover:bg-transparent border-b border-border/80">
+                  <TableHead scope="col" className="w-12 px-3 py-2.5 text-center">
+                    <input
+                      ref={headerCheckboxRef}
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={handleToggleAll}
+                      aria-label="Seleccionar o deseleccionar todas las columnas"
+                      className="size-4 rounded border-input text-primary focus:ring-1 focus:ring-ring cursor-pointer"
+                    />
+                  </TableHead>
                   <TableHead scope="col" className="w-48 px-3.5 py-2.5 text-xs font-semibold text-foreground">
                     Columna
                   </TableHead>
@@ -133,7 +226,7 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {columns.map((column) => (
+                {allColumns.map((column) => (
                   <ColumnRow key={column.name} {...rowProps(column)} />
                 ))}
               </TableBody>
@@ -141,7 +234,7 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
           </div>
         ) : (
           <ul className="space-y-2.5">
-            {columns.map((column) => (
+            {allColumns.map((column) => (
               <ColumnCard key={column.name} {...rowProps(column)} />
             ))}
           </ul>
@@ -152,14 +245,46 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
 }
 
 function ColumnRow(props: RowProps) {
-  const { column } = props;
+  const { column, isSelected, setColumnSelected } = props;
 
   return (
-    <TableRow className="hover:bg-muted/15 border-b border-border/60 transition-colors">
+    <TableRow
+      className={cn(
+        'border-b border-border/60 transition-colors',
+        isSelected ? 'hover:bg-muted/15' : 'bg-muted/5 opacity-60 hover:opacity-80',
+      )}
+    >
+      <TableCell className="px-3 py-3 align-top text-center">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(event) => setColumnSelected(column.name, event.target.checked)}
+          aria-label={`Incluir campo ${column.name} en el análisis`}
+          className="size-4 rounded border-input text-primary focus:ring-1 focus:ring-ring cursor-pointer mt-0.5"
+        />
+      </TableCell>
+
       <TableCell className="px-3.5 py-3 align-top font-mono text-xs font-medium text-foreground whitespace-nowrap">
         <div className="flex items-center gap-2">
-          <DataTypeIcon type={column.type} subtype={column.subtype} colored className="size-4 shrink-0" />
-          <span className="truncate">{column.name}</span>
+          <DataTypeIcon
+            type={column.type}
+            subtype={column.subtype}
+            colored={isSelected}
+            className={cn('size-4 shrink-0', !isSelected && 'grayscale opacity-60')}
+          />
+          <span
+            className={cn(
+              'truncate',
+              !isSelected && 'text-muted-foreground line-through decoration-muted-foreground/40',
+            )}
+          >
+            {column.name}
+          </span>
+          {!isSelected && (
+            <Badge variant="outline" className="text-[10px] h-4 px-1 text-muted-foreground font-sans">
+              Excluido
+            </Badge>
+          )}
         </div>
       </TableCell>
 
@@ -170,8 +295,8 @@ function ColumnRow(props: RowProps) {
       </TableCell>
 
       <TableCell className="px-3.5 py-3 align-top text-xs">
-        <ColumnStats column={column} />
-        <InvalidControls {...props} />
+        <ColumnStats column={column} isSelected={isSelected} />
+        {isSelected && <InvalidControls {...props} />}
       </TableCell>
 
       <TableCell
@@ -187,16 +312,44 @@ function ColumnRow(props: RowProps) {
 }
 
 function ColumnCard(props: RowProps) {
-  const { column } = props;
+  const { column, isSelected, setColumnSelected } = props;
 
   return (
-    <li className="space-y-2.5 rounded-xl border border-border/80 bg-card p-3.5 shadow-2xs">
+    <li
+      className={cn(
+        'space-y-2.5 rounded-xl border border-border/80 bg-card p-3.5 shadow-2xs transition-all',
+        !isSelected && 'opacity-65 bg-muted/10 border-dashed',
+      )}
+    >
       <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <DataTypeIcon type={column.type} subtype={column.subtype} colored className="size-4 shrink-0" />
-          <span className="min-w-0 truncate font-mono text-xs font-semibold text-foreground" title={column.name}>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(event) => setColumnSelected(column.name, event.target.checked)}
+            aria-label={`Incluir campo ${column.name} en el análisis`}
+            className="size-4 rounded border-input text-primary focus:ring-1 focus:ring-ring cursor-pointer shrink-0"
+          />
+          <DataTypeIcon
+            type={column.type}
+            subtype={column.subtype}
+            colored={isSelected}
+            className={cn('size-4 shrink-0', !isSelected && 'grayscale opacity-60')}
+          />
+          <span
+            className={cn(
+              'min-w-0 truncate font-mono text-xs font-semibold text-foreground',
+              !isSelected && 'text-muted-foreground line-through decoration-muted-foreground/40',
+            )}
+            title={column.name}
+          >
             {column.name}
           </span>
+          {!isSelected && (
+            <Badge variant="outline" className="text-[10px] h-4 px-1 text-muted-foreground shrink-0 font-sans">
+              Excluido
+            </Badge>
+          )}
         </div>
         <div className="w-36 shrink-0">
           <TypeSelect {...props} />
@@ -204,11 +357,11 @@ function ColumnCard(props: RowProps) {
       </div>
 
       <div className="text-xs space-y-1">
-        <ColumnStats column={column} />
+        <ColumnStats column={column} isSelected={isSelected} />
         <p className="truncate font-mono text-[11px] text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
           {column.samples.join(' · ') || '—'}
         </p>
-        <InvalidControls {...props} />
+        {isSelected && <InvalidControls {...props} />}
       </div>
     </li>
   );
@@ -272,7 +425,13 @@ function InvalidControls({ column, dataset, preserveInvalid, setPreserveInvalid 
   );
 }
 
-function ColumnStats({ column }: { column: ColumnProfile }) {
+function ColumnStats({
+  column,
+  isSelected = true,
+}: {
+  column: ColumnProfile;
+  isSelected?: boolean;
+}) {
   const format = describeFormat(column.format);
 
   return (
@@ -292,6 +451,11 @@ function ColumnStats({ column }: { column: ColumnProfile }) {
           <span className="text-amber-600 dark:text-amber-400">
             {' · '}
             {column.nullCount.toLocaleString('es-MX')} vacíos
+          </span>
+        )}
+        {!isSelected && (
+          <span className="text-muted-foreground/80 italic">
+            {' · '}No se procesará en visualizaciones
           </span>
         )}
       </div>

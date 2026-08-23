@@ -44,10 +44,15 @@ export interface WizardStore {
   selectedFingerprint: string | null;
   composedDataset: ParsedDataset | null;
   canAdvance: boolean;
-
   addDataset: (dataset: ParsedDataset) => void;
   removeDataset: (id: string) => void;
   setSelectedFingerprint: (fingerprint: string | null) => void;
+  /**
+   * Indica si hay al menos una columna seleccionada en el paso de tipos para
+   * poder avanzar.
+   */
+  mappingReady: boolean;
+  setMappingReady: (ready: boolean) => void;
 
   /** Herramienta de análisis elegida en el paso 3. */
   toolId: string | null;

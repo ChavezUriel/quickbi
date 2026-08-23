@@ -22,6 +22,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   const [selectedFingerprint, setSelectedFingerprint] = useState<string | null>(null);
   const [toolId, setToolIdState] = useState<string | null>(null);
   const [toolReady, setToolReady] = useState(false);
+  const [mappingReady, setMappingReady] = useState(true);
 
   // Derive schema groups from datasets
   const schemaGroups = useMemo<SchemaGroup[]>(() => {
@@ -92,12 +93,17 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     [tool],
   );
 
+  // Reset mapping readiness when the dataset changes
+  useEffect(() => {
+    setMappingReady(true);
+  }, [composedDataset]);
+
   const canAdvance = useMemo<boolean>(() => {
     switch (step) {
       case 'carga':
         return selectedFingerprint !== null && composedDataset !== null;
       case 'tipos':
-        return composedDataset !== null;
+        return composedDataset !== null && mappingReady;
       case 'herramienta':
         return tool !== null;
       case 'configuracion':
@@ -105,7 +111,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       case 'cuadro':
         return false;
     }
-  }, [step, selectedFingerprint, composedDataset, tool, toolReady]);
+  }, [step, selectedFingerprint, composedDataset, mappingReady, tool, toolReady]);
 
   // Cambiar de herramienta puede acortar la secuencia por debajo del paso
   // actual; si eso pasa, el asistente retrocede al último paso que sigue
@@ -186,6 +192,8 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       addDataset,
       removeDataset,
       setSelectedFingerprint,
+      mappingReady,
+      setMappingReady,
       toolId,
       setToolId,
       selectTool,
@@ -206,6 +214,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       canAdvance,
       addDataset,
       removeDataset,
+      mappingReady,
       toolId,
       setToolId,
       selectTool,

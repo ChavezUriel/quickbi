@@ -10,7 +10,7 @@ import { datasetCapabilities } from '@/features/tools/capabilities';
 import { ToolGallery } from '@/features/tools/components/tool-gallery';
 import { availabilityOf, getTool } from '@/features/tools/registry';
 import type { ToolDefinition } from '@/features/tools/types';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useWizard } from '../use-wizard';
 import { StepNavigation } from './step-navigation';
 import { UploadStep } from './upload-step';
@@ -66,9 +66,13 @@ export function WizardShell() {
  * permanecen montados, ocultos por CSS, para que ir y volver no pierda nada.
  */
 function DataWorkspace({ dataset, fill }: { dataset: ParsedDataset; fill: boolean }) {
-  const { step, toolId, selectTool, setToolReady } = useWizard();
+  const { step, toolId, selectTool, setToolReady, setMappingReady } = useWizard();
   const mapping = useColumnMapping(dataset);
   const tool = getTool(toolId);
+
+  useEffect(() => {
+    setMappingReady(mapping.columns.length > 0);
+  }, [mapping.columns.length, setMappingReady]);
 
   const capabilities = useMemo(() => datasetCapabilities(mapping), [mapping]);
 

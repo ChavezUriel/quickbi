@@ -23,20 +23,50 @@ function makeColumn(
   };
 }
 
-function makeMapping(columns: ColumnProfile[], effectiveRowCount = 100): ColumnMappingState {
+function makeMapping(
+  columns: ColumnProfile[],
+  effectiveRowCount = 100,
+  allColumns: ColumnProfile[] = columns,
+): ColumnMappingState {
   return {
     columns,
+    allColumns,
     dimensions: columns.filter((c) => c.type === 'text' || c.type === 'boolean'),
     measures: columns.filter((c) => c.type === 'number'),
     dateColumns: columns.filter((c) => c.type === 'date'),
+    excludedColumns: {},
     preserveInvalid: {},
     effectiveRowCount,
     setColumnType: () => {},
     setPreserveInvalid: () => {},
+    setColumnSelected: () => {},
+    toggleColumnSelection: () => {},
+    selectAllColumns: () => {},
+    deselectAllColumns: () => {},
+    isColumnSelected: () => true,
   };
 }
 
 describe('Intelligent Capability & Semantic Detection', () => {
+  it('respects column deselection and updates capabilities accordingly', () => {
+    const dateCol = makeColumn('Fecha_Pedido', 'date', 50);
+    const clientCol = makeColumn('ID_Cliente', 'text', 120);
+    const totalCol = makeColumn('Importe_Total', 'number', 80);
+
+    // Initial with all columns selected
+    const allSelected = makeMapping([dateCol, clientCol, totalCol]);
+    expect(datasetCapabilities(allSelected).dates).toBe(1);
+    expect(datasetCapabilities(allSelected).semantics.hasCustomer).toBe(true);
+
+    // Deselect date and client columns
+    const filteredMapping = makeMapping([totalCol], 100, [dateCol, clientCol, totalCol]);
+    const caps = datasetCapabilities(filteredMapping);
+    expect(caps.columnCount).toBe(1);
+    expect(caps.dates).toBe(0);
+    expect(caps.dimensions).toBe(0);
+    expect(caps.measures).toBe(1);
+    expect(caps.semantics.hasCustomer).toBe(false);
+  });
   it('detects customer, product, order, price and volume semantics in sales datasets', () => {
     const mapping = makeMapping([
       makeColumn('Fecha_Pedido', 'date', 50),
