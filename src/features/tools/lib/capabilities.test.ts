@@ -38,6 +38,7 @@ function makeMapping(
     preserveInvalid: {},
     effectiveRowCount,
     setColumnType: () => {},
+    setColumnSubtype: () => {},
     setPreserveInvalid: () => {},
     setColumnSelected: () => {},
     toggleColumnSelection: () => {},
@@ -125,15 +126,24 @@ describe('Intelligent Capability & Semantic Detection', () => {
     expect(semantics.inventoryColumn).toBe('Stock_Disponible');
   });
 
-  it('detects conversion funnel stage dimensions', () => {
-    const mapping = makeMapping([
-      makeColumn('Etapa_Pipeline', 'text', 5, ['Lead', 'Contacto', 'Ganado']),
-      makeColumn('Oportunidades', 'number', 10),
-    ]);
-
+  it('respects user-adjusted subtypes in detectSemantics', () => {
+    // A generic column named 'Agrupacion' manually given subtype 'geo'
+    const colWithGeoSubtype: ColumnProfile = {
+      ...makeColumn('Agrupacion', 'text', 10),
+      subtype: 'geo',
+    };
+    const mapping = makeMapping([colWithGeoSubtype, makeColumn('Ventas', 'number', 50)]);
     const semantics = detectSemantics(mapping);
-    expect(semantics.hasFunnelStage).toBe(true);
-    expect(semantics.funnelColumn).toBe('Etapa_Pipeline');
+    expect(semantics.hasGeo).toBe(true);
+    expect(semantics.geoColumn).toBe('Agrupacion');
+
+    // A column that might have matched keywords, but was manually set to 'text'
+    const colOverriddenToText: ColumnProfile = {
+      ...makeColumn('Pais_Origen', 'text', 10),
+      subtype: 'text',
+    };
+    const mappingText = makeMapping([colOverriddenToText, makeColumn('Ventas', 'number', 50)]);
+    expect(detectSemantics(mappingText).hasGeo).toBe(false);
   });
 });
 

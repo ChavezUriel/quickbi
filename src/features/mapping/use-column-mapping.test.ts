@@ -242,4 +242,46 @@ describe('useColumnMapping', () => {
 
     hook.cleanup();
   });
+
+  it('allows manually adjusting column subtype and preserves valid overrides', () => {
+    const hook = setupHook(mockDataset);
+
+    // Initial subtype for 'id' is identifier
+    act(() => {
+      hook.current.setColumnSubtype('id', 'geo');
+    });
+
+    const idCol = hook.current.columns.find((c) => c.name === 'id');
+    expect(idCol?.subtype).toBe('geo');
+
+    // Change subtype for 'ventas' to currency
+    act(() => {
+      hook.current.setColumnSubtype('ventas', 'currency');
+    });
+    const ventasCol = hook.current.columns.find((c) => c.name === 'ventas');
+    expect(ventasCol?.subtype).toBe('currency');
+
+    hook.cleanup();
+  });
+
+  it('resets incompatible subtype overrides when column type changes', () => {
+    const hook = setupHook(mockDataset);
+
+    // Set 'id' to 'geo' (valid for text)
+    act(() => {
+      hook.current.setColumnSubtype('id', 'geo');
+    });
+    expect(hook.current.columns.find((c) => c.name === 'id')?.subtype).toBe('geo');
+
+    // Change 'id' type to 'number' -> 'geo' is not a valid number subtype
+    act(() => {
+      hook.current.setColumnType('id', 'number');
+    });
+    const updatedIdCol = hook.current.columns.find((c) => c.name === 'id');
+    expect(updatedIdCol?.type).toBe('number');
+    expect(updatedIdCol?.subtype).not.toBe('geo');
+
+    hook.cleanup();
+  });
 });
+

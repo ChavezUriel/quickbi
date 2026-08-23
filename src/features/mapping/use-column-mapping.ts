@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { coerceValue, profileColumn } from '@/features/dataset/lib/infer-columns';
-import type { ColumnProfile, ColumnType } from '@/features/dataset/lib/column-types';
+import type { ColumnProfile, ColumnSubtype, ColumnType } from '@/features/dataset/lib/column-types';
 import type { ParsedDataset } from '@/features/dataset/types';
+import { SELECTABLE_SUBTYPES_BY_TYPE } from './labels';
 
 export interface ColumnMappingState {
   /** Columnas activas con las correcciones del usuario ya aplicadas. */
@@ -19,6 +20,7 @@ export interface ColumnMappingState {
   preserveInvalid: Record<string, boolean>;
   effectiveRowCount: number;
   setColumnType: (name: string, type: ColumnType) => void;
+  setColumnSubtype: (name: string, subtype: ColumnSubtype) => void;
   setPreserveInvalid: (columnName: string, preserve: boolean) => void;
   setColumnSelected: (columnName: string, selected: boolean) => void;
   toggleColumnSelection: (columnName: string) => void;
@@ -38,6 +40,7 @@ export function isColumnEmpty(col: ColumnProfile, rowCount?: number): boolean {
 
 export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
   const [overrides, setOverrides] = useState<Record<string, ColumnType>>({});
+  const [subtypeOverrides, setSubtypeOverrides] = useState<Record<string, ColumnSubtype>>({});
   const [preserveInvalid, setPreserveInvalidState] = useState<Record<string, boolean>>({});
   const [excludedColumns, setExcludedColumns] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -49,17 +52,30 @@ export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
     return initial;
   });
 
-  // Al corregir un tipo hay que reperfilar la columna, no solo reetiquetarla:
-  // así el usuario ve al momento cuántos valores no sobrevivirán a su elección.
+  // Al corregir un tipo o subtipo hay que reperfilar la columna y mantener la coherencia
   const allColumns = useMemo(
     () =>
       dataset.columns.map((column) => {
-        const forced = overrides[column.name];
-        return forced === undefined
-          ? column
-          : profileColumn(column.name, dataset.rows, forced);
+        const forcedType = overrides[column.name];
+        const profiled =
+          forcedType === undefined
+            ? column
+            : profileColumn(column.name, dataset.rows, forcedType);
+
+        const forcedSubtype = subtypeOverrides[column.name];
+        if (forcedSubtype !== undefined) {
+          const validSubtypes = SELECTABLE_SUBTYPES_BY_TYPE[profiled.type];
+          if (validSubtypes && validSubtypes.includes(forcedSubtype)) {
+            return {
+              ...profiled,
+              subtype: forcedSubtype,
+            };
+          }
+        }
+
+        return profiled;
       }),
-    [dataset, overrides],
+    [dataset, overrides, subtypeOverrides],
   );
 
   // Columnas activas (no excluidas por el usuario)
@@ -87,6 +103,20 @@ export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
 
   const setColumnType = useCallback((name: string, type: ColumnType) => {
     setOverrides((current) => ({ ...current, [name]: type }));
+    // Limpiar override de subtipo si no es compatible con el nuevo tipo
+    setSubtypeOverrides((current) => {
+      const existing = current[name];
+      if (existing && !SELECTABLE_SUBTYPES_BY_TYPE[type]?.includes(existing)) {
+        const next = { ...current };
+        delete next[name];
+        return next;
+      }
+      return current;
+    });
+  }, []);
+
+  const setColumnSubtype = useCallback((name: string, subtype: ColumnSubtype) => {
+    setSubtypeOverrides((current) => ({ ...current, [name]: subtype }));
   }, []);
 
   const setPreserveInvalid = useCallback((columnName: string, preserve: boolean) => {
@@ -177,6 +207,7 @@ export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
     preserveInvalid,
     effectiveRowCount,
     setColumnType,
+    setColumnSubtype,
     setPreserveInvalid,
     setColumnSelected,
     toggleColumnSelection,
@@ -185,3 +216,4 @@ export function useColumnMapping(dataset: ParsedDataset): ColumnMappingState {
     isColumnSelected,
   };
 }
+

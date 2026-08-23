@@ -1,4 +1,4 @@
-import type { ColumnFormat, ColumnType } from '@/features/dataset/lib/column-types';
+import type { ColumnFormat, ColumnSubtype, ColumnType } from '@/features/dataset/lib/column-types';
 export { SUBTYPE_LABEL } from '@/components/icons/data-type-icons';
 
 export const TYPE_LABEL: Record<ColumnType, string> = {
@@ -11,6 +11,15 @@ export const TYPE_LABEL: Record<ColumnType, string> = {
 
 /** `empty` queda fuera: no es una corrección que tenga sentido elegir. */
 export const SELECTABLE_TYPES: ColumnType[] = ['number', 'date', 'boolean', 'text'];
+
+/** Subtipos / características semánticas disponibles según el tipo base de dato. */
+export const SELECTABLE_SUBTYPES_BY_TYPE: Record<ColumnType, ColumnSubtype[]> = {
+  number: ['decimal', 'currency', 'percentage', 'integer', 'duration'],
+  text: ['text', 'geo', 'product', 'customer', 'identifier', 'funnel_stage'],
+  date: ['date', 'datetime', 'period'],
+  boolean: ['boolean'],
+  empty: ['empty'],
+};
 
 /**
  * Hace visible cómo se está leyendo la columna. Un `1.234` interpretado como
@@ -30,3 +39,4 @@ export function describeFormat(format: ColumnFormat): string | null {
       return null;
   }
 }
+

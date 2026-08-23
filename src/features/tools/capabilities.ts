@@ -1,4 +1,5 @@
 import type { ColumnProfile } from '@/features/dataset/lib/column-types';
+import { sampleMatchesGeoEntities } from '@/features/dataset/lib/infer-subtype';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
 import type { DatasetCapabilities, DatasetSemantics } from './types';
 
@@ -21,26 +22,35 @@ export function normalizeKeyword(text: string): string {
     .trim();
 }
 
-/** Comprueba si el nombre de una columna coincide o contiene palabras clave semánticas. */
+/** Comprueba si el nombre de una columna coincide o contiene palabras clave semánticas por tokens completos o frases. */
 export function matchesKeyword(name: string, keywords: readonly string[]): boolean {
   const norm = normalizeKeyword(name);
+  const words = norm.split(/[\s_\-./\\,;:()\[\]{}|<>]+/).filter(Boolean);
+
   return keywords.some((kw) => {
     const normKw = normalizeKeyword(kw);
     if (norm === normKw) return true;
-    if (norm.includes(normKw)) return true;
+    if (normKw.includes(' ') || normKw.includes('_')) {
+      const phrase = normKw.replace(/_/g, ' ');
+      const normPhrase = norm.replace(/_/g, ' ');
+      if (normPhrase === phrase || normPhrase.includes(phrase)) return true;
+    }
+    if (words.includes(normKw)) return true;
     return false;
   });
 }
 
-/** Comprueba si alguna muestra de datos contiene valores representativos de una entidad. */
+/** Comprueba si alguna muestra de datos contiene valores representativos de una entidad por tokens completos. */
 export function matchesSample(samples: readonly string[], keywords: readonly string[]): boolean {
   if (!samples || samples.length === 0) return false;
   return samples.some((sample) => {
     if (!sample) return false;
     const normSample = normalizeKeyword(sample);
+    const tokens = normSample.split(/[\s_\-./\\,;:()\[\]{}|<>]+/).filter(Boolean);
+
     return keywords.some((kw) => {
       const normKw = normalizeKeyword(kw);
-      return normSample === normKw || normSample.startsWith(normKw) || normSample.includes(normKw);
+      return normSample === normKw || tokens.includes(normKw);
     });
   });
 }
@@ -71,24 +81,20 @@ const ORDER_KEYWORDS = [
 
 const GEO_KEYWORDS = [
   'pais', 'country', 'nacion', 'nation', 'region', 'provincia', 'province',
-  'ciudad', 'city', 'municipio', 'poblacion', 'estado', 'state',
-  'comunidad', 'ccaa', 'cca', 'territorio', 'territory', 'ubicacion', 'location',
-  'zona', 'zone', 'distrito', 'district', 'lat', 'lon', 'latitude', 'longitude',
-  'cp', 'zip', 'codigo_postal', 'postal_code', 'iso', 'continente', 'continent',
-  'sucursal', 'sede', 'tienda', 'delegacion', 'mercado', 'market', 'destino', 'origen',
-  'localidad', 'area', 'poblado', 'pais_destino', 'pais_origen', 'pais_cliente',
-  'billing_country', 'shipping_country', 'country_code', 'state_code', 'geo',
-  'geografia', 'geography', 'address', 'direccion',
+  'ciudad', 'city', 'municipio', 'poblacion', 'comunidad', 'ccaa',
+  'territorio', 'territory', 'distrito', 'codigo_postal', 'postal_code',
+  'zip_code', 'continente', 'continent', 'pais_destino', 'pais_origen',
+  'pais_cliente', 'billing_country', 'shipping_country', 'country_code',
+  'estado_provincia', 'state_province', 'zona_geografica', 'region_geografica',
 ] as const;
 
-const GEO_SAMPLE_ENTITIES = [
-  'espana', 'spain', 'francia', 'france', 'mexico', 'colombia', 'argentina',
-  'chile', 'peru', 'usa', 'eeuu', 'estados unidos', 'united states', 'brasil', 'brazil',
-  'italia', 'italy', 'alemania', 'germany', 'uk', 'reino unido', 'portugal',
-  'canada', 'madrid', 'barcelona', 'valencia', 'sevilla', 'cdmx', 'bogota',
-  'buenos aires', 'santiago', 'lima', 'andalucia', 'cataluna', 'galicia',
-  'japon', 'japan', 'china', 'india', 'australia', 'ecuador', 'venezuela',
-  'uruguay', 'paraguay', 'bolivia', 'panama', 'costa rica', 'guatemala',
+const GEO_DISQUALIFY_KEYWORDS = [
+  'estado_civil', 'estado_cuenta', 'estado_pago', 'estado_factura', 'estado_solicitud',
+  'estado_pedido', 'estado_transaccion', 'estado_ticket', 'estado_proceso',
+  'estado_financiero', 'estado_animo', 'calle', 'avenida', 'street', 'address',
+  'domicilio', 'direccion', 'ip_address', 'ip', 'mac_address', 'email_address',
+  'zona_horaria', 'time_zone', 'timezone', 'cuenta_origen', 'cuenta_destino',
+  'banco_origen', 'banco_destino', 'almacen_origen', 'almacen_destino',
 ] as const;
 
 const INVENTORY_KEYWORDS = [
@@ -133,23 +139,35 @@ export function detectSemantics(mapping: ColumnMappingState): DatasetSemantics {
   const dimensions = mapping.dimensions;
   const measures = mapping.measures;
 
-  // 1. Cliente
-  const explicitCustomer = dimensions.find((c) => matchesKeyword(c.name, CUSTOMER_KEYWORDS));
-  const candidateCustomer = dimensions.find(isIdentifierCandidate);
-  const customerCol = explicitCustomer ?? candidateCustomer ?? null;
+  // 1. Cliente (prioriza subtipo 'customer' o coincidencia de keywords)
+  const explicitCustomer = dimensions.find((c) => c.subtype === 'customer');
+  const fallbackCustomer = dimensions.find(
+    (c) => c.subtype === undefined && matchesKeyword(c.name, CUSTOMER_KEYWORDS),
+  );
+  const candidateCustomer = dimensions.find(
+    (c) => c.subtype === undefined && isIdentifierCandidate(c),
+  );
+  const customerCol = explicitCustomer ?? fallbackCustomer ?? candidateCustomer ?? null;
 
-  // 2. Producto / SKU
-  const productCol = dimensions.find((c) => matchesKeyword(c.name, PRODUCT_KEYWORDS)) ?? null;
+  // 2. Producto / SKU (prioriza subtipo 'product')
+  const explicitProduct = dimensions.find((c) => c.subtype === 'product');
+  const fallbackProduct = dimensions.find(
+    (c) => c.subtype === undefined && matchesKeyword(c.name, PRODUCT_KEYWORDS),
+  );
+  const productCol = explicitProduct ?? fallbackProduct ?? null;
 
   // 3. Pedido / Transacción
   const orderCol = dimensions.find((c) => matchesKeyword(c.name, ORDER_KEYWORDS)) ?? null;
 
-  // 4. Geografía
-  const geoCol = dimensions.find(
+  // 4. Geografía (prioriza subtipo 'geo' ajustado por el usuario o detectado inteligentemente)
+  const explicitGeo = dimensions.find((c) => c.subtype === 'geo');
+  const fallbackGeo = dimensions.find(
     (c) =>
-      matchesKeyword(c.name, GEO_KEYWORDS) ||
-      matchesSample(c.samples, GEO_SAMPLE_ENTITIES),
-  ) ?? null;
+      c.subtype === undefined &&
+      !matchesKeyword(c.name, GEO_DISQUALIFY_KEYWORDS) &&
+      (matchesKeyword(c.name, GEO_KEYWORDS) || sampleMatchesGeoEntities(c.samples)),
+  );
+  const geoCol = explicitGeo ?? fallbackGeo ?? null;
 
   // 5. Inventario
   const invMeasure = measures.find((c) => matchesKeyword(c.name, INVENTORY_KEYWORDS));
@@ -157,17 +175,28 @@ export function detectSemantics(mapping: ColumnMappingState): DatasetSemantics {
   const inventoryCol = invMeasure?.name ?? invDim?.name ?? null;
 
   // 6. Embudo / Etapas
-  const funnelCol = dimensions.find(
+  const explicitFunnel = dimensions.find((c) => c.subtype === 'funnel_stage');
+  const fallbackFunnel = dimensions.find(
     (c) =>
-      matchesKeyword(c.name, FUNNEL_KEYWORDS) ||
-      (c.distinctCount >= 2 && c.distinctCount <= 15 && matchesSample(c.samples, FUNNEL_SAMPLE_ENTITIES)),
-  ) ?? null;
+      c.subtype === undefined &&
+      (matchesKeyword(c.name, FUNNEL_KEYWORDS) ||
+        (c.distinctCount >= 2 && c.distinctCount <= 15 && matchesSample(c.samples, FUNNEL_SAMPLE_ENTITIES))),
+  );
+  const funnelCol = explicitFunnel ?? fallbackFunnel ?? null;
 
-  // 7. Precio
-  const priceCol = measures.find((c) => matchesKeyword(c.name, PRICE_KEYWORDS)) ?? null;
+  // 7. Precio / Moneda
+  const explicitPrice = measures.find((c) => c.subtype === 'currency');
+  const fallbackPrice = measures.find(
+    (c) => c.subtype === undefined && matchesKeyword(c.name, PRICE_KEYWORDS),
+  );
+  const priceCol = explicitPrice ?? fallbackPrice ?? null;
 
   // 8. Volumen / Cantidad
-  const volumeCol = measures.find((c) => matchesKeyword(c.name, VOLUME_KEYWORDS)) ?? null;
+  const explicitVolume = measures.find((c) => c.subtype === 'integer');
+  const fallbackVolume = measures.find(
+    (c) => c.subtype === undefined && matchesKeyword(c.name, VOLUME_KEYWORDS),
+  );
+  const volumeCol = explicitVolume ?? fallbackVolume ?? null;
 
   // 9. Conciliación
   const reconMeasures = measures.filter((c) => matchesKeyword(c.name, RECONCILIATION_KEYWORDS));
@@ -217,3 +246,4 @@ export function datasetCapabilities(mapping: ColumnMappingState): DatasetCapabil
     semantics: detectSemantics(mapping),
   };
 }
+

@@ -38,12 +38,20 @@ interface Scored {
   rank: number;
 }
 
+const SUBTYPE_RELEVANT_HINTS: Record<string, readonly string[]> = {
+  geo: ['pais', 'territorio', 'estado', 'region', 'provincia', 'ciudad', 'comunidad', 'zona', 'ubicacion', 'location', 'country', 'city', 'state'],
+  customer: ['cliente', 'customer', 'usuario', 'user', 'comprador', 'buyer', 'socio', 'contacto', 'contact', 'titular', 'account'],
+  product: ['producto', 'product', 'item', 'articulo', 'sku', 'servicio', 'modelo'],
+  currency: ['importe', 'precio', 'monto', 'revenue', 'venta', 'sales', 'coste', 'costo', 'valor', 'total', 'ingreso'],
+  funnel_stage: ['etapa', 'fase', 'step', 'stage', 'funnel', 'pipeline', 'embudo', 'proceso'],
+  integer: ['cantidad', 'unidades', 'volumen', 'conteo', 'count', 'qty'],
+};
+
 /**
  * Columna más probable para un hueco, o `null` si no hay ninguna candidata.
  *
- * El nombre exacto gana al nombre que contiene la pista, y ambos ganan a
- * cualquier desempate por cardinalidad: que una columna se llame «cliente» es
- * mucha más señal que tener muchos valores distintos.
+ * El nombre exacto gana al subtipo semántico, este gana al nombre que contiene
+ * la pista, y todos ganan a cualquier desempate por cardinalidad.
  */
 export function suggestColumn(
   candidates: readonly ColumnProfile[],
@@ -56,17 +64,30 @@ export function suggestColumn(
 
   for (const column of candidates) {
     const name = normalizeName(column.name);
+
+    // 1. Coincidencia exacta por nombre
     const exact = hints.findIndex((hint) => name === normalizeName(hint));
     if (exact >= 0) {
       scored.push({ column, rank: exact });
       continue;
     }
 
+    // 2. Coincidencia por subtipo semántico (ajustado por el usuario o detectado)
+    const relevantHints = column.subtype ? SUBTYPE_RELEVANT_HINTS[column.subtype] : undefined;
+    if (relevantHints) {
+      const subtypeMatchIdx = hints.findIndex((hint) =>
+        relevantHints.some((rh) => normalizeName(hint) === rh || normalizeName(hint).includes(rh)),
+      );
+      if (subtypeMatchIdx >= 0) {
+        scored.push({ column, rank: hints.length + subtypeMatchIdx });
+        continue;
+      }
+    }
+
+    // 3. Coincidencia parcial por nombre
     const partial = hints.findIndex((hint) => name.includes(normalizeName(hint)));
     if (partial >= 0) {
-      // Detrás de todas las coincidencias exactas, conservando el orden de
-      // las pistas entre sí.
-      scored.push({ column, rank: hints.length + partial });
+      scored.push({ column, rank: hints.length * 2 + partial });
     }
   }
 
@@ -88,3 +109,4 @@ export function suggestColumn(
   );
   return best.name;
 }
+

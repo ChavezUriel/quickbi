@@ -27,10 +27,16 @@ import {
 } from '@/components/ui/table';
 import { useMediaQuery } from '@/lib/use-media-query';
 import { cn } from '@/lib/utils';
-import type { ColumnProfile, ColumnType } from '@/features/dataset/lib/column-types';
+import type { ColumnProfile, ColumnSubtype, ColumnType } from '@/features/dataset/lib/column-types';
 import type { ParsedDataset } from '@/features/dataset/types';
-import { DataTypeBadge, DataTypeIcon } from '@/components/icons/data-type-icons';
-import { SELECTABLE_TYPES, TYPE_LABEL, describeFormat } from '../labels';
+import { DataTypeIcon } from '@/components/icons/data-type-icons';
+import {
+  SELECTABLE_SUBTYPES_BY_TYPE,
+  SELECTABLE_TYPES,
+  SUBTYPE_LABEL,
+  TYPE_LABEL,
+  describeFormat,
+} from '../labels';
 import type { ColumnMappingState } from '../use-column-mapping';
 import { CastFailureDetail } from './cast-failure-detail';
 import { generateCastReport } from '../lib/cast-report';
@@ -57,6 +63,7 @@ interface RowProps {
   isSelected: boolean;
   preserveInvalid: boolean;
   setColumnType: (name: string, type: ColumnType) => void;
+  setColumnSubtype: (name: string, subtype: ColumnSubtype) => void;
   setPreserveInvalid: (columnName: string, preserve: boolean) => void;
   setColumnSelected: (columnName: string, selected: boolean) => void;
 }
@@ -64,12 +71,7 @@ interface RowProps {
 /**
  * Paso intermedio entre la vista previa y el gráfico: el usuario confirma los
  * tipos inferidos, selecciona/deselecciona campos para las visualizaciones y gestiona
- * posibles errores de conversión.
- *
- * Se dibuja de dos maneras. Con sitio, una tabla: cuatro datos por columna
- * comparados en vertical de un vistazo. Sin él, una lista de fichas, porque
- * una tabla de cuatro columnas —una con un desplegable dentro— en 375 px se
- * convierte en un carrusel horizontal que nadie quiere manejar.
+ * posibles errores de conversión y características semánticas.
  */
 export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
   const {
@@ -78,6 +80,7 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
     preserveInvalid,
     effectiveRowCount,
     setColumnType,
+    setColumnSubtype,
     setPreserveInvalid,
     setColumnSelected,
     selectAllColumns,
@@ -85,7 +88,7 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
     isColumnSelected,
   } = state;
 
-  const isWide = useMediaQuery('(min-width: 40rem)');
+  const isWide = useMediaQuery('(min-width: 48rem)');
   const isFiltered = effectiveRowCount < dataset.rowCount;
 
   const allSelected = allColumns.length > 0 && columns.length === allColumns.length;
@@ -113,6 +116,7 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
     isSelected: isColumnSelected(column.name),
     preserveInvalid: !!preserveInvalid[column.name],
     setColumnType,
+    setColumnSubtype,
     setPreserveInvalid,
     setColumnSelected,
   });
@@ -134,8 +138,8 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
               </Badge>
             </div>
             <CardDescription className="text-sm text-pretty text-muted-foreground">
-              Detectados automáticamente a partir de los datos. Deselecciona los campos que no quieras
-              usar en las herramientas de visualización y ajusta los tipos si es necesario.
+              Detectados automáticamente a partir de los datos. Deselecciona campos, ajusta su tipo base o
+              modifica la característica semántica adicional para afinar las herramientas visuales.
             </CardDescription>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -194,8 +198,6 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
           </Alert>
         )}
 
-        {/* Se elige en JS, no con `hidden`: montar las dos formas duplicaría el
-            informe de casteo de cada columna, que recorre el dataset entero. */}
         {isWide ? (
           <div className="max-h-[60vh] overflow-auto rounded-xl border border-border/80 bg-card">
             <Table>
@@ -211,14 +213,17 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
                       className="size-4 rounded border-input text-primary focus:ring-1 focus:ring-ring cursor-pointer"
                     />
                   </TableHead>
-                  <TableHead scope="col" className="w-48 px-3.5 py-2.5 text-xs font-semibold text-foreground">
+                  <TableHead scope="col" className="w-44 px-3.5 py-2.5 text-xs font-semibold text-foreground">
                     Columna
                   </TableHead>
-                  <TableHead scope="col" className="w-44 px-3.5 py-2.5 text-xs font-semibold text-foreground">
+                  <TableHead scope="col" className="w-36 px-3.5 py-2.5 text-xs font-semibold text-foreground">
                     Tipo de dato
                   </TableHead>
-                  <TableHead scope="col" className="px-3.5 py-2.5 text-xs font-semibold text-foreground">
-                    Datos y Calidad
+                  <TableHead scope="col" className="w-48 px-3.5 py-2.5 text-xs font-semibold text-foreground">
+                    Característica adicional
+                  </TableHead>
+                  <TableHead scope="col" className="min-w-[180px] px-3.5 py-2.5 text-xs font-semibold text-foreground">
+                    Calidad del dato
                   </TableHead>
                   <TableHead scope="col" className={cn('px-3.5 py-2.5 text-xs font-semibold text-foreground', SAMPLE_COLUMN)}>
                     Muestra de valores
@@ -277,6 +282,7 @@ function ColumnRow(props: RowProps) {
               'truncate',
               !isSelected && 'text-muted-foreground line-through decoration-muted-foreground/40',
             )}
+            title={column.name}
           >
             {column.name}
           </span>
@@ -289,13 +295,19 @@ function ColumnRow(props: RowProps) {
       </TableCell>
 
       <TableCell className="px-3.5 py-2.5 align-top">
-        <div className="w-full min-w-[140px] max-w-[180px]">
+        <div className="w-full min-w-[120px] max-w-[150px]">
           <TypeSelect {...props} />
         </div>
       </TableCell>
 
+      <TableCell className="px-3.5 py-2.5 align-top">
+        <div className="w-full min-w-[160px] max-w-[210px]">
+          <SubtypeSelect {...props} />
+        </div>
+      </TableCell>
+
       <TableCell className="px-3.5 py-3 align-top text-xs">
-        <ColumnStats column={column} isSelected={isSelected} />
+        <ColumnQuality column={column} isSelected={isSelected} />
         {isSelected && <InvalidControls {...props} />}
       </TableCell>
 
@@ -351,13 +363,25 @@ function ColumnCard(props: RowProps) {
             </Badge>
           )}
         </div>
-        <div className="w-36 shrink-0">
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+        <div className="space-y-1">
+          <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
+            Tipo de dato
+          </span>
           <TypeSelect {...props} />
+        </div>
+        <div className="space-y-1">
+          <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
+            Característica
+          </span>
+          <SubtypeSelect {...props} />
         </div>
       </div>
 
-      <div className="text-xs space-y-1">
-        <ColumnStats column={column} isSelected={isSelected} />
+      <div className="text-xs space-y-1 pt-1">
+        <ColumnQuality column={column} isSelected={isSelected} />
         <p className="truncate font-mono text-[11px] text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
           {column.samples.join(' · ') || '—'}
         </p>
@@ -382,7 +406,7 @@ function TypeSelect({ column, setColumnType }: RowProps) {
         aria-label={`Tipo de la columna ${column.name}`}
       >
         <div className="flex items-center gap-1.5 truncate">
-          <DataTypeIcon type={column.type} subtype={column.subtype} colored className="size-3.5 shrink-0" />
+          <DataTypeIcon type={column.type} colored className="size-3.5 shrink-0" />
           <SelectValue />
         </div>
       </SelectTrigger>
@@ -392,6 +416,45 @@ function TypeSelect({ column, setColumnType }: RowProps) {
             <div className="flex items-center gap-2">
               <DataTypeIcon type={type} colored className="size-3.5 shrink-0" />
               <span>{TYPE_LABEL[type]}</span>
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function SubtypeSelect({ column, setColumnSubtype }: RowProps) {
+  const selectableSubtypes = SELECTABLE_SUBTYPES_BY_TYPE[column.type] ?? [column.type as ColumnSubtype];
+  const currentSubtype = column.subtype ?? (column.type === 'number' ? 'decimal' : (column.type as ColumnSubtype));
+
+  return (
+    <Select
+      value={currentSubtype}
+      onValueChange={(value: ColumnSubtype | null) => {
+        if (value !== null) setColumnSubtype(column.name, value);
+      }}
+      items={selectableSubtypes.map((st) => ({
+        value: st,
+        label: SUBTYPE_LABEL[st] ?? st,
+      }))}
+    >
+      <SelectTrigger
+        size="sm"
+        className="h-8 w-full shrink-0 rounded-lg text-xs"
+        aria-label={`Característica adicional de la columna ${column.name}`}
+      >
+        <div className="flex items-center gap-1.5 truncate">
+          <DataTypeIcon type={column.type} subtype={currentSubtype} colored className="size-3.5 shrink-0" />
+          <SelectValue />
+        </div>
+      </SelectTrigger>
+      <SelectContent>
+        {selectableSubtypes.map((st) => (
+          <SelectItem key={st} value={st} className="text-xs">
+            <div className="flex items-center gap-2">
+              <DataTypeIcon type={column.type} subtype={st} colored className="size-3.5 shrink-0" />
+              <span>{SUBTYPE_LABEL[st] ?? st}</span>
             </div>
           </SelectItem>
         ))}
@@ -425,7 +488,7 @@ function InvalidControls({ column, dataset, preserveInvalid, setPreserveInvalid 
   );
 }
 
-function ColumnStats({
+function ColumnQuality({
   column,
   isSelected = true,
 }: {
@@ -437,9 +500,6 @@ function ColumnStats({
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground leading-snug">
-        {column.subtype && column.subtype !== (column.type as string) && (
-          <DataTypeBadge type={column.type} subtype={column.subtype} showSubtype size="xs" />
-        )}
         <span>
           <strong className="font-medium text-foreground">
             {column.distinctCount.toLocaleString('es-MX')}
@@ -448,9 +508,15 @@ function ColumnStats({
           distintos
         </span>
         {column.nullCount > 0 && (
-          <span className="text-amber-600 dark:text-amber-400">
+          <span className="text-amber-600 dark:text-amber-400 font-medium">
             {' · '}
             {column.nullCount.toLocaleString('es-MX')} vacíos
+          </span>
+        )}
+        {column.invalidCount > 0 && (
+          <span className="text-destructive font-medium">
+            {' · '}
+            {column.invalidCount.toLocaleString('es-MX')} inválidos
           </span>
         )}
         {!isSelected && (
@@ -463,3 +529,4 @@ function ColumnStats({
     </div>
   );
 }
+

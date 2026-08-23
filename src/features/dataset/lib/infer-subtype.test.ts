@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { inferColumnSubtype } from './infer-subtype';
 
 describe('inferColumnSubtype', () => {
@@ -84,6 +84,23 @@ describe('inferColumnSubtype', () => {
       expect(inferColumnSubtype({ name: 'ciudad', type: 'text' })).toBe('geo');
       expect(inferColumnSubtype({ name: 'codigo_postal', type: 'text' })).toBe('geo');
       expect(inferColumnSubtype({ name: 'lugar', type: 'text', samples: ['Madrid', 'Barcelona'] })).toBe('geo');
+      expect(inferColumnSubtype({ name: 'pais', type: 'text', samples: ['ES', 'MX', 'US'] })).toBe('geo');
+      expect(inferColumnSubtype({ name: 'comunidad_autonoma', type: 'text' })).toBe('geo');
+      expect(inferColumnSubtype({ name: 'estado_provincia', type: 'text' })).toBe('geo');
+    });
+
+    it('does not classify non-map suitable fields as geo (preventing false positives)', () => {
+      expect(inferColumnSubtype({ name: 'estado_civil', type: 'text', samples: ['Soltero', 'Casado'] })).not.toBe('geo');
+      expect(inferColumnSubtype({ name: 'estado_cuenta', type: 'text', samples: ['Activo', 'Inactivo'] })).not.toBe('geo');
+      expect(inferColumnSubtype({ name: 'estado_pago', type: 'text', samples: ['Pendiente', 'Pagado'] })).not.toBe('geo');
+      expect(inferColumnSubtype({ name: 'direccion', type: 'text', samples: ['Calle Alcalá 45', 'Av. Reforma 100'] })).not.toBe('geo');
+      expect(inferColumnSubtype({ name: 'ip_address', type: 'text', samples: ['192.168.1.1', '10.0.0.1'] })).toBe('identifier');
+      expect(inferColumnSubtype({ name: 'zona_horaria', type: 'text', samples: ['UTC-6', 'UTC+1'] })).toBe('text');
+      expect(inferColumnSubtype({ name: 'cuenta_destino', type: 'text', samples: ['ES12345', 'ES98765'] })).not.toBe('geo');
+      // Substring false positives like 'usa' in 'usuario' or 'usado', 'cl' in 'cliente', 'pe' in 'pedido'
+      expect(inferColumnSubtype({ name: 'usuario_app', type: 'text', samples: ['Usuario 1', 'Usuario 2'] })).toBe('customer');
+      expect(inferColumnSubtype({ name: 'descripcion_comida', type: 'text', samples: ['Salsa de chile', 'Chile relleno'] })).toBe('text');
+      expect(inferColumnSubtype({ name: 'ambiente', type: 'text', samples: ['Clima templado', 'Clima cálido'] })).toBe('text');
     });
 
     it('detects product and catalog dimensions', () => {
@@ -113,3 +130,4 @@ describe('inferColumnSubtype', () => {
     });
   });
 });
+
