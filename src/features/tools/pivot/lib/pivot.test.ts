@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { columnMetric, countMetric } from '@/features/analysis/lib/metrics';
 import type { AnalysisRow } from '@/features/analysis/types';
+import { categoryAxis, TIME_DIM } from '../../lib/axis';
 import { computePivot, OTHERS_LABEL, type PivotAxis } from './pivot';
 
 function row(zona: string, canal: string, importe: number | null): AnalysisRow {
@@ -99,6 +100,31 @@ describe('computePivot', () => {
     const table = computePivot(rows, { row: axis('zona'), col: null, metric: avg });
 
     expect(table.cells[0]?.[0]).toBe(100);
+  });
+
+  it('no pliega en «Otros» cuando se usa un eje temporal TIME_DIM', () => {
+    const timeRows: AnalysisRow[] = Array.from({ length: 40 }, (_, i) => ({
+      day: `2026-01-${String(i + 1).padStart(2, '0')}`,
+      dims: { zona: 'Norte', canal: 'Web' },
+      values: { importe: 10 },
+    }));
+
+    const timeColAxis = categoryAxis({
+      dim: TIME_DIM,
+      grain: 'dia',
+      sort: 'clave',
+      max: 10,
+    });
+
+    const table = computePivot(timeRows, {
+      row: axis('zona'),
+      col: timeColAxis,
+      metric: SUM,
+    });
+
+    expect(table.cols).toHaveLength(40);
+    expect(table.cols.some((col) => col.isOthers)).toBe(false);
+    expect(table.hiddenCols).toBe(0);
   });
 
   it('devuelve una tabla vacía sin filas', () => {

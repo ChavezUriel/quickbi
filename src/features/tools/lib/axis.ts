@@ -41,7 +41,7 @@ export function categoryAxis(options: AxisOptions): PivotAxis {
       labelOf: (key: string) =>
         key === NO_DATE_KEY ? 'Sin fecha' : bucketLabel(key, grain),
       sort: 'clave',
-      max,
+      max: Number.POSITIVE_INFINITY,
     };
   }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { columnMetric, countMetric } from '@/features/analysis/lib/metrics';
 import type { AnalysisRow } from '@/features/analysis/types';
+import { categoryAxis, TIME_DIM } from '../../lib/axis';
 import type { PivotAxis } from '../../pivot/lib/pivot';
 import { buildChartData, type ChartSpec } from './build-chart';
 
@@ -92,6 +93,28 @@ describe('buildChartData', () => {
 
     expect(data.points).toHaveLength(1);
     expect(data.hiddenCategories).toBe(1);
+  });
+
+  it('no limita la cantidad de fechas ni las agrupa en «Otros» cuando el eje es temporal', () => {
+    const timeRows: AnalysisRow[] = Array.from({ length: 50 }, (_, i) => ({
+      day: `2026-01-${String(i + 1).padStart(2, '0')}`,
+      dims: { zona: 'Norte' },
+      values: { importe: 10, unidades: 1 },
+    }));
+
+    const timeAxis = categoryAxis({
+      dim: TIME_DIM,
+      grain: 'dia',
+      sort: 'clave',
+      max: 20,
+    });
+
+    const data = buildChartData(timeRows, spec({ category: timeAxis }));
+
+    expect(data.categories).toHaveLength(50);
+    expect(data.categories.some((cat) => cat.isOthers)).toBe(false);
+    expect(data.hiddenCategories).toBe(0);
+    expect(data.series[0]?.values).toHaveLength(50);
   });
 
   it('sobrevive a un dataset vacío', () => {

@@ -254,7 +254,7 @@ export function BuilderDashboard({
           <CardHeader>
             <CardTitle>{title}</CardTitle>
             <CardDescription className="text-xs text-pretty">
-              {formatCount(data.categories.length)} categorías
+              {formatCount(data.categories.length)} {usesTime ? 'períodos' : 'categorías'}
               {data.series.length > 1 && ` · ${formatCount(data.series.length)} series`}
               {data.hiddenCategories > 0 &&
                 ` · ${formatCount(data.hiddenCategories)} fuera del máximo`}
