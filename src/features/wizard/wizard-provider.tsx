@@ -11,9 +11,8 @@ import {
   getSchemaFingerprint,
   mergeDatasets,
 } from '@/features/upload/lib/merge-datasets';
-import { getTool } from '@/features/tools/registry';
 
-const STEPS: WizardStepId[] = ['carga', 'tipos', 'herramienta', 'cuadro'];
+const STEPS: WizardStepId[] = ['carga', 'tipos', 'herramienta'];
 
 export function WizardProvider({ children }: { children: ReactNode }) {
   const [step, setStep] = useState<WizardStepId>('carga');
@@ -76,14 +75,8 @@ export function WizardProvider({ children }: { children: ReactNode }) {
     return mergeDatasets(matchingDatasets);
   }, [datasets, selectedFingerprint, schemaGroups]);
 
-  const tool = getTool(toolId);
-
   const steps = STEPS;
-
-  const stepLabels = useMemo<Record<WizardStepId, string>>(
-    () => ({ ...STEP_LABELS, cuadro: tool?.label ?? STEP_LABELS.cuadro }),
-    [tool],
-  );
+  const stepLabels = STEP_LABELS;
 
   // Reset mapping readiness when the dataset changes
   useEffect(() => {
@@ -97,49 +90,59 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       case 'tipos':
         return composedDataset !== null && mappingReady;
       case 'herramienta':
-        return tool !== null;
-      case 'cuadro':
         return false;
     }
-  }, [step, selectedFingerprint, composedDataset, mappingReady, tool]);
+  }, [step, selectedFingerprint, composedDataset, mappingReady]);
 
-  // Cambiar de herramienta puede acortar la secuencia por debajo del paso
-  // actual; si eso pasa, el asistente retrocede al último paso que sigue
-  // existiendo en vez de quedarse en un paso que ya no está.
-  useEffect(() => {
-    if (!steps.includes(step)) {
-      setStep(steps[steps.length - 1] ?? 'carga');
-    }
-  }, [steps, step]);
+  const canGoToStep = useCallback(
+    (target: WizardStepId): boolean => {
+      switch (target) {
+        case 'carga':
+          return true;
+        case 'tipos':
+          return selectedFingerprint !== null && composedDataset !== null;
+        case 'herramienta':
+          return composedDataset !== null && mappingReady;
+      }
+    },
+    [selectedFingerprint, composedDataset, mappingReady],
+  );
+
+  const goToStep = useCallback(
+    (target: WizardStepId) => {
+      if (!canGoToStep(target)) return;
+
+      if (target === 'herramienta') {
+        if (step === 'herramienta' && toolId !== null) {
+          setToolIdState(null);
+        }
+      }
+      setStep(target);
+    },
+    [canGoToStep, step, toolId],
+  );
 
   const goNext = useCallback(() => {
     setStep((current) => {
       const index = steps.indexOf(current);
-      return steps[index + 1] ?? current;
+      const next = steps[index + 1];
+      if (next && canGoToStep(next)) {
+        return next;
+      }
+      return current;
     });
-  }, [steps]);
+  }, [steps, canGoToStep]);
 
   const goBack = useCallback(() => {
+    if (step === 'herramienta' && toolId !== null) {
+      setToolIdState(null);
+      return;
+    }
     setStep((current) => {
       const index = steps.indexOf(current);
       return index > 0 ? (steps[index - 1] ?? current) : current;
     });
-  }, [steps]);
-
-  const goToStep = useCallback(
-    (target: WizardStepId) => {
-      const targetIndex = steps.indexOf(target);
-      const currentIndex = steps.indexOf(step);
-      if (targetIndex < 0 || currentIndex < 0) return;
-
-      // Se puede volver a cualquier paso ya visitado, y avanzar solo al
-      // siguiente, y solo si el actual está resuelto.
-      if (targetIndex < currentIndex || (targetIndex === currentIndex + 1 && canAdvance)) {
-        setStep(target);
-      }
-    },
-    [steps, step, canAdvance],
-  );
+  }, [step, toolId, steps]);
 
   const addDataset = useCallback((dataset: ParsedDataset) => {
     setDatasets((prev) => [...prev, dataset]);
@@ -157,7 +160,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   const selectTool = useCallback((id: string) => {
     setToolIdState(id);
     setToolReady(false);
-    setStep('cuadro');
+    setStep('herramienta');
   }, []);
 
   const store = useMemo<WizardStore>(
@@ -168,6 +171,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       goNext,
       goBack,
       goToStep,
+      canGoToStep,
       datasets,
       schemaGroups,
       selectedFingerprint,
@@ -191,6 +195,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       goNext,
       goBack,
       goToStep,
+      canGoToStep,
       datasets,
       schemaGroups,
       selectedFingerprint,

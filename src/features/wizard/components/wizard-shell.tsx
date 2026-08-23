@@ -20,9 +20,8 @@ export function WizardShell() {
   const { step, composedDataset, toolId } = useWizard();
   const tool = getTool(toolId);
 
-  // Solo el cuadro de mando de algunas herramientas quiere la ventana entera;
-  // los demás pasos son documentos que crecen con su contenido y quieren scroll.
-  const fill = step === 'cuadro' && tool?.fill === true;
+  const isToolOpen = step === 'herramienta' && toolId !== null;
+  const fill = isToolOpen && tool?.fill === true;
 
   return (
     <AppShell fill={fill}>
@@ -32,7 +31,7 @@ export function WizardShell() {
         className={cn(
           SHELL_CONTAINER,
           'flex-1 py-4 sm:py-6',
-          step !== 'cuadro' && 'pb-24 sm:pb-28',
+          !isToolOpen && 'pb-24 sm:pb-28',
           fill && '3xl:flex 3xl:min-h-0 3xl:flex-col 3xl:py-3',
         )}
       >
@@ -51,7 +50,7 @@ export function WizardShell() {
         )}
       </main>
 
-      {step !== 'cuadro' && <StepNavigation />}
+      {!isToolOpen && <StepNavigation />}
     </AppShell>
   );
 }
@@ -76,6 +75,9 @@ function DataWorkspace({ dataset, fill }: { dataset: ParsedDataset; fill: boolea
 
   const capabilities = useMemo(() => datasetCapabilities(mapping), [mapping]);
 
+  const isToolOpen = step === 'herramienta' && toolId !== null;
+  const isGalleryOpen = step === 'herramienta' && toolId === null;
+
   return (
     // La cadena de alturas: para que el cuadro de mando pueda medir «lo que
     // queda de ventana», cada envoltorio entre `main` y él cede su altura en
@@ -85,7 +87,7 @@ function DataWorkspace({ dataset, fill }: { dataset: ParsedDataset; fill: boolea
         <ColumnMapper dataset={dataset} state={mapping} />
       </div>
 
-      <div style={{ display: step === 'herramienta' ? undefined : 'none' }}>
+      <div style={{ display: isGalleryOpen ? undefined : 'none' }}>
         <ToolGallery
           capabilities={capabilities}
           selected={toolId}
@@ -103,6 +105,7 @@ function DataWorkspace({ dataset, fill }: { dataset: ParsedDataset; fill: boolea
           mapping={mapping}
           capabilities={capabilities}
           fill={fill}
+          active={isToolOpen}
           onReady={setToolReady}
         />
       )}
@@ -116,6 +119,7 @@ function ToolHost({
   mapping,
   capabilities,
   fill,
+  active,
   onReady,
 }: {
   tool: ToolDefinition;
@@ -123,10 +127,10 @@ function ToolHost({
   mapping: ReturnType<typeof useColumnMapping>;
   capabilities: ReturnType<typeof datasetCapabilities>;
   fill: boolean;
+  active: boolean;
   onReady: (ready: boolean) => void;
 }) {
-  const { step, goToStep } = useWizard();
-  const active = step === 'cuadro';
+  const { setToolId } = useWizard();
 
   // Los tipos se pueden corregir después de elegir la herramienta, y esa
   // corrección puede dejarla sin lo que necesitaba. Es preferible decirlo a
@@ -151,7 +155,7 @@ function ToolHost({
           <AlertTitle>{tool.label} ya no encaja con estos datos</AlertTitle>
           <AlertDescription className="space-y-2">
             <p>{availability.reason}</p>
-            <Button variant="outline" size="sm" onClick={() => goToStep('herramienta')}>
+            <Button variant="outline" size="sm" onClick={() => setToolId(null)}>
               Elegir otra herramienta
             </Button>
           </AlertDescription>

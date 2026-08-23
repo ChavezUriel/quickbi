@@ -52,7 +52,7 @@ function CompactIndicator() {
 }
 
 function FullIndicator() {
-  const { step, steps, stepLabels, goToStep } = useWizard();
+  const { step, steps, stepLabels, goToStep, canGoToStep, toolId } = useWizard();
   const currentIndex = steps.indexOf(step);
 
   return (
@@ -61,19 +61,30 @@ function FullIndicator() {
         {steps.map((id, index) => {
           const isCompleted = index < currentIndex;
           const isCurrent = index === currentIndex;
-          const isFuture = index > currentIndex;
+          const isAccessible = canGoToStep(id);
+          const isClickable =
+            isAccessible && (!isCurrent || (id === 'herramienta' && toolId !== null));
 
           return (
             <li key={id} className="flex items-center">
               <button
                 type="button"
-                disabled={isFuture}
+                disabled={!isClickable}
                 onClick={() => goToStep(id)}
                 aria-current={isCurrent ? 'step' : undefined}
+                title={
+                  isCurrent && id === 'herramienta' && toolId !== null
+                    ? 'Volver a la galería de herramientas'
+                    : `Paso ${index + 1}: ${stepLabels[id]}`
+                }
                 className={cn(
-                  'group flex items-center gap-2 rounded-full px-1 py-1 transition-colors',
+                  'group flex items-center gap-2 rounded-full px-2 py-1 transition-all duration-200',
                   'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
-                  isFuture ? 'cursor-default' : 'cursor-pointer',
+                  isClickable
+                    ? 'cursor-pointer hover:bg-muted/60'
+                    : isCurrent
+                      ? 'cursor-default'
+                      : 'cursor-not-allowed opacity-50',
                 )}
               >
                 <span
@@ -82,17 +93,28 @@ function FullIndicator() {
                     isCompleted && 'border-primary bg-primary text-primary-foreground',
                     isCurrent &&
                       'border-primary bg-primary/10 text-primary ring-2 ring-primary/20',
-                    isFuture && 'border-muted-foreground/30 text-muted-foreground',
+                    !isCompleted &&
+                      !isCurrent &&
+                      isAccessible &&
+                      'border-primary/60 text-foreground group-hover:border-primary group-hover:bg-primary/10',
+                    !isCompleted &&
+                      !isCurrent &&
+                      !isAccessible &&
+                      'border-muted-foreground/30 text-muted-foreground',
                   )}
                 >
                   {isCompleted ? <Check className="size-3.5" /> : index + 1}
                 </span>
                 <span
                   className={cn(
-                    'hidden max-w-40 truncate text-xs font-medium whitespace-nowrap lg:block',
-                    isCurrent && 'text-foreground',
+                    'hidden max-w-40 truncate text-xs font-medium whitespace-nowrap lg:block transition-colors',
+                    isCurrent && 'text-foreground font-semibold',
                     isCompleted && 'text-muted-foreground group-hover:text-foreground',
-                    isFuture && 'text-muted-foreground/50',
+                    !isCompleted &&
+                      !isCurrent &&
+                      isAccessible &&
+                      'text-muted-foreground group-hover:text-foreground',
+                    !isCompleted && !isCurrent && !isAccessible && 'text-muted-foreground/40',
                   )}
                 >
                   {stepLabels[id]}

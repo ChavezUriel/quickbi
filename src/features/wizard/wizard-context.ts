@@ -11,14 +11,12 @@ import type { ParsedDataset } from '@/features/dataset/types';
 export type WizardStepId =
   | 'carga'
   | 'tipos'
-  | 'herramienta'
-  | 'cuadro';
+  | 'herramienta';
 
 export const STEP_LABELS: Record<WizardStepId, string> = {
   carga: 'Carga de archivos',
   tipos: 'Tipos de campos',
   herramienta: 'Herramienta',
-  cuadro: 'Análisis',
 };
 
 export interface SchemaGroup {
@@ -36,6 +34,7 @@ export interface WizardStore {
   goNext: () => void;
   goBack: () => void;
   goToStep: (step: WizardStepId) => void;
+  canGoToStep: (step: WizardStepId) => boolean;
 
   datasets: ParsedDataset[];
   schemaGroups: SchemaGroup[];
