@@ -3,7 +3,7 @@ import type { Currency, Granularity } from '@/features/analysis/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
 import { toolStorageKey, usePersistedState } from '../use-persisted-state';
 import { useToolSlots, type SlotDef, type ToolSlotsState } from '../use-tool-slots';
-import type { AnomalyMethod, AnomalySensitivity } from './lib/anomalies';
+import type { AnomalyAgg, AnomalyMethod, AnomalySensitivity } from './lib/anomalies';
 
 export const ANOMALIES_SLOTS: SlotDef[] = [
   {
@@ -50,6 +50,7 @@ export interface AnomaliesSettings {
   sensitivity: AnomalySensitivity;
   windowSize: number;
   grain: Granularity;
+  agg: AnomalyAgg;
   currency: Currency;
   selectedDimensionValue: string | null;
 }
@@ -66,6 +67,7 @@ const DEFAULTS: AnomaliesSettings = {
   sensitivity: 'alta',
   windowSize: 7,
   grain: 'dia',
+  agg: 'sum',
   currency: 'EUR',
   selectedDimensionValue: null,
 };

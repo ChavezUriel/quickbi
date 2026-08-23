@@ -87,4 +87,33 @@ describe('computeForecast', () => {
     expect(res.metrics.r2).toBeGreaterThanOrEqual(0);
     expect(res.metrics.accuracyRating).toBeDefined();
   });
+
+  it('aggregates series using sum and avg properly', () => {
+    const rows = [
+      { fecha: '2025-01-01', monto: 100 },
+      { fecha: '2025-01-15', monto: 200 },
+      { fecha: '2025-02-01', monto: 300 },
+      { fecha: '2025-02-15', monto: 500 },
+    ];
+
+    const sumRes = computeForecast(rows, {
+      dateCol: 'fecha',
+      measureCol: 'monto',
+      grain: 'mes',
+      horizon: 2,
+      agg: 'sum',
+    });
+    expect(sumRes.historical[0]?.actual).toBe(300);
+    expect(sumRes.historical[1]?.actual).toBe(800);
+
+    const avgRes = computeForecast(rows, {
+      dateCol: 'fecha',
+      measureCol: 'monto',
+      grain: 'mes',
+      horizon: 2,
+      agg: 'avg',
+    });
+    expect(avgRes.historical[0]?.actual).toBe(150);
+    expect(avgRes.historical[1]?.actual).toBe(400);
+  });
 });

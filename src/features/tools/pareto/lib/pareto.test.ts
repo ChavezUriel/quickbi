@@ -70,4 +70,28 @@ describe('computePareto', () => {
     expect(res.items).toEqual([]);
     expect(res.concentration.gini).toBe(0);
   });
+
+  it('supports custom aggregation functions (avg, count, sum)', () => {
+    const multiRows: AnalysisRow[] = [
+      { day: null, dims: { producto: 'P1' }, values: { ventas: 100 } },
+      { day: null, dims: { producto: 'P1' }, values: { ventas: 300 } }, // sum=400, avg=200, count=2
+      { day: null, dims: { producto: 'P2' }, values: { ventas: 300 } }, // sum=300, avg=300, count=1
+    ];
+
+    const sumRes = computePareto(multiRows, 'producto', 'ventas', { agg: 'sum' });
+    expect(sumRes.items[0]?.entity).toBe('P1');
+    expect(sumRes.items[0]?.value).toBe(400);
+
+    const avgRes = computePareto(multiRows, 'producto', 'ventas', { agg: 'avg' });
+    expect(avgRes.items[0]?.entity).toBe('P2'); // P2 has avg 300 > P1 avg 200
+    expect(avgRes.items[0]?.value).toBe(300);
+    expect(avgRes.items[1]?.entity).toBe('P1');
+    expect(avgRes.items[1]?.value).toBe(200);
+
+    const countRes = computePareto(multiRows, 'producto', 'ventas', { agg: 'count' });
+    expect(countRes.items[0]?.entity).toBe('P1'); // P1 has count 2
+    expect(countRes.items[0]?.value).toBe(2);
+    expect(countRes.items[1]?.entity).toBe('P2'); // P2 has count 1
+    expect(countRes.items[1]?.value).toBe(1);
+  });
 });

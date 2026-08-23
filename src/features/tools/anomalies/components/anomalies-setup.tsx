@@ -3,8 +3,14 @@ import type { Currency, Granularity } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
 import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
-import type { AnomalyMethod, AnomalySensitivity } from '../lib/anomalies';
+import type { AnomalyAgg, AnomalyMethod, AnomalySensitivity } from '../lib/anomalies';
 import { ANOMALIES_SLOTS, type AnomaliesConfigState } from '../use-anomalies-config';
+
+const AGG_OPTIONS: { value: AnomalyAgg; label: string }[] = [
+  { value: 'sum', label: 'Suma total por período' },
+  { value: 'avg', label: 'Promedio por período' },
+  { value: 'count', label: 'Recuento de registros' },
+];
 
 const METHODS: { value: AnomalyMethod; label: string }[] = [
   { value: 'rolling_zscore', label: 'Media móvil + Z-Score (Estándar)' },
@@ -84,6 +90,15 @@ export function AnomaliesSetup({ state }: { state: AnomaliesConfigState }) {
             options={GRAINS}
             ariaLabel="Agrupación temporal"
             onChange={(value) => update({ grain: value as Granularity })}
+          />
+        </SetupField>
+
+        <SetupField label="Agregación de la métrica" hint="Cómo combinar los registros en cada período.">
+          <OptionSelect
+            value={settings.agg}
+            options={AGG_OPTIONS}
+            ariaLabel="Agregación de la métrica"
+            onChange={(value) => update({ agg: value as AnomalyAgg })}
           />
         </SetupField>
 

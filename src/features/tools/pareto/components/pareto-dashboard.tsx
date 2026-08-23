@@ -24,6 +24,7 @@ import { downloadDataUrl, downloadTextFile } from '@/lib/download';
 import { cn } from '@/lib/utils';
 import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
+import type { MetricFormat } from '@/features/analysis/types';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
 import { OptionSelect } from '../../components/option-select';
@@ -65,14 +66,18 @@ export function ParetoDashboard({
     return computePareto(prepared.rows, entityDim, measureColumn, {
       thresholdA: settings.thresholdA,
       thresholdB: settings.thresholdB,
+      agg: settings.agg,
     });
-  }, [prepared.rows, entityDim, measureColumn, settings.thresholdA, settings.thresholdB]);
+  }, [prepared.rows, entityDim, measureColumn, settings.thresholdA, settings.thresholdB, settings.agg]);
 
   const baseName = dataset.fileName.replace(/\.[^.]+$/, '');
   const currency = settings.currency;
   const numFormat = useMemo(
-    () => ({ format: 'moneda' as const, currency }),
-    [currency],
+    () => ({
+      format: (settings.agg === 'count' ? 'numero' : 'moneda') as MetricFormat,
+      currency,
+    }),
+    [currency, settings.agg],
   );
 
   // Filtered items for table
@@ -267,6 +272,23 @@ export function ParetoDashboard({
               size="sm"
               onChange={(value) => {
                 state.slots.setSlot('metrica', value);
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Agregación</span>
+            <OptionSelect
+              value={settings.agg}
+              options={[
+                { value: 'sum', label: 'Suma total' },
+                { value: 'avg', label: 'Promedio' },
+                { value: 'count', label: 'Recuento' },
+              ]}
+              ariaLabel="Agregación de la métrica"
+              size="sm"
+              onChange={(value) => {
+                state.update({ agg: value as any });
               }}
             />
           </div>

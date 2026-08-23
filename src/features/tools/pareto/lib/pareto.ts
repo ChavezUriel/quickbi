@@ -1,6 +1,7 @@
 import type { AnalysisRow } from '@/features/analysis/types';
 
 export type ABCClass = 'A' | 'B' | 'C';
+export type ParetoAggregation = 'sum' | 'avg' | 'count';
 
 export interface ParetoItem {
   rank: number;
@@ -44,11 +45,13 @@ export interface ParetoResult {
   items: ParetoItem[];
   summaryABC: Record<ABCClass, ABCClassSummary>;
   concentration: ConcentrationMetrics;
+  agg: ParetoAggregation;
 }
 
 export interface ParetoOptions {
   thresholdA?: number; // default 80
   thresholdB?: number; // default 95
+  agg?: ParetoAggregation; // default 'sum'
 }
 
 /**
@@ -87,20 +90,37 @@ export function computePareto(
 ): ParetoResult {
   const thresholdA = options.thresholdA ?? 80;
   const thresholdB = options.thresholdB ?? 95;
+  const agg = options.agg ?? 'sum';
 
   // 1. Agrupar valores por entidad
-  const map = new Map<string, number>();
+  const map = new Map<string, { sum: number; count: number }>();
   for (const row of rows) {
     const entity = row.dims[categoryDim] ?? '(Sin categoría)';
     const val = row.values[measureColumn];
-    if (val !== null && val !== undefined && Number.isFinite(val)) {
-      map.set(entity, (map.get(entity) ?? 0) + val);
+    const hasNum = val !== null && val !== undefined && Number.isFinite(val);
+
+    const cur = map.get(entity) ?? { sum: 0, count: 0 };
+    if (agg === 'count') {
+      cur.count += 1;
+      map.set(entity, cur);
+    } else if (hasNum) {
+      cur.sum += val;
+      cur.count += 1;
+      map.set(entity, cur);
     }
   }
 
   // Ordenar entidades descendentemente por valor acumulado
   const sortedEntries = Array.from(map.entries())
-    .map(([entity, value]) => ({ entity, value: Math.max(0, value) }))
+    .map(([entity, stats]) => {
+      let value = stats.sum;
+      if (agg === 'avg') {
+        value = stats.count > 0 ? stats.sum / stats.count : 0;
+      } else if (agg === 'count') {
+        value = stats.count;
+      }
+      return { entity, value: Math.max(0, value) };
+    })
     .sort((a, b) => b.value - a.value);
 
   const totalEntities = sortedEntries.length;
@@ -212,5 +232,6 @@ export function computePareto(
     items,
     summaryABC,
     concentration,
+    agg,
   };
 }

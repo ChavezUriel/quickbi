@@ -286,6 +286,22 @@ export function ForecastDashboard({
           </div>
 
           <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Agregación</span>
+            <OptionSelect
+              value={state.settings.agg}
+              options={[
+                { value: 'sum', label: 'Suma total' },
+                { value: 'avg', label: 'Promedio' },
+              ]}
+              ariaLabel="Agregación temporal"
+              size="sm"
+              onChange={(value) => {
+                state.update({ agg: value as 'sum' | 'avg' });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
             <span>Horizonte</span>
             <OptionSelect
               value={String(state.settings.horizon)}

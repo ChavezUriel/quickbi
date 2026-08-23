@@ -29,6 +29,11 @@ const CONFIDENCE_OPTIONS = [
   { value: '80', label: '80% (Banda más estrecha)' },
 ];
 
+const AGG_OPTIONS = [
+  { value: 'sum', label: 'Suma total por período' },
+  { value: 'avg', label: 'Promedio por período' },
+];
+
 export function ForecastSetup({ state }: { state: ForecastConfigState }) {
   const { slots, settings, update } = state;
 
@@ -49,6 +54,15 @@ export function ForecastSetup({ state }: { state: ForecastConfigState }) {
             }))}
             ariaLabel="Granularidad temporal"
             onChange={(val) => update({ grain: val as Granularity })}
+          />
+        </SetupField>
+
+        <SetupField label="Agregación temporal" hint="Cómo combinar múltiples filas del mismo período.">
+          <OptionSelect
+            value={settings.agg}
+            options={AGG_OPTIONS}
+            ariaLabel="Agregación temporal"
+            onChange={(val) => update({ agg: val as 'sum' | 'avg' })}
           />
         </SetupField>
 

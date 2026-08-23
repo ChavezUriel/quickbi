@@ -5,6 +5,7 @@ export type AnomalyMethod = 'rolling_zscore' | 'iqr' | 'rolling_median';
 export type AnomalySensitivity = 'muy_alta' | 'alta' | 'media' | 'baja';
 export type AnomalyType = 'pico' | 'caida' | 'normal';
 export type AnomalySeverity = 'critica' | 'alta' | 'moderada' | 'leve';
+export type AnomalyAgg = 'sum' | 'avg' | 'count';
 
 export interface AnomalyPoint {
   bucket: string;
@@ -38,6 +39,7 @@ export interface AnomaliesResult {
   method: AnomalyMethod;
   windowSize: number;
   multiplier: number;
+  agg: AnomalyAgg;
 }
 
 export interface AnomaliesParams {
@@ -48,6 +50,7 @@ export interface AnomaliesParams {
   method: AnomalyMethod;
   sensitivity: AnomalySensitivity;
   windowSize: number;
+  agg?: AnomalyAgg;
 }
 
 const SENSITIVITY_MULTIPLIER: Record<AnomalySensitivity, number> = {
@@ -64,14 +67,14 @@ export function computeAnomalies(
   rows: readonly AnalysisRow[],
   params: AnomaliesParams,
 ): AnomaliesResult | null {
-  const { measure, dimensionFilter, grain, method, sensitivity, windowSize } = params;
+  const { measure, dimensionFilter, grain, method, sensitivity, windowSize, agg = 'sum' } = params;
 
   if (rows.length === 0) return null;
 
   // Filtrar filas aplicables
   let minDay: string | null = null;
   let maxDay: string | null = null;
-  const bucketTotals = new Map<string, number>();
+  const bucketTotals = new Map<string, { sum: number; count: number }>();
 
   for (const row of rows) {
     if (row.day === null) continue;
@@ -89,7 +92,10 @@ export function computeAnomalies(
     if (maxDay === null || row.day > maxDay) maxDay = row.day;
 
     const b = bucketOf(row.day, grain);
-    bucketTotals.set(b, (bucketTotals.get(b) ?? 0) + val);
+    const cur = bucketTotals.get(b) ?? { sum: 0, count: 0 };
+    cur.sum += val;
+    cur.count += 1;
+    bucketTotals.set(b, cur);
   }
 
   if (minDay === null || maxDay === null) return null;
@@ -98,11 +104,24 @@ export function computeAnomalies(
   const allBuckets = generateBuckets(window, grain);
   if (allBuckets.length === 0) return null;
 
-  const seriesData: { bucket: string; label: string; value: number }[] = allBuckets.map((b) => ({
-    bucket: b,
-    label: bucketLabel(b, grain),
-    value: bucketTotals.get(b) ?? 0,
-  }));
+  const seriesData: { bucket: string; label: string; value: number }[] = allBuckets.map((b) => {
+    const data = bucketTotals.get(b);
+    let value = 0;
+    if (data && data.count > 0) {
+      if (agg === 'avg') {
+        value = data.sum / data.count;
+      } else if (agg === 'count') {
+        value = data.count;
+      } else {
+        value = data.sum;
+      }
+    }
+    return {
+      bucket: b,
+      label: bucketLabel(b, grain),
+      value,
+    };
+  });
 
   const multiplier = SENSITIVITY_MULTIPLIER[sensitivity] ?? 2.0;
   const values = seriesData.map((d) => d.value);
@@ -232,6 +251,7 @@ export function computeAnomalies(
     method,
     windowSize,
     multiplier,
+    agg,
   };
 }
 

@@ -3,6 +3,7 @@ import type { Currency } from '@/features/analysis/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
 import { toolStorageKey, usePersistedState } from '../use-persisted-state';
 import { useToolSlots, type SlotDef, type ToolSlotsState } from '../use-tool-slots';
+import type { ParetoAggregation } from './lib/pareto';
 
 export const PARETO_SLOTS: SlotDef[] = [
   {
@@ -51,6 +52,7 @@ export const PARETO_SLOTS: SlotDef[] = [
 export interface ParetoSettings {
   thresholdA: number; // default 80
   thresholdB: number; // default 95
+  agg: ParetoAggregation;
   currency: Currency;
 }
 
@@ -66,6 +68,7 @@ export interface ParetoConfigState {
 const DEFAULTS: ParetoSettings = {
   thresholdA: 80,
   thresholdB: 95,
+  agg: 'sum',
   currency: 'EUR',
 };
 

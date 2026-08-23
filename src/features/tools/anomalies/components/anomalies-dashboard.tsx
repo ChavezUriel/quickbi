@@ -88,6 +88,7 @@ export function AnomaliesDashboard({
       method: state.settings.method,
       sensitivity: state.settings.sensitivity,
       windowSize: state.settings.windowSize,
+      agg: state.settings.agg,
     });
   }, [
     prepared.rows,
@@ -99,6 +100,7 @@ export function AnomaliesDashboard({
     state.settings.method,
     state.settings.sensitivity,
     state.settings.windowSize,
+    state.settings.agg,
   ]);
 
   const filteredPoints = useMemo(() => {
@@ -243,6 +245,23 @@ export function AnomaliesDashboard({
               size="sm"
               onChange={(value) => {
                 state.update({ grain: value as any });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground min-w-32">
+            <span>Agregación</span>
+            <OptionSelect
+              value={state.settings.agg}
+              options={[
+                { value: 'sum', label: 'Suma total' },
+                { value: 'avg', label: 'Promedio' },
+                { value: 'count', label: 'Recuento' },
+              ]}
+              ariaLabel="Agregación de la métrica"
+              size="sm"
+              onChange={(value) => {
+                state.update({ agg: value as any });
               }}
             />
           </div>

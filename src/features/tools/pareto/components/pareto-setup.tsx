@@ -3,7 +3,14 @@ import type { Currency } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
 import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
+import type { ParetoAggregation } from '../lib/pareto';
 import { PARETO_SLOTS, type ParetoConfigState } from '../use-pareto-config';
+
+const AGGREGATIONS: { value: ParetoAggregation; label: string }[] = [
+  { value: 'sum', label: 'Suma total acumulada' },
+  { value: 'avg', label: 'Promedio por registro' },
+  { value: 'count', label: 'Recuento de registros' },
+];
 
 const THRESHOLD_PRESETS = [
   { value: '80-95', label: '80 / 15 / 5 % (Regla clásica de Pareto)' },
@@ -31,6 +38,18 @@ export function ParetoSetup({ state }: { state: ParetoConfigState }) {
       <SlotPicker slots={PARETO_SLOTS} state={slots} />
 
       <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+        <SetupField
+          label="Agregación de la métrica"
+          hint="Cómo acumular el valor por cada entidad."
+        >
+          <OptionSelect
+            value={settings.agg}
+            options={AGGREGATIONS}
+            ariaLabel="Agregación"
+            onChange={(value) => update({ agg: value as ParetoAggregation })}
+          />
+        </SetupField>
+
         <SetupField
           label="Bandas de clasificación ABC"
           hint="Límites de corte para Clase A (foco estratégico), B y C."

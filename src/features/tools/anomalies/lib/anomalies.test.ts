@@ -104,4 +104,49 @@ describe('computeAnomalies', () => {
 
     expect(result?.summary.anomalyCount).toBe(0);
   });
+
+  it('supports custom aggregation functions (avg, count, sum)', () => {
+    const rows: AnalysisRow[] = [
+      makeRow({ ventas: 100 }, '2024-05-01'),
+      makeRow({ ventas: 200 }, '2024-05-01'),
+      makeRow({ ventas: 50 }, '2024-05-02'),
+      makeRow({ ventas: 50 }, '2024-05-02'),
+    ];
+
+    const sumResult = computeAnomalies(rows, {
+      dateColumn: 'fecha',
+      measure: 'ventas',
+      grain: 'dia',
+      method: 'rolling_zscore',
+      sensitivity: 'alta',
+      windowSize: 7,
+      agg: 'sum',
+    });
+    expect(sumResult?.points[0]?.actual).toBe(300);
+    expect(sumResult?.points[1]?.actual).toBe(100);
+
+    const avgResult = computeAnomalies(rows, {
+      dateColumn: 'fecha',
+      measure: 'ventas',
+      grain: 'dia',
+      method: 'rolling_zscore',
+      sensitivity: 'alta',
+      windowSize: 7,
+      agg: 'avg',
+    });
+    expect(avgResult?.points[0]?.actual).toBe(150);
+    expect(avgResult?.points[1]?.actual).toBe(50);
+
+    const countResult = computeAnomalies(rows, {
+      dateColumn: 'fecha',
+      measure: 'ventas',
+      grain: 'dia',
+      method: 'rolling_zscore',
+      sensitivity: 'alta',
+      windowSize: 7,
+      agg: 'count',
+    });
+    expect(countResult?.points[0]?.actual).toBe(2);
+    expect(countResult?.points[1]?.actual).toBe(2);
+  });
 });
