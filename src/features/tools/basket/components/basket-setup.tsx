@@ -1,5 +1,5 @@
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { BASKET_SLOTS, type BasketConfigState } from '../use-basket-config';
 
@@ -34,7 +34,7 @@ export function BasketSetup({ state }: { state: BasketConfigState }) {
     >
       <SlotPicker slots={BASKET_SLOTS} state={slots} />
 
-      <SetupGrid>
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField
           label="Soporte mínimo"
           hint="En qué porcentaje de tickets debe aparecer la combinación para considerarla relevante."
@@ -70,15 +70,13 @@ export function BasketSetup({ state }: { state: BasketConfigState }) {
             onChange={(value) => update({ minLift: Number(value) })}
           />
         </SetupField>
-      </SetupGrid>
+      </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          <b>Lift &gt; 1:</b> Comprar el producto A incrementa significativamente la probabilidad de
-          adquirir el producto B. Ideal para recomendaciones en el checkout, packs promocionales y
-          distribución en tienda.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        <strong>Lift &gt; 1:</strong> Comprar el producto A incrementa significativamente la probabilidad de
+        adquirir el producto B. Ideal para recomendaciones en el checkout, packs promocionales y
+        distribución en tienda.
+      </SetupNote>
     </SetupCard>
   );
 }

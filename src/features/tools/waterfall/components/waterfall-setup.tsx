@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL, GRANULARITY_LABEL } from '@/features/analysis/labels';
 import type { Currency, Granularity } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import type { SplitMode } from '../lib/waterfall';
 import { WATERFALL_SLOTS, type WaterfallConfigState } from '../use-waterfall-config';
@@ -36,7 +36,7 @@ export function WaterfallSetup({ state }: { state: WaterfallConfigState }) {
     >
       <SlotPicker slots={WATERFALL_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField
           label="Partición de períodos"
           hint="Cómo se definen los dos bloques de tiempo a comparar."
@@ -86,9 +86,9 @@ export function WaterfallSetup({ state }: { state: WaterfallConfigState }) {
       </div>
 
       {settings.splitMode === 'personalizado' && (
-        <div className="grid gap-4 rounded-lg border border-border/60 bg-muted/20 p-3 sm:grid-cols-2">
-          <SetupField label="Período 1 (Base / Inicio)">
-            <div className="flex gap-2">
+        <div className="grid gap-4 rounded-xl border border-border/80 bg-muted/20 p-3.5 sm:grid-cols-2">
+          <SetupField label="Período 1 (Base / Inicio)" hint="Rango de fechas de referencia inicial.">
+            <div className="flex items-center gap-2">
               <input
                 type="date"
                 value={settings.customPeriod1.desde}
@@ -98,9 +98,9 @@ export function WaterfallSetup({ state }: { state: WaterfallConfigState }) {
                   })
                 }
                 aria-label="Período 1 desde"
-                className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               />
-              <span className="self-center text-xs text-muted-foreground">a</span>
+              <span className="self-center text-xs font-medium text-muted-foreground">a</span>
               <input
                 type="date"
                 value={settings.customPeriod1.hasta}
@@ -110,13 +110,13 @@ export function WaterfallSetup({ state }: { state: WaterfallConfigState }) {
                   })
                 }
                 aria-label="Período 1 hasta"
-                className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               />
             </div>
           </SetupField>
 
-          <SetupField label="Período 2 (Actual / Final)">
-            <div className="flex gap-2">
+          <SetupField label="Período 2 (Actual / Final)" hint="Rango de fechas para evaluar el cambio.">
+            <div className="flex items-center gap-2">
               <input
                 type="date"
                 value={settings.customPeriod2.desde}
@@ -126,9 +126,9 @@ export function WaterfallSetup({ state }: { state: WaterfallConfigState }) {
                   })
                 }
                 aria-label="Período 2 desde"
-                className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               />
-              <span className="self-center text-xs text-muted-foreground">a</span>
+              <span className="self-center text-xs font-medium text-muted-foreground">a</span>
               <input
                 type="date"
                 value={settings.customPeriod2.hasta}
@@ -138,19 +138,17 @@ export function WaterfallSetup({ state }: { state: WaterfallConfigState }) {
                   })
                 }
                 aria-label="Período 2 hasta"
-                className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               />
             </div>
           </SetupField>
         </div>
       )}
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          El gráfico de cascada ordena automáticamente los impactos de mayor a menor relevancia
-          y clasifica los movimientos en nuevos, crecimiento, contracción o perdidos.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        El gráfico de cascada ordena automáticamente los impactos de mayor a menor relevancia
+        y clasifica los movimientos en nuevos, crecimiento, contracción o perdidos.
+      </SetupNote>
     </SetupCard>
   );
 }

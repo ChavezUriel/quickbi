@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL, METRIC_FORMAT_LABEL } from '@/features/analysis/labels';
 import type { Currency, MetricFormat } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import {
   GEO_MAP_SLOTS,
@@ -38,7 +38,7 @@ export function GeoMapSetup({ state }: { state: GeoMapConfigState }) {
     >
       <SlotPicker slots={GEO_MAP_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-4">
         <SetupField
           label="Operación de cálculo"
           hint="Cómo agregar la métrica numérica."
@@ -51,7 +51,7 @@ export function GeoMapSetup({ state }: { state: GeoMapConfigState }) {
           />
         </SetupField>
 
-        <SetupField label="Formato de la métrica">
+        <SetupField label="Formato de la métrica" hint="Visualización de las cifras.">
           <OptionSelect
             value={settings.format}
             options={FORMAT_OPTIONS}
@@ -87,13 +87,11 @@ export function GeoMapSetup({ state }: { state: GeoMapConfigState }) {
         </SetupField>
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          El análisis reconoce automáticamente nombres y códigos ISO de países,
-          comunidades autónomas españolas, estados latinoamericanos y principales regiones globales,
-          agrupándolos en zonas territoriales sin depender de conexiones a internet.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        El análisis reconoce automáticamente nombres y códigos ISO de países,
+        comunidades autónomas españolas, estados latinoamericanos y principales regiones globales,
+        agrupándolos en zonas territoriales sin depender de conexiones a internet.
+      </SetupNote>
     </SetupCard>
   );
 }

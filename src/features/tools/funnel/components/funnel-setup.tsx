@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import {
   FUNNEL_SLOTS,
@@ -25,7 +25,7 @@ export function FunnelSetup({ state }: { state: FunnelConfigState }) {
     >
       <SlotPicker slots={FUNNEL_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField
           label="Modo de cálculo"
           hint="Cómo cuantificar el volumen que pasa por cada fase del embudo."
@@ -53,12 +53,10 @@ export function FunnelSetup({ state }: { state: FunnelConfigState }) {
         )}
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          El embudo detectará automáticamente la etapa con mayor tasa de abandono y
-          calculará la retención paso a paso y respecto a la entrada inicial.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        El embudo detectará automáticamente la etapa con mayor tasa de abandono y
+        calculará la retención paso a paso y respecto a la entrada inicial.
+      </SetupNote>
     </SetupCard>
   );
 }

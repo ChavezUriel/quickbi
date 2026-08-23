@@ -46,10 +46,10 @@ export function AnalysisSetup({ state }: { state: AnalysisConfigState }) {
   const dimensionsByName = new Map(dimensionColumns.map((column) => [column.name, column]));
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Configuración del análisis</CardTitle>
-        <CardDescription>
+    <Card className="mx-auto w-full max-w-5xl shadow-xs">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold tracking-tight">Configuración del análisis</CardTitle>
+        <CardDescription className="text-sm text-pretty text-muted-foreground">
           Prepara el cuadro de mando: sobre qué fecha se ordena el tiempo, por qué
           columnas se puede abrir y qué cifras se miden.
         </CardDescription>

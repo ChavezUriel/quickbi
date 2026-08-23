@@ -81,29 +81,29 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Tipos de columna</CardTitle>
-        <CardDescription>
-          Detectados a partir de los datos. Corrige el que no encaje: de ello depende
+    <Card className="mx-auto w-full max-w-5xl shadow-xs">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold tracking-tight">Tipos de columna</CardTitle>
+        <CardDescription className="text-sm text-pretty text-muted-foreground">
+          Detectados automáticamente a partir de los datos. Corrige el que no encaje: de ello depende
           qué columnas puedes medir y por cuáles puedes agrupar.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {isFiltered ? (
-          <Alert variant="destructive" role="status">
+          <Alert variant="destructive" role="status" className="rounded-xl">
             <TriangleAlert className="size-4" />
-            <AlertTitle>Filas excluidas por errores de conversión</AlertTitle>
-            <AlertDescription>
+            <AlertTitle className="font-semibold">Filas excluidas por errores de conversión</AlertTitle>
+            <AlertDescription className="text-xs">
               {effectiveRowCount.toLocaleString('es-MX')} de{' '}
               {dataset.rowCount.toLocaleString('es-MX')} filas se incluirán en el análisis.
             </AlertDescription>
           </Alert>
         ) : (
-          <Alert role="status">
-            <Info className="size-4" />
-            <AlertDescription>
+          <Alert role="status" className="rounded-xl">
+            <Info className="size-4 text-primary" />
+            <AlertDescription className="text-xs">
               {effectiveRowCount.toLocaleString('es-MX')} de{' '}
               {dataset.rowCount.toLocaleString('es-MX')} filas se incluirán en el análisis.
             </AlertDescription>
@@ -113,15 +113,21 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
         {/* Se elige en JS, no con `hidden`: montar las dos formas duplicaría el
             informe de casteo de cada columna, que recorre el dataset entero. */}
         {isWide ? (
-          <div className="max-h-[65vh] overflow-auto rounded-md border">
+          <div className="max-h-[60vh] overflow-auto rounded-xl border border-border/80 bg-card">
             <Table>
-              <TableHeader className="sticky top-0 z-10 bg-card">
-                <TableRow>
-                  <TableHead scope="col">Columna</TableHead>
-                  <TableHead scope="col">Tipo</TableHead>
-                  <TableHead scope="col">Datos</TableHead>
-                  <TableHead scope="col" className={SAMPLE_COLUMN}>
-                    Muestra
+              <TableHeader className="sticky top-0 z-10 bg-muted/40 backdrop-blur-xs border-b border-border/80">
+                <TableRow className="hover:bg-transparent border-b border-border/80">
+                  <TableHead scope="col" className="w-48 px-3.5 py-2.5 text-xs font-semibold text-foreground">
+                    Columna
+                  </TableHead>
+                  <TableHead scope="col" className="w-44 px-3.5 py-2.5 text-xs font-semibold text-foreground">
+                    Tipo de dato
+                  </TableHead>
+                  <TableHead scope="col" className="px-3.5 py-2.5 text-xs font-semibold text-foreground">
+                    Datos y Calidad
+                  </TableHead>
+                  <TableHead scope="col" className={cn('px-3.5 py-2.5 text-xs font-semibold text-foreground', SAMPLE_COLUMN)}>
+                    Muestra de valores
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -133,7 +139,7 @@ export function ColumnMapper({ dataset, state }: ColumnMapperProps) {
             </Table>
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {columns.map((column) => (
               <ColumnCard key={column.name} {...rowProps(column)} />
             ))}
@@ -148,23 +154,25 @@ function ColumnRow(props: RowProps) {
   const { column } = props;
 
   return (
-    <TableRow>
-      <TableCell className="pt-3 align-top font-mono text-xs whitespace-nowrap">
+    <TableRow className="hover:bg-muted/15 border-b border-border/60 transition-colors">
+      <TableCell className="px-3.5 py-3 align-top font-mono text-xs font-medium text-foreground whitespace-nowrap">
         {column.name}
       </TableCell>
 
-      <TableCell className="pt-3 align-top">
-        <TypeSelect {...props} />
+      <TableCell className="px-3.5 py-2.5 align-top">
+        <div className="w-full min-w-[140px] max-w-[180px]">
+          <TypeSelect {...props} />
+        </div>
       </TableCell>
 
-      <TableCell className="pt-3 align-top text-xs">
+      <TableCell className="px-3.5 py-3 align-top text-xs">
         <ColumnStats column={column} />
         <InvalidControls {...props} />
       </TableCell>
 
       <TableCell
         className={cn(
-          'max-w-xs truncate pt-3 align-top font-mono text-xs text-muted-foreground',
+          'max-w-xs truncate px-3.5 py-3 align-top font-mono text-xs text-muted-foreground',
           SAMPLE_COLUMN,
         )}
       >
@@ -178,17 +186,19 @@ function ColumnCard(props: RowProps) {
   const { column } = props;
 
   return (
-    <li className="space-y-2 rounded-lg border p-3">
+    <li className="space-y-2.5 rounded-xl border border-border/80 bg-card p-3.5 shadow-2xs">
       <div className="flex items-center justify-between gap-3">
-        <span className="min-w-0 truncate font-mono text-xs font-medium" title={column.name}>
+        <span className="min-w-0 truncate font-mono text-xs font-semibold text-foreground" title={column.name}>
           {column.name}
         </span>
-        <TypeSelect {...props} />
+        <div className="w-36 shrink-0">
+          <TypeSelect {...props} />
+        </div>
       </div>
 
-      <div className="text-xs">
+      <div className="text-xs space-y-1">
         <ColumnStats column={column} />
-        <p className="mt-0.5 truncate font-mono text-muted-foreground">
+        <p className="truncate font-mono text-[11px] text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
           {column.samples.join(' · ') || '—'}
         </p>
         <InvalidControls {...props} />
@@ -208,14 +218,14 @@ function TypeSelect({ column, setColumnType }: RowProps) {
     >
       <SelectTrigger
         size="sm"
-        className="h-8 shrink-0 md:h-7"
+        className="h-8 w-full shrink-0 rounded-lg text-xs"
         aria-label={`Tipo de la columna ${column.name}`}
       >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
         {SELECTABLE_TYPES.map((type) => (
-          <SelectItem key={type} value={type}>
+          <SelectItem key={type} value={type} className="text-xs">
             {TYPE_LABEL[type]}
           </SelectItem>
         ))}
@@ -236,12 +246,12 @@ function InvalidControls({ column, dataset, preserveInvalid, setPreserveInvalid 
   return (
     <div className="mt-2 space-y-1.5">
       <CastFailureDetail failures={failures} columnName={column.name} />
-      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground select-none">
+      <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground select-none hover:text-foreground transition-colors">
         <input
           type="checkbox"
           checked={preserveInvalid}
           onChange={(event) => setPreserveInvalid(column.name, event.target.checked)}
-          className="size-3.5 rounded border-input text-primary focus:ring-1 focus:ring-ring"
+          className="size-3.5 rounded border-input text-primary focus:ring-1 focus:ring-ring cursor-pointer"
         />
         <span>Preservar valores no convertibles</span>
       </label>
@@ -254,12 +264,20 @@ function ColumnStats({ column }: { column: ColumnProfile }) {
 
   return (
     <div className="space-y-0.5">
-      <p className="text-muted-foreground">
-        {column.distinctCount.toLocaleString('es-MX')}
-        {column.distinctCountExact ? '' : '+'} distintos
-        {column.nullCount > 0 && ` · ${column.nullCount.toLocaleString('es-MX')} vacíos`}
+      <p className="text-muted-foreground leading-snug">
+        <strong className="font-medium text-foreground">
+          {column.distinctCount.toLocaleString('es-MX')}
+          {column.distinctCountExact ? '' : '+'}
+        </strong>{' '}
+        distintos
+        {column.nullCount > 0 && (
+          <span className="text-amber-600 dark:text-amber-400">
+            {' · '}
+            {column.nullCount.toLocaleString('es-MX')} vacíos
+          </span>
+        )}
       </p>
-      {format && <p className="text-muted-foreground">{format}</p>}
+      {format && <p className="text-muted-foreground/80 font-mono text-[11px]">{format}</p>}
     </div>
   );
 }

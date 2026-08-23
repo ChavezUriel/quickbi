@@ -94,7 +94,7 @@ export function FileUploader({ onDatasetParsed, compact = false }: FileUploaderP
   );
 
   return (
-    <div className="flex h-full w-full flex-col space-y-4">
+    <div className="flex h-full w-full flex-col space-y-3">
       <Card
         role="button"
         tabIndex={0}
@@ -120,25 +120,25 @@ export function FileUploader({ onDatasetParsed, compact = false }: FileUploaderP
         }}
         onDrop={handleDrop}
         className={cn(
-          'group flex h-full flex-col justify-center border-2 border-dashed transition-all duration-200',
+          'group flex h-full min-h-[150px] flex-col justify-center rounded-xl border-2 border-dashed transition-all duration-200 shadow-2xs',
           isParsing ? 'cursor-progress' : 'cursor-pointer',
           isDragging
             ? 'border-primary bg-primary/5 shadow-md scale-[0.99]'
-            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30',
+            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/20',
         )}
       >
         <CardContent
           className={cn(
             'my-auto flex flex-col items-center justify-center text-center transition-all',
-            compact ? 'gap-2.5 p-4 sm:p-5' : 'gap-4 py-8 px-6 sm:py-12',
+            compact ? 'gap-2 p-4 sm:p-5' : 'gap-4 py-8 px-6 sm:py-10',
           )}
         >
           {isParsing ? (
             <>
               <Loader2
-                className={cn('animate-spin text-primary', compact ? 'size-6' : 'size-10')}
+                className={cn('animate-spin text-primary', compact ? 'size-6' : 'size-9')}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs font-medium text-muted-foreground">
                 Procesando {parsingCount} archivo(s)…
               </p>
             </>
@@ -146,26 +146,26 @@ export function FileUploader({ onDatasetParsed, compact = false }: FileUploaderP
             <>
               <div
                 className={cn(
-                  'flex items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110',
-                  compact ? 'size-9' : 'size-14',
+                  'flex items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105',
+                  compact ? 'size-9' : 'size-12',
                 )}
               >
                 <UploadCloud
-                  className={cn('text-primary', compact ? 'size-4.5' : 'size-7')}
+                  className={cn('text-primary', compact ? 'size-5' : 'size-6')}
                 />
               </div>
               <div className="space-y-1">
-                <p className={cn('font-semibold text-foreground', compact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base')}>
+                <p className={cn('font-semibold text-foreground tracking-tight', compact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base')}>
                   {compact
                     ? 'Añadir más archivos'
                     : 'Arrastra tus archivos aquí o haz clic para seleccionarlos'}
                 </p>
-                <p className="text-[11px] text-muted-foreground sm:text-xs">
+                <p className="text-[11px] text-muted-foreground">
                   Formatos: {ACCEPTED_EXTENSIONS.join(' · ')}
                 </p>
                 {!compact && (
-                  <p className="mt-2 flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                    <Lock className="size-3" />
+                  <p className="mt-2.5 flex items-center justify-center gap-1.5 text-xs text-muted-foreground/80">
+                    <Lock className="size-3 text-muted-foreground/70" />
                     Los datos se procesan en memoria y nunca salen de tu navegador
                   </p>
                 )}

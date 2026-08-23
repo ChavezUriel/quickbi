@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency, MetricFormat } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { SEASONALITY_SLOTS, type SeasonalityConfigState } from '../use-seasonality-config';
 
@@ -33,7 +33,7 @@ export function SeasonalitySetup({ state }: { state: SeasonalityConfigState }) {
     >
       <SlotPicker slots={SEASONALITY_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-4">
         <SetupField label="Formato de la métrica" hint="Visualización de importes o conteos.">
           <OptionSelect
             value={settings.format}
@@ -76,11 +76,9 @@ export function SeasonalitySetup({ state }: { state: SeasonalityConfigState }) {
         </SetupField>
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          El análisis identificará automáticamente picos y valles recurrentes, el sesgo entre días laborables y fines de semana, y los índices estacionales base 100.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        El análisis identificará automáticamente picos y valles recurrentes, el sesgo entre días laborables y fines de semana, y los índices estacionales base 100.
+      </SetupNote>
     </SetupCard>
   );
 }

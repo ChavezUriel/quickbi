@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { RFM_SLOTS, type ReferenceMode, type RfmConfigState } from '../use-rfm-config';
 
@@ -29,7 +29,7 @@ export function RfmSetup({ state }: { state: RfmConfigState }) {
     >
       <SlotPicker slots={RFM_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField
           label="Medir la recencia desde"
           hint="El día contra el que se cuenta «cuánto hace de su última compra»."
@@ -43,13 +43,13 @@ export function RfmSetup({ state }: { state: RfmConfigState }) {
         </SetupField>
 
         {settings.referenceMode === 'personalizada' && (
-          <SetupField label="Fecha de referencia">
+          <SetupField label="Fecha de referencia" hint="Fecha fija contra la que evaluar la recencia.">
             <input
               type="date"
               value={settings.referenceDay}
               onChange={(event) => update({ referenceDay: event.target.value })}
               aria-label="Fecha de referencia"
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
             />
           </SetupField>
         )}
@@ -67,13 +67,11 @@ export function RfmSetup({ state }: { state: RfmConfigState }) {
         </SetupField>
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          Las notas de 1 a 5 salen de comparar cada cliente con el resto de la cartera,
-          no con umbrales fijos: «hace 40 días» es reciente en un negocio y una eternidad
-          en otro, y solo tus propios datos saben cuál es cuál.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        Las notas de 1 a 5 salen de comparar cada cliente con el resto de la cartera,
+        no con umbrales fijos: «hace 40 días» es reciente en un negocio y una eternidad
+        en otro, y solo tus propios datos saben cuál es cuál.
+      </SetupNote>
     </SetupCard>
   );
 }

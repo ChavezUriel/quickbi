@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL, GRANULARITIES, GRANULARITY_LABEL } from '@/features/analysis/labels';
 import type { Currency, Granularity, MetricFormat } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { EXECUTIVE_SLOTS, type ExecutiveConfigState } from '../use-executive-config';
 
@@ -27,7 +27,7 @@ export function ExecutiveSetup({ state }: { state: ExecutiveConfigState }) {
     >
       <SlotPicker slots={EXECUTIVE_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-4">
         <SetupField label="Tipo de formato" hint="Cómo se presentan las cifras.">
           <OptionSelect
             value={settings.format}
@@ -73,11 +73,9 @@ export function ExecutiveSetup({ state }: { state: ExecutiveConfigState }) {
         </SetupField>
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          El informe cruzará automáticamente la serie histórica y el desglose categórico para redactar un informe ejecutivo listo para presentaciones de negocio.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        El informe cruzará automáticamente la serie histórica y el desglose categórico para redactar un informe ejecutivo listo para presentaciones de negocio.
+      </SetupNote>
     </SetupCard>
   );
 }

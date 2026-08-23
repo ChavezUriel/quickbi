@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { CORRELATIONS_SLOTS, type CorrelationsConfigState } from '../use-correlations-config';
 
@@ -20,7 +20,7 @@ export function CorrelationsSetup({ state }: { state: CorrelationsConfigState })
     >
       <SlotPicker slots={CORRELATIONS_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField
           label="Variable X inicial"
           hint="Métrica para el eje horizontal del diagrama de dispersión."
@@ -58,13 +58,11 @@ export function CorrelationsSetup({ state }: { state: CorrelationsConfigState })
         </SetupField>
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          El coeficiente de correlación de Pearson (r) oscila entre -1 (relación inversa
-          perfecta) y +1 (relación directa perfecta). Valores cercanos a 0 indican ausencia de
-          relación lineal.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        El coeficiente de correlación de Pearson (r) oscila entre -1 (relación inversa
+        perfecta) y +1 (relación directa perfecta). Valores cercanos a 0 indican ausencia de
+        relación lineal.
+      </SetupNote>
     </SetupCard>
   );
 }

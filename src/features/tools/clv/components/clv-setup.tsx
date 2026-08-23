@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { CLV_SLOTS, type ClvConfigState, type ReferenceMode } from '../use-clv-config';
 
@@ -40,7 +40,7 @@ export function ClvSetup({ state }: { state: ClvConfigState }) {
     >
       <SlotPicker slots={CLV_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField
           label="Umbral de inactividad (Churn)"
           hint="Días sin compras para considerar a un cliente en riesgo o perdido."
@@ -90,13 +90,13 @@ export function ClvSetup({ state }: { state: ClvConfigState }) {
         </SetupField>
 
         {settings.referenceMode === 'personalizada' && (
-          <SetupField label="Fecha de referencia">
+          <SetupField label="Fecha de referencia" hint="Fecha fija contra la que evaluar la recencia.">
             <input
               type="date"
               value={settings.referenceDay}
               onChange={(e) => update({ referenceDay: e.target.value })}
               aria-label="Fecha de referencia"
-              className="h-8 w-full rounded-md border border-input bg-transparent px-2.5 text-sm"
+              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </SetupField>
         )}
@@ -111,12 +111,10 @@ export function ClvSetup({ state }: { state: ClvConfigState }) {
         </SetupField>
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          La segmentación por deciles (D1 a D10) agrupa a los clientes en 10 partes iguales según su
-          gasto acumulado, permitiendo ver qué porcentaje de los ingresos depende del Top 10% y Top 20%.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        La segmentación por deciles (D1 a D10) agrupa a los clientes en 10 partes iguales según su
+        gasto acumulado, permitiendo ver qué porcentaje de los ingresos depende del Top 10% y Top 20%.
+      </SetupNote>
     </SetupCard>
   );
 }

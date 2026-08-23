@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency, Granularity } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { COHORTS_SLOTS, type CohortsConfigState } from '../use-cohorts-config';
 
@@ -31,7 +31,7 @@ export function CohortsSetup({ state }: { state: CohortsConfigState }) {
     >
       <SlotPicker slots={COHORTS_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-4">
         <SetupField
           label="Agrupación de cohortes"
           hint="Período temporal para agrupar las altas de clientes."
@@ -58,7 +58,7 @@ export function CohortsSetup({ state }: { state: CohortsConfigState }) {
 
         <SetupField
           label="Modo de visualización"
-          hint="Mostrar como porcentaje de retención o valores absolutos."
+          hint="Mostrar como porcentaje o valores absolutos."
         >
           <OptionSelect
             value={settings.displayMode}
@@ -78,13 +78,11 @@ export function CohortsSetup({ state }: { state: CohortsConfigState }) {
         </SetupField>
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          La matriz de retención coloca cada cohorte en una fila (mes de adquisición) y los períodos
-          transcurridos (M0, M1, M2...) en columnas, iluminando la intensidad de repetición de
-          compra.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        La matriz de retención coloca cada cohorte en una fila (mes de adquisición) y los períodos
+        transcurridos (M0, M1, M2...) en columnas, iluminando la intensidad de repetición de
+        compra.
+      </SetupNote>
     </SetupCard>
   );
 }

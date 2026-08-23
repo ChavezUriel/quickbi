@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL, GRANULARITIES, GRANULARITY_LABEL } from '@/features/analysis/labels';
 import type { Currency, Granularity } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { CHURN_SLOTS, type ChurnConfigState } from '../use-churn-config';
 
@@ -17,7 +17,7 @@ export function ChurnSetup({ state }: { state: ChurnConfigState }) {
     >
       <SlotPicker slots={CHURN_SLOTS} state={slots} />
 
-      <SetupGrid>
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField
           label="Período de análisis"
           hint="Cada cuánto tiempo se agrupa la actividad para medir la retención."
@@ -44,15 +44,13 @@ export function ChurnSetup({ state }: { state: ChurnConfigState }) {
             onChange={(value) => update({ currency: value as Currency })}
           />
         </SetupField>
-      </SetupGrid>
+      </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          Un Quick Ratio superior a 1 indica crecimiento neto (entran más clientes o ingresos
-          de los que se pierden). En modelos de suscripción y SaaS, un valor superior a 2–4 es
-          considerado óptimo.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        Un Quick Ratio superior a 1 indica crecimiento neto (entran más clientes o ingresos
+        de los que se pierden). En modelos de suscripción y SaaS, un valor superior a 2–4 es
+        considerado óptimo.
+      </SetupNote>
     </SetupCard>
   );
 }

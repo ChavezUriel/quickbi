@@ -23,8 +23,8 @@ export function UploadStep() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid items-stretch gap-4 md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr] xl:grid-cols-[260px_1fr]">
+    <div className="mx-auto w-full max-w-5xl space-y-6">
+      <div className="grid items-stretch gap-4 md:grid-cols-[240px_1fr] lg:grid-cols-[260px_1fr]">
         <FileUploader onDatasetParsed={addDataset} compact />
         <FileList
           datasets={datasets}
@@ -36,7 +36,7 @@ export function UploadStep() {
       </div>
 
       {composedDataset && (
-        <>
+        <div className="space-y-6">
           <DatasetReadiness dataset={composedDataset} />
           <DatasetPreview
             dataset={composedDataset}
@@ -45,7 +45,7 @@ export function UploadStep() {
                 ?.datasetIds.length
             }
           />
-        </>
+        </div>
       )}
     </div>
   );
@@ -75,7 +75,7 @@ function EmptyState({
   onDatasetParsed: React.ComponentProps<typeof FileUploader>['onDatasetParsed'];
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col justify-center gap-8 py-4 sm:py-10">
+    <div className="mx-auto flex w-full max-w-3xl flex-col justify-center gap-8 py-6 sm:py-12">
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-bold tracking-tight text-balance sm:text-3xl">
           Análisis exploratorio de tus datos, sin subirlos a ningún sitio
@@ -86,20 +86,27 @@ function EmptyState({
         </p>
       </div>
 
-      <div className="mx-auto w-full max-w-lg">
+      <div className="mx-auto w-full max-w-xl">
         <FileUploader onDatasetParsed={onDatasetParsed} />
       </div>
 
       <ol className="grid gap-3 sm:grid-cols-3">
         {HOW_IT_WORKS.map(({ icon: Icon, title, text }, index) => (
-          <li key={title} className="space-y-1.5 rounded-lg border border-border p-4">
+          <li
+            key={title}
+            className="space-y-2 rounded-xl border border-border/80 bg-card p-4 shadow-2xs transition-all hover:border-primary/40 hover:shadow-xs"
+          >
             <div className="flex items-center gap-2">
-              <Icon className="size-4 text-muted-foreground" aria-hidden />
-              <span className="text-sm font-medium">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Icon className="size-4" aria-hidden />
+              </div>
+              <span className="text-xs font-semibold tracking-tight text-foreground">
                 {index + 1}. {title}
               </span>
             </div>
-            <p className="text-xs text-pretty text-muted-foreground">{text}</p>
+            <p className="text-xs text-pretty text-muted-foreground leading-relaxed pl-9">
+              {text}
+            </p>
           </li>
         ))}
       </ol>

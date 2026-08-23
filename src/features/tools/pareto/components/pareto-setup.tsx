@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { PARETO_SLOTS, type ParetoConfigState } from '../use-pareto-config';
 
@@ -30,7 +30,7 @@ export function ParetoSetup({ state }: { state: ParetoConfigState }) {
     >
       <SlotPicker slots={PARETO_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField
           label="Bandas de clasificación ABC"
           hint="Límites de corte para Clase A (foco estratégico), B y C."
@@ -56,13 +56,11 @@ export function ParetoSetup({ state }: { state: ParetoConfigState }) {
         </SetupField>
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          La <b>Clase A</b> representa los elementos críticos que generan la gran mayoría del
-          valor. La <b>Clase B</b> tiene un impacto moderado, y la <b>Clase C</b> agrupa la
-          larga cola de baja contribución individual.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        La <strong>Clase A</strong> representa los elementos críticos que generan la gran mayoría del
+        valor. La <strong>Clase B</strong> tiene un impacto moderado, y la <strong>Clase C</strong> agrupa la
+        larga cola de baja contribución individual.
+      </SetupNote>
     </SetupCard>
   );
 }

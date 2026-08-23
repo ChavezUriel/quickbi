@@ -140,7 +140,7 @@ export function ToolGallery({
       </div>
 
       {/* Barra de búsqueda y filtros rápidos */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Buscador */}
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
@@ -150,8 +150,8 @@ export function ToolGallery({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar herramienta (ej. RFM, clientes, tendencia, cohortes...)"
             className={cn(
-              'w-full h-9 rounded-xl border border-input bg-background/80 pl-9 pr-8 text-sm',
-              'placeholder:text-muted-foreground/60 transition-all shadow-xs',
+              'w-full h-9 rounded-xl border border-input bg-background/80 pl-9 pr-8 text-xs sm:text-sm',
+              'placeholder:text-muted-foreground/60 transition-all shadow-2xs',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none',
             )}
           />
@@ -174,7 +174,7 @@ export function ToolGallery({
             size="sm"
             onClick={() => setActiveCategory('all')}
             className={cn(
-              'h-8 rounded-lg text-xs font-medium cursor-pointer transition-all',
+              'h-9 rounded-xl text-xs font-medium cursor-pointer transition-all px-3',
               activeCategory === 'all'
                 ? 'shadow-xs'
                 : 'text-muted-foreground hover:text-foreground',
@@ -197,7 +197,7 @@ export function ToolGallery({
                 size="sm"
                 onClick={() => setActiveCategory(cat)}
                 className={cn(
-                  'h-8 rounded-lg text-xs font-medium cursor-pointer transition-all',
+                  'h-9 rounded-xl text-xs font-medium cursor-pointer transition-all px-3',
                   isCurrent
                     ? 'shadow-xs'
                     : 'text-muted-foreground hover:text-foreground',
@@ -214,7 +214,7 @@ export function ToolGallery({
             onClick={() => setOnlyCompatible((prev) => !prev)}
             aria-pressed={onlyCompatible}
             className={cn(
-              'h-8 rounded-lg text-xs font-semibold cursor-pointer ml-auto sm:ml-1 border transition-all',
+              'h-9 rounded-xl text-xs font-semibold cursor-pointer px-3 border transition-all',
               onlyCompatible
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs ring-2 ring-emerald-500/25'
                 : 'border-border text-muted-foreground hover:text-foreground hover:border-border/80',
@@ -321,7 +321,7 @@ function ToolCard({
       }`}
       onClick={() => onSelect(tool.id)}
       className={cn(
-        'group relative flex h-full w-full min-w-0 flex-col gap-2.5 text-left rounded-2xl p-4 sm:p-4.5 transition-all duration-200 overflow-hidden',
+        'group relative flex h-full w-full min-w-0 flex-col justify-between gap-3 text-left rounded-2xl p-4 sm:p-5 transition-all duration-200 overflow-hidden shadow-2xs',
         'focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
         isAvailable
           ? isRecommended
@@ -332,97 +332,99 @@ function ToolCard({
           'bg-primary/[0.04] border-primary ring-2 ring-primary/20 shadow-md shadow-primary/10 hover:border-primary',
       )}
     >
-      {/* Cabecera: Icono, Título y Badges de estado */}
-      <div className="flex items-center justify-between gap-2 w-full min-w-0">
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          <span
-            className={cn(
-              'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200',
-              selected
-                ? 'bg-primary text-primary-foreground shadow-xs'
-                : isAvailable
-                  ? isRecommended
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white'
-                    : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
-                  : 'bg-muted text-muted-foreground',
-            )}
-          >
-            {selected ? (
-              <Check className="size-4" aria-hidden />
-            ) : (
-              <Icon className="size-4" aria-hidden />
-            )}
-          </span>
+      <div className="space-y-2.5 w-full min-w-0">
+        {/* Cabecera: Icono, Título y Badges de estado */}
+        <div className="flex items-center justify-between gap-2 w-full min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <span
+              className={cn(
+                'flex size-8 shrink-0 items-center justify-center rounded-xl transition-colors duration-200',
+                selected
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : isAvailable
+                    ? isRecommended
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white'
+                      : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
+                    : 'bg-muted text-muted-foreground',
+              )}
+            >
+              {selected ? (
+                <Check className="size-4" aria-hidden />
+              ) : (
+                <Icon className="size-4" aria-hidden />
+              )}
+            </span>
 
-          <h4
-            className={cn(
-              'text-sm font-semibold tracking-tight truncate',
-              selected
-                ? 'text-primary'
-                : isRecommended
-                  ? 'text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors'
-                  : 'text-foreground group-hover:text-primary transition-colors',
+            <h4
+              className={cn(
+                'text-sm font-semibold tracking-tight truncate',
+                selected
+                  ? 'text-primary'
+                  : isRecommended
+                    ? 'text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors'
+                    : 'text-foreground group-hover:text-primary transition-colors',
+              )}
+            >
+              {tool.label}
+            </h4>
+          </div>
+
+          {/* Badges de estado alineados a la derecha */}
+          <div className="flex shrink-0 items-center gap-1">
+            {selected && (
+              <Badge variant="default" className="text-[0.65rem] px-1.5 py-0 font-semibold shadow-xs">
+                En uso
+              </Badge>
             )}
-          >
-            {tool.label}
-          </h4>
+            {isRecommended && !selected && (
+              <Badge
+                variant="outline"
+                className="text-[0.65rem] px-1.5 py-0 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 font-semibold shadow-2xs"
+              >
+                <Sparkles className="size-2.5 mr-0.5 text-emerald-500" />
+                Recomendada
+              </Badge>
+            )}
+            {!isAvailable && (
+              <Badge
+                variant="outline"
+                className="text-[0.65rem] px-1.5 py-0 border-amber-500/30 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium"
+              >
+                Faltan datos
+              </Badge>
+            )}
+            {!tool.hasSetup && isAvailable && !selected && !isRecommended && (
+              <Badge
+                variant="outline"
+                className="text-[0.65rem] px-1.5 py-0 border-border text-muted-foreground bg-muted/40 font-medium"
+              >
+                <Zap className="size-2.5 mr-0.5 text-amber-500" />
+                Directo
+              </Badge>
+            )}
+          </div>
         </div>
 
-        {/* Badges de estado alineados a la derecha */}
-        <div className="flex shrink-0 items-center gap-1">
-          {selected && (
-            <Badge variant="default" className="text-[0.65rem] px-1.5 py-0 font-semibold shadow-xs">
-              En uso
-            </Badge>
-          )}
-          {isRecommended && !selected && (
-            <Badge
-              variant="outline"
-              className="text-[0.65rem] px-1.5 py-0 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 font-semibold shadow-2xs"
-            >
-              <Sparkles className="size-2.5 mr-0.5 text-emerald-500" />
-              Recomendada
-            </Badge>
-          )}
-          {!isAvailable && (
-            <Badge
-              variant="outline"
-              className="text-[0.65rem] px-1.5 py-0 border-amber-500/30 text-amber-700 dark:text-amber-300 bg-amber-500/10 font-medium"
-            >
-              Faltan datos
-            </Badge>
-          )}
-          {!tool.hasSetup && isAvailable && !selected && !isRecommended && (
-            <Badge
-              variant="outline"
-              className="text-[0.65rem] px-1.5 py-0 border-border text-muted-foreground bg-muted/40 font-medium"
-            >
-              <Zap className="size-2.5 mr-0.5 text-amber-500" />
-              Directo
-            </Badge>
-          )}
-        </div>
+        {/* Tagline / Pregunta clave a ancho completo */}
+        <p className="text-xs font-semibold text-foreground/90 leading-snug text-pretty w-full min-w-0">
+          {tool.tagline}
+        </p>
+
+        {/* Descripción a ancho completo con altura mínima para nivelar */}
+        <p className="text-xs text-muted-foreground text-pretty leading-relaxed line-clamp-2 min-h-[2.25rem] w-full min-w-0">
+          {tool.description}
+        </p>
       </div>
 
-      {/* Tagline / Pregunta clave a ancho completo */}
-      <p className="text-xs font-medium text-foreground/90 leading-snug text-pretty w-full min-w-0">
-        {tool.tagline}
-      </p>
-
-      {/* Descripción a ancho completo */}
-      <p className="text-xs text-muted-foreground text-pretty leading-relaxed line-clamp-3 w-full min-w-0">
-        {tool.description}
-      </p>
-
       {/* Requisitos de columnas y columnas detectadas */}
-      <div className="mt-auto space-y-2 pt-1.5 w-full min-w-0">
+      <div className="space-y-2 pt-2 border-t border-border/50 w-full min-w-0">
         <div className="flex flex-wrap items-center gap-1.5 w-full min-w-0">
           {isAvailable ? (
             <>
               {tool.needs.map((need) => (
                 <span
                   key={need}
-                  className="inline-flex max-w-full items-center rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-[0.68rem] text-muted-foreground font-normal leading-normal whitespace-normal break-words"
+                  className="inline-flex max-w-full items-center rounded-md border border-border/60 bg-muted/30 px-2 py-0.5 text-[0.68rem] text-muted-foreground font-medium leading-normal whitespace-normal break-words"
                 >
                   {need}
                 </span>

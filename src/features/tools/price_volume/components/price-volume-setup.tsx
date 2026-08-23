@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { PRICE_VOLUME_SLOTS, type PriceVolumeConfigState } from '../use-price-volume-config';
 
@@ -26,7 +26,7 @@ export function PriceVolumeSetup({ state }: { state: PriceVolumeConfigState }) {
     >
       <SlotPicker slots={PRICE_VOLUME_SLOTS} state={slots} />
 
-      <SetupGrid>
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField
           label="La columna de importe contiene"
           hint="Cómo interpretar los valores numéricos monetarios del dataset."
@@ -52,16 +52,14 @@ export function PriceVolumeSetup({ state }: { state: PriceVolumeConfigState }) {
             onChange={(value) => update({ currency: value as Currency })}
           />
         </SetupField>
-      </SetupGrid>
+      </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          <b>Descomposición PVM:</b> Si seleccionas una columna de fecha, la herramienta comparará
-          automáticamente los dos períodos temporales para explicar qué parte del crecimiento o caída
-          se debe a subidas de precio, qué parte a variación de unidades vendidas y qué parte al mix de
-          productos.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        <strong>Descomposición PVM:</strong> Si seleccionas una columna de fecha, la herramienta comparará
+        automáticamente los dos períodos temporales para explicar qué parte del crecimiento o caída
+        se debe a subidas de precio, qué parte a variación de unidades vendidas y qué parte al mix de
+        productos.
+      </SetupNote>
     </SetupCard>
   );
 }

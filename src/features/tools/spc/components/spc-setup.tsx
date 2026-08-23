@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency, MetricFormat } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { SPC_SLOTS, type SpcConfigState } from '../use-spc-config';
 
@@ -26,7 +26,7 @@ export function SpcSetup({ state }: { state: SpcConfigState }) {
     >
       <SlotPicker slots={SPC_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField
           label="Estimación de dispersión (σ)"
           hint="Método para calcular la desviación típica del proceso."
@@ -65,11 +65,9 @@ export function SpcSetup({ state }: { state: SpcConfigState }) {
         )}
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          El sistema evalúa continuamente 8 reglas estadísticas para detectar causas especiales de variación: puntos fuera de 3σ, desplazamientos de media, tendencias monótonas y estratificación.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        El sistema evalúa continuamente 8 reglas estadísticas para detectar causas especiales de variación: puntos fuera de 3σ, desplazamientos de media, tendencias monótonas y estratificación.
+      </SetupNote>
     </SetupCard>
   );
 }

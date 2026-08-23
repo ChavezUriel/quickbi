@@ -1,22 +1,22 @@
 import { CURRENCIES, CURRENCY_LABEL, GRANULARITY_LABEL } from '@/features/analysis/labels';
 import type { Currency, Granularity } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import type { AnomalyMethod, AnomalySensitivity } from '../lib/anomalies';
 import { ANOMALIES_SLOTS, type AnomaliesConfigState } from '../use-anomalies-config';
 
 const METHODS: { value: AnomalyMethod; label: string }[] = [
   { value: 'rolling_zscore', label: 'Media móvil + Z-Score (Estándar)' },
-  { value: 'rolling_median', label: 'Mediana móvil + MAD (Robusto a outliers)' },
+  { value: 'rolling_median', label: 'Mediana móvil + MAD (Robusto)' },
   { value: 'iqr', label: 'Rango Intercuartil (IQR)' },
 ];
 
 const SENSITIVITIES: { value: AnomalySensitivity; label: string }[] = [
-  { value: 'muy_alta', label: 'Muy alta (1.5x - Detecta variaciones leves)' },
-  { value: 'alta', label: 'Alta (2.0x - Recomendado para series normales)' },
-  { value: 'media', label: 'Media (2.5x - Solo desvíos notorios)' },
-  { value: 'baja', label: 'Baja (3.0x - Solo eventos extremos)' },
+  { value: 'muy_alta', label: 'Muy alta (1.5x - Detecta leves)' },
+  { value: 'alta', label: 'Alta (2.0x - Recomendado)' },
+  { value: 'media', label: 'Media (2.5x - Solo notorios)' },
+  { value: 'baja', label: 'Baja (3.0x - Solo extremos)' },
 ];
 
 const WINDOW_SIZES = [
@@ -41,10 +41,10 @@ export function AnomaliesSetup({ state }: { state: AnomaliesConfigState }) {
     >
       <SlotPicker slots={ANOMALIES_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-4">
         <SetupField
           label="Método de detección"
-          hint="Cómo se calcula el valor esperado y el intervalo normal."
+          hint="Cómo se calcula el valor esperado."
         >
           <OptionSelect
             value={settings.method}
@@ -56,7 +56,7 @@ export function AnomaliesSetup({ state }: { state: AnomaliesConfigState }) {
 
         <SetupField
           label="Sensibilidad del umbral"
-          hint="Multiplicador de dispersión para considerar un punto como atípico."
+          hint="Multiplicador de dispersión para atípicos."
         >
           <OptionSelect
             value={settings.sensitivity}
@@ -68,7 +68,7 @@ export function AnomaliesSetup({ state }: { state: AnomaliesConfigState }) {
 
         <SetupField
           label="Ventana móvil"
-          hint="Número de períodos utilizados para el cálculo de la media/mediana."
+          hint="Número de períodos para media o mediana."
         >
           <OptionSelect
             value={String(settings.windowSize)}
@@ -97,12 +97,11 @@ export function AnomaliesSetup({ state }: { state: AnomaliesConfigState }) {
         </SetupField>
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          Los puntos fuera de la banda de confianza se marcan con chinchetas de advertencia en el
-          gráfico y se clasifican por severidad en la tabla inferior.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        Los puntos fuera de la banda de confianza se marcan con chinchetas de advertencia en el
+        gráfico y se clasifican por severidad en la tabla inferior.
+      </SetupNote>
     </SetupCard>
   );
 }
+

@@ -26,32 +26,32 @@ export function DatasetReadiness({ dataset }: DatasetReadinessProps) {
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Preparación del análisis</CardTitle>
-        <CardDescription>
-          Así se han leído las columnas. En el siguiente paso puedes corregir cualquier
+    <Card className="shadow-xs">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-semibold tracking-tight">Preparación del análisis</CardTitle>
+        <CardDescription className="text-xs sm:text-sm text-muted-foreground">
+          Así se han interpretado las columnas. En el siguiente paso puedes corregir cualquier
           tipo que no encaje.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="grid gap-3 sm:grid-cols-3">
         <Check
-          icon={<CalendarDays className="size-4" aria-hidden />}
+          icon={<CalendarDays className="size-4 text-primary" aria-hidden />}
           label="Eje temporal"
           columns={dates}
           ok={dates.length > 0}
           missing="Sin fechas: no habrá evolución ni comparación de períodos."
         />
         <Check
-          icon={<Hash className="size-4" aria-hidden />}
+          icon={<Hash className="size-4 text-primary" aria-hidden />}
           label="Métricas"
           columns={numbers}
           ok={numbers.length > 0}
           missing="Sin columnas numéricas: solo se podrán contar filas."
         />
         <Check
-          icon={<Tags className="size-4" aria-hidden />}
+          icon={<Tags className="size-4 text-primary" aria-hidden />}
           label="Dimensiones"
           columns={categories}
           ok={categories.length > 0}
@@ -76,24 +76,32 @@ function Check({
   missing: string;
 }) {
   return (
-    <div className="space-y-1.5 rounded-md border p-3">
-      <div className="flex items-center gap-1.5 text-sm font-medium">
-        {icon}
-        {label}
+    <div className="flex flex-col justify-between gap-2 rounded-xl border border-border/80 bg-muted/15 p-3.5 shadow-2xs transition-all hover:border-primary/30">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-xs font-semibold text-foreground tracking-tight">
+          <div className="flex size-6 items-center justify-center rounded-md bg-primary/10">
+            {icon}
+          </div>
+          <span>{label}</span>
+        </div>
         {ok ? (
-          <CheckCircle2 className="size-3.5 text-emerald-600" aria-hidden />
+          <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
         ) : (
-          <CircleAlert className="size-3.5 text-muted-foreground" aria-hidden />
+          <CircleAlert className="size-4 text-amber-500" aria-hidden />
         )}
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        {ok
-          ? columns
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        {ok ? (
+          <span className="font-mono text-[11px] text-foreground/90">
+            {columns
               .slice(0, 4)
               .map((column) => column.name)
-              .join(', ') + (columns.length > 4 ? ` y ${columns.length - 4} más` : '')
-          : missing}
+              .join(', ') + (columns.length > 4 ? ` y ${columns.length - 4} más` : '')}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/80">{missing}</span>
+        )}
       </p>
     </div>
   );

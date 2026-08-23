@@ -35,20 +35,20 @@ export function DatasetPreview({ dataset, sourceFileCount }: DatasetPreviewProps
   const showMultipleFilesTitle = sourceFileCount && sourceFileCount > 1;
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
+    <Card className="w-full shadow-xs">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-wrap items-center gap-2 text-base font-semibold tracking-tight">
           <span className="break-all">
             {showMultipleFilesTitle
               ? `${sourceFileCount} archivos combinados`
               : dataset.fileName}
           </span>
           {!showMultipleFilesTitle && (
-            <Badge variant="secondary">{dataset.fileType.toUpperCase()}</Badge>
+            <Badge variant="secondary" className="font-mono text-xs uppercase">{dataset.fileType}</Badge>
           )}
-          <Badge variant="outline">{dataset.rowCount.toLocaleString('es-MX')} filas</Badge>
+          <Badge variant="outline" className="text-xs">{dataset.rowCount.toLocaleString('es-MX')} filas</Badge>
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm text-muted-foreground">
           {dataset.columns.length} columnas detectadas — vista previa de las primeras{' '}
           {Math.min(PREVIEW_ROW_COUNT, dataset.rowCount)} filas
         </CardDescription>
@@ -70,29 +70,20 @@ export function DatasetPreview({ dataset, sourceFileCount }: DatasetPreviewProps
           </Alert>
         )}
 
-        {/* Nombres de columna */}
-        <div className="flex flex-wrap gap-1.5">
-          {dataset.columns.map((column) => (
-            <Badge key={column.name} variant="outline" className="font-mono text-xs">
-              {column.name}
-            </Badge>
-          ))}
-        </div>
-
         {/* Tabla responsive con scroll horizontal */}
-        <div className="overflow-x-auto rounded-md border">
+        <div className="overflow-x-auto rounded-xl border border-border/80 bg-card">
           <Table>
             <TableCaption className="sr-only">
               Vista previa de {dataset.fileName}: primeras{' '}
               {Math.min(PREVIEW_ROW_COUNT, dataset.rowCount)} de {dataset.rowCount} filas.
             </TableCaption>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border/80">
                 {dataset.columns.map((column) => (
                   <TableHead
                     key={column.name}
                     scope="col"
-                    className="font-mono text-xs whitespace-nowrap"
+                    className="font-mono text-xs font-semibold text-foreground whitespace-nowrap px-3.5 py-2.5"
                   >
                     {column.name}
                   </TableHead>
@@ -102,9 +93,9 @@ export function DatasetPreview({ dataset, sourceFileCount }: DatasetPreviewProps
             <TableBody>
               {previewRows.map((row, rowIndex) => (
                 // eslint-disable-next-line react/no-array-index-key -- la vista previa es de solo lectura y no se reordena
-                <TableRow key={rowIndex}>
+                <TableRow key={rowIndex} className="hover:bg-muted/20">
                   {dataset.columns.map((column) => (
-                    <TableCell key={column.name} className="text-sm whitespace-nowrap">
+                    <TableCell key={column.name} className="text-xs whitespace-nowrap px-3.5 py-2.5 font-mono text-muted-foreground">
                       {formatCell(row[column.name])}
                     </TableCell>
                   ))}

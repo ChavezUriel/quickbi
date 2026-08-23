@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import {
   RECONCILIATION_SLOTS,
@@ -41,7 +41,7 @@ export function ReconciliationSetup({
     >
       <SlotPicker slots={RECONCILIATION_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-4">
         <SetupField
           label="Modo de comparación"
           hint="Cómo están organizadas las dos fuentes en los datos."
@@ -58,27 +58,27 @@ export function ReconciliationSetup({
           <>
             <SetupField
               label="Etiqueta Fuente A"
-              hint="Texto exacto que identifica la Fuente A en la columna de origen."
+              hint="Texto que identifica la Fuente A en la columna de origen."
             >
               <input
                 type="text"
                 placeholder="ej. Banco o Sistema 1"
                 value={settings.sourceAValue}
                 onChange={(e) => update({ sourceAValue: e.target.value })}
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+                className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
               />
             </SetupField>
 
             <SetupField
               label="Etiqueta Fuente B"
-              hint="Texto exacto que identifica la Fuente B en la columna de origen."
+              hint="Texto que identifica la Fuente B en la columna de origen."
             >
               <input
                 type="text"
                 placeholder="ej. ERP o Contabilidad"
                 value={settings.sourceBValue}
                 onChange={(e) => update({ sourceBValue: e.target.value })}
-                className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+                className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
               />
             </SetupField>
           </>
@@ -109,12 +109,10 @@ export function ReconciliationSetup({
         </SetupField>
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          La conciliación clasifica cada registro automáticamente y calcula el descuadre
-          neto y la discrepancia acumulada, facilitando auditorías financieras y operativas.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        La conciliación clasifica cada registro automáticamente y calcula el descuadre
+        neto y la discrepancia acumulada, facilitando auditorías financieras y operativas.
+      </SetupNote>
     </SetupCard>
   );
 }

@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { DISTRIBUTIONS_SLOTS, type DistributionsConfigState } from '../use-distributions-config';
 
@@ -25,7 +25,7 @@ export function DistributionsSetup({ state }: { state: DistributionsConfigState 
     >
       <SlotPicker slots={DISTRIBUTIONS_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField
           label="Número de intervalos (Bins)"
           hint="Cómo de fino se divide el eje en el histograma."
@@ -51,13 +51,11 @@ export function DistributionsSetup({ state }: { state: DistributionsConfigState 
         </SetupField>
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          Los valores atípicos se identifican según la regla de Tukey: cualquier observación
-          situada a más de 1.5 veces el rango intercuartílico (IQR = Q3 - Q1) respecto a los
-          cuartiles.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        Los valores atípicos se identifican según la regla de Tukey: cualquier observación
+        situada a más de 1.5 veces el rango intercuartílico (IQR = Q3 - Q1) respecto a los
+        cuartiles.
+      </SetupNote>
     </SetupCard>
   );
 }

@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL, GRANULARITIES, GRANULARITY_LABEL } from '@/features/analysis/labels';
 import type { Currency, Granularity, MetricFormat } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { FORECAST_SLOTS, type ForecastConfigState } from '../use-forecast-config';
 
@@ -39,7 +39,7 @@ export function ForecastSetup({ state }: { state: ForecastConfigState }) {
     >
       <SlotPicker slots={FORECAST_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField label="Granularidad temporal" hint="Frecuencia de agregación de la serie.">
           <OptionSelect
             value={settings.grain}
@@ -103,11 +103,9 @@ export function ForecastSetup({ state }: { state: ForecastConfigState }) {
         )}
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          El motor calculará el ajuste histórico y evaluará el error MAPE y RMSE mediante backtesting para garantizar la confiabilidad estadística del pronóstico.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        El motor calculará el ajuste histórico y evaluará el error MAPE y RMSE mediante backtesting para garantizar la confiabilidad estadística del pronóstico.
+      </SetupNote>
     </SetupCard>
   );
 }

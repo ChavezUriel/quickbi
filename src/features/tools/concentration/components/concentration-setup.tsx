@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import { CONCENTRATION_SLOTS, type ConcentrationConfigState } from '../use-concentration-config';
 
@@ -22,7 +22,7 @@ export function ConcentrationSetup({ state }: { state: ConcentrationConfigState 
     >
       <SlotPicker slots={CONCENTRATION_SLOTS} state={slots} />
 
-      <SetupGrid>
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-3">
         <SetupField label="Moneda" hint="Cómo se expresan las cifras de facturación.">
           <OptionSelect
             value={settings.currency}
@@ -46,15 +46,13 @@ export function ConcentrationSetup({ state }: { state: ConcentrationConfigState 
             onChange={(value) => update({ topLimit: Number(value) })}
           />
         </SetupField>
-      </SetupGrid>
+      </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          <b>Coeficiente de Gini:</b> Varía de 0 (igualdad total, todos los clientes facturan lo mismo)
-          a 1 (concentración extrema en un solo cliente). Un Gini superior a 0,7 o un índice HHI superior
-          a 2.500 indican vulnerabilidad financiera ante bajas de clientes clave.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        <strong>Coeficiente de Gini:</strong> Varía de 0 (igualdad total, todos los clientes facturan lo mismo)
+        a 1 (concentración extrema en un solo cliente). Un Gini superior a 0,7 o un índice HHI superior
+        a 2.500 indican vulnerabilidad financiera ante bajas de clientes clave.
+      </SetupNote>
     </SetupCard>
   );
 }

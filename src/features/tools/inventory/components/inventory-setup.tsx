@@ -1,7 +1,7 @@
 import { CURRENCIES, CURRENCY_LABEL } from '@/features/analysis/labels';
 import type { Currency } from '@/features/analysis/types';
 import { OptionSelect } from '../../components/option-select';
-import { SetupCard, SetupField, SetupGrid } from '../../components/setup-card';
+import { SetupCard, SetupField, SetupNote } from '../../components/setup-card';
 import { SlotPicker } from '../../components/slot-picker';
 import {
   INVENTORY_SLOTS,
@@ -32,9 +32,9 @@ export function InventorySetup({ state }: { state: InventoryConfigState }) {
     >
       <SlotPicker slots={INVENTORY_SLOTS} state={slots} />
 
-      <div className="grid gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 border-t border-border/80 pt-4 sm:grid-cols-2 lg:grid-cols-4">
         <SetupField
-          label="Período de análisis de ventas"
+          label="Período de ventas"
           hint="Horizonte temporal para anualizar el ratio de rotación."
         >
           <OptionSelect
@@ -70,23 +70,21 @@ export function InventorySetup({ state }: { state: InventoryConfigState }) {
         </SetupField>
 
         {settings.referenceMode === 'personalizada' && (
-          <SetupField label="Fecha de referencia">
+          <SetupField label="Fecha de referencia" hint="Fecha fija contra la que evaluar la antigüedad.">
             <input
               type="date"
               value={settings.referenceDay}
               onChange={(e) => update({ referenceDay: e.target.value })}
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
             />
           </SetupField>
         )}
       </div>
 
-      <SetupGrid>
-        <p className="col-span-full text-xs text-pretty text-muted-foreground">
-          Los productos sin ventas en el período o con más de 90 días en almacén se catalogan
-          automáticamente como <b>stock muerto</b> para facilitar decisiones de rebajas y liquidación.
-        </p>
-      </SetupGrid>
+      <SetupNote>
+        Los productos sin ventas en el período o con más de 90 días en almacén se catalogan
+        automáticamente como <strong>stock muerto</strong> para facilitar decisiones de rebajas y liquidación.
+      </SetupNote>
     </SetupCard>
   );
 }

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Info } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -17,23 +18,25 @@ export function SetupCard({
   title,
   description,
   children,
+  className,
 }: {
   title: string;
   description: ReactNode;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <Card className="mx-auto w-full max-w-5xl">
-      <CardHeader>
-        <CardTitle className="text-lg">{title}</CardTitle>
-        <CardDescription className="text-pretty">{description}</CardDescription>
+    <Card className={cn('mx-auto w-full max-w-5xl shadow-xs', className)}>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-semibold tracking-tight">{title}</CardTitle>
+        <CardDescription className="text-sm text-pretty text-muted-foreground">{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">{children}</CardContent>
     </Card>
   );
 }
 
-/** Un control con su rótulo y su explicación de una línea. */
+/** Un control con su rótulo accesible y su explicación de una línea. */
 export function SetupField({
   label,
   hint,
@@ -46,19 +49,54 @@ export function SetupField({
   children: ReactNode;
 }) {
   return (
-    <div className={cn('space-y-1.5', className)}>
-      <div>
-        <h3 className="text-sm font-medium">{label}</h3>
+    <div className={cn('flex flex-col justify-between gap-1.5', className)}>
+      <div className="space-y-0.5 min-h-[2.25rem]">
+        <label className="text-xs font-semibold text-foreground tracking-tight block">
+          {label}
+        </label>
         {hint !== undefined && (
-          <p className="text-xs text-pretty text-muted-foreground">{hint}</p>
+          <p className="text-[11px] text-pretty text-muted-foreground leading-snug">
+            {hint}
+          </p>
         )}
       </div>
-      {children}
+      <div className="w-full">{children}</div>
     </div>
   );
 }
 
 /** Grupo de controles que se reparten el ancho en pantallas grandes. */
-export function SetupGrid({ children }: { children: ReactNode }) {
-  return <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>;
+export function SetupGrid({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-3', className)}>
+      {children}
+    </div>
+  );
+}
+
+/** Nota explicativa al pie de la configuración de una herramienta. */
+export function SetupNote({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/25 px-3.5 py-2.5 text-xs text-muted-foreground text-pretty leading-relaxed',
+        className,
+      )}
+    >
+      <Info className="size-4 shrink-0 text-muted-foreground/80 mt-0.5" aria-hidden="true" />
+      <div className="flex-1">{children}</div>
+    </div>
+  );
 }
