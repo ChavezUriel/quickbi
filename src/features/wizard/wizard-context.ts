@@ -16,7 +16,7 @@ export type WizardStepId =
 export const STEP_LABELS: Record<WizardStepId, string> = {
   carga: 'Carga de archivos',
   tipos: 'Tipos de campos',
-  herramienta: 'Herramienta',
+  herramienta: 'Selección de herramienta',
 };
 
 export interface SchemaGroup {

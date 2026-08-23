@@ -1,17 +1,17 @@
 import { useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useWizard } from '../use-wizard';
 
 /**
- * Isla de navegación flotante (Action Dock), centrada en la zona de foco del usuario.
+ * Botón flotante circular en la esquina inferior derecha para avanzar al siguiente paso.
  *
- * Flota elevada en el eje central de visión para facilitar el avance y retroceso
- * en cualquier resolución de pantalla, con soporte para atajo de teclado (`Enter`).
+ * Muestra una flecha verde hacia la derecha y permite avanzar de paso
+ * mediante clic o atajo de teclado (`Enter`).
  */
 export function StepNavigation() {
-  const { step, steps, goNext, goBack, canAdvance } = useWizard();
+  const { step, steps, stepLabels, goNext, canAdvance } = useWizard();
 
   const index = steps.indexOf(step);
   const nextStep = steps[index + 1] ?? null;
@@ -49,53 +49,45 @@ export function StepNavigation() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canAdvance, nextStep, goNext]);
 
+  if (nextStep === null) return null;
+
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 sm:bottom-6"
-      style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
+      className="fixed bottom-6 right-6 z-40 sm:bottom-8 sm:right-8"
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        paddingRight: 'env(safe-area-inset-right, 0px)',
+      }}
     >
-      <nav
-        aria-label="Navegación del asistente"
-        className={cn(
-          'pointer-events-auto flex items-center gap-2 rounded-full border p-1.5',
-          'bg-background/90 backdrop-blur-xl dark:bg-card/90',
-          'shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.45)]',
-          'transition-all duration-300 ease-out',
+      <Button
+        type="button"
+        size="icon"
+        onClick={goNext}
+        disabled={!canAdvance}
+        aria-label={nextStep ? `Avanzar a ${stepLabels[nextStep]}` : 'Siguiente paso'}
+        title={
           canAdvance
-            ? 'border-primary/40 ring-2 ring-primary/15 shadow-primary/10'
-            : 'border-border/80 shadow-black/5',
+            ? (nextStep ? `Siguiente: ${stepLabels[nextStep]}` : 'Siguiente paso')
+            : 'Completa este paso para continuar'
+        }
+        className={cn(
+          'group size-12 sm:size-14 rounded-full border p-0 transition-all duration-300 ease-out',
+          'bg-background/95 backdrop-blur-xl dark:bg-card/95',
+          'shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.45)]',
+          canAdvance
+            ? 'cursor-pointer border-emerald-500/40 dark:border-emerald-500/50 ring-2 ring-emerald-500/20 shadow-emerald-500/20 hover:scale-110 hover:border-emerald-500 hover:shadow-[0_12px_36px_rgba(16,185,129,0.35)] active:scale-95'
+            : 'cursor-not-allowed border-border/80 opacity-40 shadow-black/5',
         )}
       >
-        {index > 0 ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={goBack}
-            className="h-9 rounded-full px-3.5 text-xs font-medium text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors"
-            aria-label="Volver al paso anterior"
-          >
-            <ChevronLeft className="mr-0.5 size-4" />
-            <span>Atrás</span>
-          </Button>
-        ) : null}
-
-        {nextStep !== null ? (
-          <Button
-            size="sm"
-            onClick={goNext}
-            disabled={!canAdvance}
-            className={cn(
-              'group h-9 rounded-full px-4 text-xs sm:text-sm font-medium transition-all duration-200',
-              canAdvance
-                ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
-                : 'opacity-45 cursor-not-allowed bg-muted text-muted-foreground',
-            )}
-          >
-            <span>Siguiente</span>
-            <ChevronRight className="ml-0.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </Button>
-        ) : null}
-      </nav>
+        <ArrowRight
+          className={cn(
+            'size-5 sm:size-6 transition-all duration-200',
+            canAdvance
+              ? 'text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 group-hover:text-emerald-500 dark:group-hover:text-emerald-300'
+              : 'text-emerald-600/50 dark:text-emerald-400/50',
+          )}
+        />
+      </Button>
     </div>
   );
 }

@@ -111,15 +111,10 @@ export function WizardProvider({ children }: { children: ReactNode }) {
   const goToStep = useCallback(
     (target: WizardStepId) => {
       if (!canGoToStep(target)) return;
-
-      if (target === 'herramienta') {
-        if (step === 'herramienta' && toolId !== null) {
-          setToolIdState(null);
-        }
-      }
+      setToolIdState(null);
       setStep(target);
     },
-    [canGoToStep, step, toolId],
+    [canGoToStep],
   );
 
   const goNext = useCallback(() => {
@@ -127,6 +122,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       const index = steps.indexOf(current);
       const next = steps[index + 1];
       if (next && canGoToStep(next)) {
+        setToolIdState(null);
         return next;
       }
       return current;

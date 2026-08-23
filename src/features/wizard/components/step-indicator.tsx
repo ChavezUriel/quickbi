@@ -59,7 +59,7 @@ function FullIndicator() {
     <nav aria-label="Progreso del asistente" className="hidden sm:block">
       <ol className="flex items-center">
         {steps.map((id, index) => {
-          const isCompleted = index < currentIndex;
+          const isCompleted = index < currentIndex || (id === 'herramienta' && toolId !== null);
           const isCurrent = index === currentIndex;
           const isAccessible = canGoToStep(id);
           const isClickable =
@@ -71,10 +71,10 @@ function FullIndicator() {
                 type="button"
                 disabled={!isClickable}
                 onClick={() => goToStep(id)}
-                aria-current={isCurrent ? 'step' : undefined}
+                aria-current={isCurrent && !isCompleted ? 'step' : undefined}
                 title={
                   isCurrent && id === 'herramienta' && toolId !== null
-                    ? 'Volver a la galería de herramientas'
+                    ? 'Volver a la selección de herramientas'
                     : `Paso ${index + 1}: ${stepLabels[id]}`
                 }
                 className={cn(
@@ -92,6 +92,7 @@ function FullIndicator() {
                     'flex size-6 shrink-0 items-center justify-center rounded-full border-2 text-[0.7rem] font-semibold transition-all duration-200',
                     isCompleted && 'border-primary bg-primary text-primary-foreground',
                     isCurrent &&
+                      !isCompleted &&
                       'border-primary bg-primary/10 text-primary ring-2 ring-primary/20',
                     !isCompleted &&
                       !isCurrent &&
@@ -109,7 +110,7 @@ function FullIndicator() {
                   className={cn(
                     'hidden max-w-40 truncate text-xs font-medium whitespace-nowrap lg:block transition-colors',
                     isCurrent && 'text-foreground font-semibold',
-                    isCompleted && 'text-muted-foreground group-hover:text-foreground',
+                    isCompleted && !isCurrent && 'text-muted-foreground group-hover:text-foreground',
                     !isCompleted &&
                       !isCurrent &&
                       isAccessible &&
