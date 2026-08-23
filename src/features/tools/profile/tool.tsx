@@ -1,20 +1,16 @@
 import { ClipboardList } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ProfileDashboard } from './components/profile-dashboard';
 
-function ProfileWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
-  // No hay nada que configurar: en cuanto hay dataset, hay perfil.
+function ProfileWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<ProfileDashboard dataset={dataset} mapping={mapping} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <ProfileDashboard dataset={dataset} mapping={mapping} />
+    </div>
   );
 }
 
@@ -27,7 +23,6 @@ export const profileTool: ToolDefinition = {
   icon: ClipboardList,
   category: 'general',
   needs: ['Cualquier tabla'],
-  hasSetup: false,
   // Crece con el número de columnas: es un documento, no un cuadro de mando.
   fill: false,
   requires: (capabilities) => {

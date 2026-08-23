@@ -1,33 +1,18 @@
 import { Scale } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ReconciliationDashboard } from './components/reconciliation-dashboard';
 import { useReconciliationConfig } from './use-reconciliation-config';
 
-function ReconciliationWorkspace({
-  dataset,
-  mapping,
-  view,
-  fill,
-  onReady,
-}: ToolWorkspaceProps) {
+function ReconciliationWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useReconciliationConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={
-        <ReconciliationDashboard
-          dataset={dataset}
-          mapping={mapping}
-          state={state}
-        />
-      }
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <ReconciliationDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -40,7 +25,6 @@ export const reconciliationTool: ToolDefinition = {
   icon: Scale,
   category: 'situacional',
   needs: ['Una clave identificadora', 'Uno o dos importes numéricos'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0) {

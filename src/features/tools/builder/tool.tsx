@@ -1,21 +1,18 @@
 import { ChartColumn } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { BuilderDashboard } from './components/builder-dashboard';
 import { useBuilderConfig } from './use-builder-config';
 
-function BuilderWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function BuilderWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useBuilderConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<BuilderDashboard dataset={dataset} mapping={mapping} state={state} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <BuilderDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -28,7 +25,6 @@ export const builderTool: ToolDefinition = {
   icon: ChartColumn,
   category: 'general',
   needs: ['Una categoría o fecha', 'Una métrica numérica (opcional)'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0 && capabilities.dates === 0) {

@@ -126,7 +126,7 @@ function ToolHost({
   onReady: (ready: boolean) => void;
 }) {
   const { step, goToStep } = useWizard();
-  const active = step === 'configuracion' || step === 'cuadro';
+  const active = step === 'cuadro';
 
   // Los tipos se pueden corregir después de elegir la herramienta, y esa
   // corrección puede dejarla sin lo que necesitaba. Es preferible decirlo a
@@ -142,7 +142,6 @@ function ToolHost({
         <tool.Workspace
           dataset={dataset}
           mapping={mapping}
-          view={step === 'cuadro' ? 'cuadro' : 'configuracion'}
           fill={fill}
           onReady={onReady}
         />

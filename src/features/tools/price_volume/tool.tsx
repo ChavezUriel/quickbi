@@ -1,29 +1,18 @@
 import { SlidersHorizontal } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { PriceVolumeDashboard } from './components/price-volume-dashboard';
 import { usePriceVolumeConfig } from './use-price-volume-config';
 
-function PriceVolumeWorkspace({
-  dataset,
-  mapping,
-  view,
-  fill,
-  onReady,
-}: ToolWorkspaceProps) {
+function PriceVolumeWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = usePriceVolumeConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={
-        <PriceVolumeDashboard dataset={dataset} mapping={mapping} state={state} />
-      }
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <PriceVolumeDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -40,7 +29,6 @@ export const priceVolumeTool: ToolDefinition = {
     'Columna de volumen / cantidad',
     'Columna de precio o importe',
   ],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.measures < 1) {

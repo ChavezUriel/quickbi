@@ -1,21 +1,18 @@
 import { Boxes } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { InventoryDashboard } from './components/inventory-dashboard';
 import { useInventoryConfig } from './use-inventory-config';
 
-function InventoryWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function InventoryWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useInventoryConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<InventoryDashboard dataset={dataset} mapping={mapping} state={state} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <InventoryDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -28,7 +25,6 @@ export const inventoryTool: ToolDefinition = {
   icon: Boxes,
   category: 'situacional',
   needs: ['Una columna de producto o SKU', 'Una columna de stock o existencias'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0) {

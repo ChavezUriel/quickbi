@@ -1,21 +1,18 @@
 import { Calendar } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { SeasonalityDashboard } from './components/seasonality-dashboard';
 import { useSeasonalityConfig } from './use-seasonality-config';
 
-function SeasonalityWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function SeasonalityWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useSeasonalityConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<SeasonalityDashboard dataset={dataset} mapping={mapping} state={state} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <SeasonalityDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -28,7 +25,6 @@ export const seasonalityTool: ToolDefinition = {
   icon: Calendar,
   category: 'temporal',
   needs: ['Una columna de fecha', 'Una columna numérica'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dates === 0) return missing('Hace falta una columna de fecha.');

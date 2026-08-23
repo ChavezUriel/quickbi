@@ -1,21 +1,18 @@
 import { Globe } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { GeoMapDashboard } from './components/geo-map-dashboard';
 import { useGeoMapConfig } from './use-geo-map-config';
 
-function GeoMapWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function GeoMapWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useGeoMapConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<GeoMapDashboard dataset={dataset} mapping={mapping} state={state} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <GeoMapDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -28,7 +25,6 @@ export const geoMapTool: ToolDefinition = {
   icon: Globe,
   category: 'general',
   needs: ['Una columna de territorio o país', 'Una columna de importe o métrica'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0) {

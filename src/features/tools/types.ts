@@ -107,19 +107,14 @@ export function missing(reason: string): ToolAvailability {
   return { available: false, score: 'incompatible', reason };
 }
 
-/** Los dos paneles de una herramienta: su configuración y su resultado. */
-export type ToolView = 'configuracion' | 'cuadro';
-
 export interface ToolWorkspaceProps {
   dataset: ParsedDataset;
   mapping: ColumnMappingState;
-  /** Panel visible. El otro sigue montado, oculto, para no perder su estado. */
-  view: ToolView;
   /** El cuadro de mando se clava a la altura de la ventana. */
   fill: boolean;
   /**
-   * Comunica al asistente si la configuración basta para pintar el cuadro de
-   * mando: es lo que habilita el botón de avanzar.
+   * Comunica al asistente si la herramienta está lista para pintar el cuadro de
+   * mando.
    */
   onReady: (ready: boolean) => void;
 }
@@ -145,11 +140,6 @@ export interface ToolDefinition {
   category: ToolCategory;
   /** Qué necesita del dataset, dicho en la tarjeta antes de elegirla. */
   needs: string[];
-  /**
-   * `false` cuando la herramienta no tiene nada que preguntar: el asistente se
-   * salta el paso de configuración en vez de enseñar una pantalla vacía.
-   */
-  hasSetup: boolean;
   /** El cuadro de mando quiere la ventana entera en pantallas anchas. */
   fill: boolean;
   requires: (capabilities: DatasetCapabilities) => ToolAvailability;

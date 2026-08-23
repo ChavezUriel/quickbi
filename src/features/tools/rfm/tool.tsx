@@ -1,21 +1,18 @@
 import { Grid3x3 } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { RfmDashboard } from './components/rfm-dashboard';
 import { useRfmConfig } from './use-rfm-config';
 
-function RfmWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function RfmWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useRfmConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<RfmDashboard dataset={dataset} mapping={mapping} state={state} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <RfmDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -28,7 +25,6 @@ export const rfmTool: ToolDefinition = {
   icon: Grid3x3,
   category: 'clientes',
   needs: ['Una columna de cliente', 'Una fecha', 'Un importe'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dates === 0) return missing('Hace falta una columna de fecha.');

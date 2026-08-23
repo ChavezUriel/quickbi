@@ -1,26 +1,18 @@
 import { ChartNoAxesCombined } from 'lucide-react';
 import { AnalysisDashboard } from '@/features/analysis/components/analysis-dashboard';
 import { useAnalysisConfig } from '@/features/analysis/use-analysis-config';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 
-function CrossWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function CrossWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const analysis = useAnalysisConfig(mapping);
-
-  // Siempre se puede avanzar: sin dimensiones el cuadro de mando analiza el
-  // total, y sin métricas cuenta filas. Nunca se queda sin nada que enseñar.
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={
-        <AnalysisDashboard dataset={dataset} mapping={mapping} analysis={analysis} />
-      }
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <AnalysisDashboard dataset={dataset} mapping={mapping} analysis={analysis} />
+    </div>
   );
 }
 
@@ -33,7 +25,6 @@ export const crossTool: ToolDefinition = {
   icon: ChartNoAxesCombined,
   category: 'temporal',
   needs: ['Una fecha para la evolución', 'Categorías por las que abrir'],
-  hasSetup: false,
   // El cuadro de mando quiere la ventana entera: filtrar y no ver a la vez el
   // total, la evolución y el detalle es perder lo que hace útil el gesto.
   fill: true,

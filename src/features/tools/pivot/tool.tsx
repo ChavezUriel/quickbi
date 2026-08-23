@@ -1,21 +1,18 @@
 import { Table2 } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { PivotDashboard } from './components/pivot-dashboard';
 import { usePivotConfig } from './use-pivot-config';
 
-function PivotWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function PivotWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = usePivotConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<PivotDashboard dataset={dataset} mapping={mapping} state={state} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <PivotDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -28,7 +25,6 @@ export const pivotTool: ToolDefinition = {
   icon: Table2,
   category: 'general',
   needs: ['Al menos una columna de categorías', 'Métrica numérica (opcional)'],
-  hasSetup: false,
   // La tabla pone su propio scroll interno y no necesita la ventana entera.
   fill: false,
   requires: (capabilities) => {

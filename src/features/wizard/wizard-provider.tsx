@@ -13,8 +13,7 @@ import {
 } from '@/features/upload/lib/merge-datasets';
 import { getTool } from '@/features/tools/registry';
 
-/** Los pasos que existen siempre, antes de saber qué herramienta se elige. */
-const BASE_STEPS: WizardStepId[] = ['carga', 'tipos', 'herramienta'];
+const STEPS: WizardStepId[] = ['carga', 'tipos', 'herramienta', 'cuadro'];
 
 export function WizardProvider({ children }: { children: ReactNode }) {
   const [step, setStep] = useState<WizardStepId>('carga');
@@ -79,14 +78,7 @@ export function WizardProvider({ children }: { children: ReactNode }) {
 
   const tool = getTool(toolId);
 
-  // La secuencia depende de la herramienta: la que no pregunta nada no gana un
-  // paso de configuración vacío.
-  const steps = useMemo<WizardStepId[]>(() => {
-    if (tool === null) return BASE_STEPS;
-    return tool.hasSetup
-      ? [...BASE_STEPS, 'configuracion', 'cuadro']
-      : [...BASE_STEPS, 'cuadro'];
-  }, [tool]);
+  const steps = STEPS;
 
   const stepLabels = useMemo<Record<WizardStepId, string>>(
     () => ({ ...STEP_LABELS, cuadro: tool?.label ?? STEP_LABELS.cuadro }),
@@ -106,12 +98,10 @@ export function WizardProvider({ children }: { children: ReactNode }) {
         return composedDataset !== null && mappingReady;
       case 'herramienta':
         return tool !== null;
-      case 'configuracion':
-        return toolReady;
       case 'cuadro':
         return false;
     }
-  }, [step, selectedFingerprint, composedDataset, mappingReady, tool, toolReady]);
+  }, [step, selectedFingerprint, composedDataset, mappingReady, tool]);
 
   // Cambiar de herramienta puede acortar la secuencia por debajo del paso
   // actual; si eso pasa, el asistente retrocede al último paso que sigue
@@ -161,19 +151,13 @@ export function WizardProvider({ children }: { children: ReactNode }) {
 
   const setToolId = useCallback((id: string | null) => {
     setToolIdState(id);
-    // La validez es de la herramienta anterior: la nueva la comunicará al
-    // montarse, y hasta entonces no hay nada resuelto que dar por bueno.
     setToolReady(false);
   }, []);
 
   const selectTool = useCallback((id: string) => {
-    const targetTool = getTool(id);
     setToolIdState(id);
     setToolReady(false);
-    if (targetTool) {
-      const nextStep: WizardStepId = targetTool.hasSetup ? 'configuracion' : 'cuadro';
-      setStep(nextStep);
-    }
+    setStep('cuadro');
   }, []);
 
   const store = useMemo<WizardStore>(

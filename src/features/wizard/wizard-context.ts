@@ -12,14 +12,12 @@ export type WizardStepId =
   | 'carga'
   | 'tipos'
   | 'herramienta'
-  | 'configuracion'
   | 'cuadro';
 
 export const STEP_LABELS: Record<WizardStepId, string> = {
   carga: 'Carga de archivos',
   tipos: 'Tipos de campos',
   herramienta: 'Herramienta',
-  configuracion: 'Configuración',
   cuadro: 'Análisis',
 };
 

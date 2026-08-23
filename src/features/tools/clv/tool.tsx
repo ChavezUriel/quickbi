@@ -1,21 +1,18 @@
 import { UserCheck } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ClvDashboard } from './components/clv-dashboard';
 import { useClvConfig } from './use-clv-config';
 
-function ClvWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function ClvWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useClvConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<ClvDashboard dataset={dataset} mapping={mapping} state={state} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <ClvDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -28,7 +25,6 @@ export const clvTool: ToolDefinition = {
   icon: UserCheck,
   category: 'clientes',
   needs: ['Una columna de cliente', 'Una fecha de compra', 'Un importe'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dates === 0) return missing('Hace falta una columna de fecha de compra.');

@@ -1,29 +1,18 @@
 import { Activity } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { CorrelationsDashboard } from './components/correlations-dashboard';
 import { useCorrelationsConfig } from './use-correlations-config';
 
-function CorrelationsWorkspace({
-  dataset,
-  mapping,
-  view,
-  fill,
-  onReady,
-}: ToolWorkspaceProps) {
+function CorrelationsWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useCorrelationsConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={
-        <CorrelationsDashboard dataset={dataset} mapping={mapping} state={state} />
-      }
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <CorrelationsDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -36,7 +25,6 @@ export const correlationsTool: ToolDefinition = {
   icon: Activity,
   category: 'general',
   needs: ['Primera columna numérica', 'Segunda columna numérica'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.measures < 2) {

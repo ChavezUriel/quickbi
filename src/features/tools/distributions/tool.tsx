@@ -1,29 +1,18 @@
 import { BarChart3 } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { DistributionsDashboard } from './components/distributions-dashboard';
 import { useDistributionsConfig } from './use-distributions-config';
 
-function DistributionsWorkspace({
-  dataset,
-  mapping,
-  view,
-  fill,
-  onReady,
-}: ToolWorkspaceProps) {
+function DistributionsWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useDistributionsConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={
-        <DistributionsDashboard dataset={dataset} mapping={mapping} state={state} />
-      }
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <DistributionsDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -36,7 +25,6 @@ export const distributionsTool: ToolDefinition = {
   icon: BarChart3,
   category: 'general',
   needs: ['Al menos una columna numérica'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.measures === 0) {

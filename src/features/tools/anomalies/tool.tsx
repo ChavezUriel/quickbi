@@ -1,21 +1,18 @@
 import { Activity } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { AnomaliesDashboard } from './components/anomalies-dashboard';
 import { useAnomaliesConfig } from './use-anomalies-config';
 
-function AnomaliesWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function AnomaliesWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useAnomaliesConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<AnomaliesDashboard dataset={dataset} mapping={mapping} state={state} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <AnomaliesDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -28,7 +25,6 @@ export const anomaliesTool: ToolDefinition = {
   icon: Activity,
   category: 'temporal',
   needs: ['Una columna de fecha', 'Una métrica cuantitativa'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dates === 0) return missing('Hace falta una columna de fecha para el análisis temporal.');

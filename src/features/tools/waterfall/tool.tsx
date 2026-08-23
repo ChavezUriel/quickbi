@@ -1,21 +1,18 @@
 import { GitCompareArrows } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { WaterfallDashboard } from './components/waterfall-dashboard';
 import { useWaterfallConfig } from './use-waterfall-config';
 
-function WaterfallWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function WaterfallWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useWaterfallConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<WaterfallDashboard dataset={dataset} mapping={mapping} state={state} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <WaterfallDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -28,7 +25,6 @@ export const waterfallTool: ToolDefinition = {
   icon: GitCompareArrows,
   category: 'situacional',
   needs: ['Una columna de fecha', 'Una categoría', 'Una métrica numérica'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dates === 0) return missing('Hace falta una columna de fecha para definir los períodos.');

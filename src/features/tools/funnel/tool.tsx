@@ -1,21 +1,18 @@
 import { Filter } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { FunnelDashboard } from './components/funnel-dashboard';
 import { useFunnelConfig } from './use-funnel-config';
 
-function FunnelWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function FunnelWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useFunnelConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<FunnelDashboard dataset={dataset} mapping={mapping} state={state} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <FunnelDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -28,7 +25,6 @@ export const funnelTool: ToolDefinition = {
   icon: Filter,
   category: 'situacional',
   needs: ['Una columna de etapa o fase', 'Una métrica de importe o conteo (opcional)'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0) {

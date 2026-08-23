@@ -1,29 +1,18 @@
 import { Scale } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ConcentrationDashboard } from './components/concentration-dashboard';
 import { useConcentrationConfig } from './use-concentration-config';
 
-function ConcentrationWorkspace({
-  dataset,
-  mapping,
-  view,
-  fill,
-  onReady,
-}: ToolWorkspaceProps) {
+function ConcentrationWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useConcentrationConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={
-        <ConcentrationDashboard dataset={dataset} mapping={mapping} state={state} />
-      }
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <ConcentrationDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -36,7 +25,6 @@ export const concentrationTool: ToolDefinition = {
   icon: Scale,
   category: 'clientes',
   needs: ['Columna de cliente', 'Columna de importe / facturación'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.measures === 0) {

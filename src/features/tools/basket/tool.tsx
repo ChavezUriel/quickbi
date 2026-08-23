@@ -1,21 +1,18 @@
 import { ShoppingBag } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { missing, recommended, compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { BasketDashboard } from './components/basket-dashboard';
 import { useBasketConfig } from './use-basket-config';
 
-function BasketWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
+function BasketWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useBasketConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={<BasketDashboard dataset={dataset} mapping={mapping} state={state} />}
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <BasketDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -28,7 +25,6 @@ export const basketTool: ToolDefinition = {
   icon: ShoppingBag,
   category: 'clientes',
   needs: ['Columna de producto', 'Columna de pedido / ticket'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions < 2 && capabilities.identifiers === 0) {

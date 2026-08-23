@@ -1,29 +1,18 @@
 import { GitCompare } from 'lucide-react';
-import { ToolPanes } from '../components/tool-panes';
+import { cn } from '@/lib/utils';
 import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { SegmentsDashboard } from './components/segments-dashboard';
 import { useSegmentsConfig } from './use-segments-config';
 
-function SegmentsWorkspace({
-  dataset,
-  mapping,
-  view,
-  fill,
-  onReady,
-}: ToolWorkspaceProps) {
+function SegmentsWorkspace({ dataset, mapping, fill, onReady }: ToolWorkspaceProps) {
   const state = useSegmentsConfig(mapping);
   useToolReady(onReady, true);
 
   return (
-    <ToolPanes
-      view={view}
-      fill={fill}
-      setup={null}
-      dashboard={
-        <SegmentsDashboard dataset={dataset} mapping={mapping} state={state} />
-      }
-    />
+    <div className={cn(fill && '3xl:min-h-0 3xl:flex-1')}>
+      <SegmentsDashboard dataset={dataset} mapping={mapping} state={state} />
+    </div>
   );
 }
 
@@ -36,7 +25,6 @@ export const segmentsTool: ToolDefinition = {
   icon: GitCompare,
   category: 'general',
   needs: ['Al menos una columna de categorías', 'Al menos una columna numérica'],
-  hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.dimensions === 0) {
