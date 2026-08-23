@@ -27,12 +27,12 @@ function CompactIndicator() {
   const position = steps.indexOf(step) + 1;
 
   return (
-    <div className="flex min-w-0 items-center gap-2 sm:hidden">
-      <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground" aria-hidden="true">
+    <div className="flex min-w-0 items-center gap-2 sm:hidden" aria-hidden>
+      <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
         {position}/{steps.length}
       </span>
-      <span className="truncate text-xs font-medium" aria-hidden="true">{stepLabels[step]}</span>
-      <span className="flex shrink-0 gap-1" aria-hidden="true">
+      <span className="truncate text-xs font-medium">{stepLabels[step]}</span>
+      <span className="flex shrink-0 gap-1">
         {steps.map((id, index) => (
           <span
             key={id}
@@ -71,7 +71,7 @@ function FullIndicator() {
                 type="button"
                 disabled={!isClickable}
                 onClick={() => goToStep(id)}
-                aria-current={isCurrent ? 'step' : undefined}
+                aria-current={isCurrent && !isCompleted ? 'step' : undefined}
                 title={
                   isCurrent && id === 'herramienta' && toolId !== null
                     ? 'Volver a la selección de herramientas'
