@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { downloadTextFile } from '@/lib/download';
 import { cn } from '@/lib/utils';
+import { GRANULARITIES, GRANULARITY_LABEL } from '@/features/analysis/labels';
 import { formatCount, formatMetric } from '@/features/analysis/lib/format';
 import { prepareRows } from '@/features/analysis/lib/prepare-rows';
-import { EMPTY_LABEL } from '@/features/analysis/types';
+import { EMPTY_LABEL, type Granularity } from '@/features/analysis/types';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
 import { OptionSelect, type Option } from '../../components/option-select';
@@ -20,6 +21,8 @@ import {
   TIME_DIM,
   type PivotConfigState,
 } from '../use-pivot-config';
+
+const GRAINS: Granularity[] = [...GRANULARITIES, 'anio'];
 
 /**
  * Tabla dinámica: filas, columnas y una cifra en cada cruce.
@@ -119,6 +122,36 @@ export function PivotDashboard({
               onChange={(value) => update({ metricColumn: value })}
             />
           </Control>
+
+          {settings.metricColumn !== COUNT_COLUMN && (
+            <Control label="Agregación">
+              <OptionSelect
+                value={settings.agg}
+                options={[
+                  { value: 'sum', label: 'Suma' },
+                  { value: 'avg', label: 'Promedio' },
+                ]}
+                ariaLabel="Agregación de la métrica"
+                size="sm"
+                onChange={(value) => update({ agg: value as 'sum' | 'avg' })}
+              />
+            </Control>
+          )}
+
+          {usesTime && (
+            <Control label="Grano">
+              <OptionSelect
+                value={settings.grain}
+                options={GRAINS.map((grain) => ({
+                  value: grain,
+                  label: GRANULARITY_LABEL[grain],
+                }))}
+                ariaLabel="Grano temporal"
+                size="sm"
+                onChange={(value) => update({ grain: value as Granularity })}
+              />
+            </Control>
+          )}
 
           <div className="ml-auto flex items-center gap-3">
             <Toggle

@@ -138,16 +138,48 @@ export function BuilderDashboard({
               />
             </Control>
 
-            {isScatter ? (
-              <Control label="Eje Y">
+            {settings.metricColumn !== COUNT_COLUMN && (
+              <Control label="Agregación">
                 <OptionSelect
-                  value={settings.metricYColumn}
-                  options={metricOptions}
-                  ariaLabel="Métrica del eje Y"
+                  value={settings.agg}
+                  options={[
+                    { value: 'sum', label: 'Suma' },
+                    { value: 'avg', label: 'Promedio' },
+                  ]}
+                  ariaLabel="Agregación de la métrica"
                   size="sm"
-                  onChange={(value) => update({ metricYColumn: value })}
+                  onChange={(value) => update({ agg: value as 'sum' | 'avg' })}
                 />
               </Control>
+            )}
+
+            {isScatter ? (
+              <>
+                <Control label="Eje Y">
+                  <OptionSelect
+                    value={settings.metricYColumn}
+                    options={metricOptions}
+                    ariaLabel="Métrica del eje Y"
+                    size="sm"
+                    onChange={(value) => update({ metricYColumn: value })}
+                  />
+                </Control>
+
+                {settings.metricYColumn !== COUNT_COLUMN && (
+                  <Control label="Agregación Y">
+                    <OptionSelect
+                      value={settings.aggY}
+                      options={[
+                        { value: 'sum', label: 'Suma' },
+                        { value: 'avg', label: 'Promedio' },
+                      ]}
+                      ariaLabel="Agregación eje Y"
+                      size="sm"
+                      onChange={(value) => update({ aggY: value as 'sum' | 'avg' })}
+                    />
+                  </Control>
+                )}
+              </>
             ) : (
               <Control label="Series">
                 <OptionSelect
