@@ -1,4 +1,5 @@
 import type { ColumnFormat, ColumnType } from '@/features/dataset/lib/column-types';
+export { SUBTYPE_LABEL } from '@/components/icons/data-type-icons';
 
 export const TYPE_LABEL: Record<ColumnType, string> = {
   number: 'Número',

@@ -43,7 +43,7 @@ export function SetupField({
   className,
   children,
 }: {
-  label: string;
+  label: ReactNode;
   hint?: string;
   className?: string;
   children: ReactNode;

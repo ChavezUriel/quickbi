@@ -27,6 +27,7 @@ import { useMediaQuery } from '@/lib/use-media-query';
 import { cn } from '@/lib/utils';
 import type { ColumnProfile, ColumnType } from '@/features/dataset/lib/column-types';
 import type { ParsedDataset } from '@/features/dataset/types';
+import { DataTypeBadge, DataTypeIcon } from '@/components/icons/data-type-icons';
 import { SELECTABLE_TYPES, TYPE_LABEL, describeFormat } from '../labels';
 import type { ColumnMappingState } from '../use-column-mapping';
 import { CastFailureDetail } from './cast-failure-detail';
@@ -156,7 +157,10 @@ function ColumnRow(props: RowProps) {
   return (
     <TableRow className="hover:bg-muted/15 border-b border-border/60 transition-colors">
       <TableCell className="px-3.5 py-3 align-top font-mono text-xs font-medium text-foreground whitespace-nowrap">
-        {column.name}
+        <div className="flex items-center gap-2">
+          <DataTypeIcon type={column.type} subtype={column.subtype} colored className="size-4 shrink-0" />
+          <span className="truncate">{column.name}</span>
+        </div>
       </TableCell>
 
       <TableCell className="px-3.5 py-2.5 align-top">
@@ -188,9 +192,12 @@ function ColumnCard(props: RowProps) {
   return (
     <li className="space-y-2.5 rounded-xl border border-border/80 bg-card p-3.5 shadow-2xs">
       <div className="flex items-center justify-between gap-3">
-        <span className="min-w-0 truncate font-mono text-xs font-semibold text-foreground" title={column.name}>
-          {column.name}
-        </span>
+        <div className="flex min-w-0 items-center gap-2">
+          <DataTypeIcon type={column.type} subtype={column.subtype} colored className="size-4 shrink-0" />
+          <span className="min-w-0 truncate font-mono text-xs font-semibold text-foreground" title={column.name}>
+            {column.name}
+          </span>
+        </div>
         <div className="w-36 shrink-0">
           <TypeSelect {...props} />
         </div>
@@ -221,12 +228,18 @@ function TypeSelect({ column, setColumnType }: RowProps) {
         className="h-8 w-full shrink-0 rounded-lg text-xs"
         aria-label={`Tipo de la columna ${column.name}`}
       >
-        <SelectValue />
+        <div className="flex items-center gap-1.5 truncate">
+          <DataTypeIcon type={column.type} subtype={column.subtype} colored className="size-3.5 shrink-0" />
+          <SelectValue />
+        </div>
       </SelectTrigger>
       <SelectContent>
         {SELECTABLE_TYPES.map((type) => (
           <SelectItem key={type} value={type} className="text-xs">
-            {TYPE_LABEL[type]}
+            <div className="flex items-center gap-2">
+              <DataTypeIcon type={type} colored className="size-3.5 shrink-0" />
+              <span>{TYPE_LABEL[type]}</span>
+            </div>
           </SelectItem>
         ))}
       </SelectContent>
@@ -263,20 +276,25 @@ function ColumnStats({ column }: { column: ColumnProfile }) {
   const format = describeFormat(column.format);
 
   return (
-    <div className="space-y-0.5">
-      <p className="text-muted-foreground leading-snug">
-        <strong className="font-medium text-foreground">
-          {column.distinctCount.toLocaleString('es-MX')}
-          {column.distinctCountExact ? '' : '+'}
-        </strong>{' '}
-        distintos
+    <div className="space-y-1">
+      <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground leading-snug">
+        {column.subtype && column.subtype !== (column.type as string) && (
+          <DataTypeBadge type={column.type} subtype={column.subtype} showSubtype size="xs" />
+        )}
+        <span>
+          <strong className="font-medium text-foreground">
+            {column.distinctCount.toLocaleString('es-MX')}
+            {column.distinctCountExact ? '' : '+'}
+          </strong>{' '}
+          distintos
+        </span>
         {column.nullCount > 0 && (
           <span className="text-amber-600 dark:text-amber-400">
             {' · '}
             {column.nullCount.toLocaleString('es-MX')} vacíos
           </span>
         )}
-      </p>
+      </div>
       {format && <p className="text-muted-foreground/80 font-mono text-[11px]">{format}</p>}
     </div>
   );

@@ -6,10 +6,11 @@ import {
   toIso,
 } from '@/features/analysis/lib/dates';
 import type { Granularity } from '@/features/analysis/types';
-import type {
-  ColumnProfile,
-  ColumnRole,
-  ColumnType,
+import {
+  type ColumnProfile,
+  type ColumnRole,
+  type ColumnSubtype,
+  type ColumnType,
 } from '@/features/dataset/lib/column-types';
 import { coerceValue } from '@/features/dataset/lib/infer-columns';
 import type { DataRow } from '@/features/dataset/types';
@@ -82,6 +83,7 @@ export interface TopValue {
 export interface ColumnStats {
   name: string;
   type: ColumnType;
+  subtype?: ColumnSubtype;
   role: ColumnRole;
   /** Filas del dataset. */
   total: number;
@@ -184,6 +186,7 @@ function profileSingleColumn(
   return {
     name: column.name,
     type: column.type,
+    subtype: column.subtype,
     role: column.role,
     total: rows.length,
     nulls,

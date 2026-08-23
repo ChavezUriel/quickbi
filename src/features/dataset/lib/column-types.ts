@@ -19,9 +19,29 @@ export type ColumnFormat =
   | { kind: 'date'; order: DateOrder }
   | { kind: 'none' };
 
+/** Subtipo de dato o categoría semántica para enriquecer el lenguaje visual. */
+export type ColumnSubtype =
+  | 'currency'
+  | 'percentage'
+  | 'integer'
+  | 'decimal'
+  | 'duration'
+  | 'date'
+  | 'datetime'
+  | 'period'
+  | 'identifier'
+  | 'geo'
+  | 'customer'
+  | 'product'
+  | 'funnel_stage'
+  | 'text'
+  | 'boolean'
+  | 'empty';
+
 export interface ColumnProfile {
   name: string;
   type: ColumnType;
+  subtype?: ColumnSubtype;
   format: ColumnFormat;
   role: ColumnRole;
   /** Celdas vacías. */

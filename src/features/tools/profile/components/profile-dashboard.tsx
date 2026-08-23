@@ -1,14 +1,9 @@
 import { useMemo, useState } from 'react';
 import {
-  CalendarDays,
   CircleAlert,
   Copy,
   Download,
-  Hash,
   Search,
-  SquareStack,
-  Tags,
-  ToggleLeft,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,8 +17,8 @@ import {
 } from '@/components/ui/card';
 import { downloadTextFile } from '@/lib/download';
 import { cn } from '@/lib/utils';
+import { DataTypeBadge, DataTypeIcon } from '@/components/icons/data-type-icons';
 import { formatCount, formatMetric } from '@/features/analysis/lib/format';
-import type { ColumnType } from '@/features/dataset/lib/column-types';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
 import { normalizeName } from '../../lib/slot-suggest';
@@ -173,36 +168,18 @@ function Tile({
   );
 }
 
-const TYPE_ICON: Record<ColumnType, typeof Hash> = {
-  number: Hash,
-  date: CalendarDays,
-  boolean: ToggleLeft,
-  text: Tags,
-  empty: SquareStack,
-};
-
-const TYPE_LABEL: Record<ColumnType, string> = {
-  number: 'Número',
-  date: 'Fecha',
-  boolean: 'Booleano',
-  text: 'Texto',
-  empty: 'Vacía',
-};
-
 function ColumnCard({ column }: { column: ColumnStats }) {
-  const Icon = TYPE_ICON[column.type];
-
   return (
     <Card size="sm" className="min-w-0">
       <CardHeader>
         <CardTitle className="flex min-w-0 items-center gap-1.5">
-          <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <DataTypeIcon type={column.type} subtype={column.subtype} colored className="size-4 shrink-0" />
           <span className="truncate font-mono text-xs" title={column.name}>
             {column.name}
           </span>
         </CardTitle>
         <CardDescription className="flex flex-wrap items-center gap-1.5 text-xs">
-          <Badge variant="outline">{TYPE_LABEL[column.type]}</Badge>
+          <DataTypeBadge type={column.type} subtype={column.subtype} showSubtype size="xs" />
           <span className="tabular-nums">
             {formatCount(column.distinctCount)}
             {column.distinctCountExact ? '' : '+'} distintos

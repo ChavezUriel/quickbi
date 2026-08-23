@@ -1,5 +1,7 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CircleAlert } from 'lucide-react';
+import { DataTypeIcon } from '@/components/icons/data-type-icons';
+import type { ColumnType } from '@/features/dataset/lib/column-types';
 import type { SlotDef, ToolSlotsState } from '../use-tool-slots';
 import { OptionSelect } from './option-select';
 import { SetupField, SetupGrid } from './setup-card';
@@ -27,6 +29,8 @@ export function SlotPicker({
         {slots.map((slot) => {
           const candidates = state.candidatesFor(slot.id);
           const value = state.assignments[slot.id] ?? UNSET;
+          const slotType: ColumnType =
+            slot.kind === 'measure' ? 'number' : slot.kind === 'date' ? 'date' : 'text';
           const options = [
             ...candidates.map((column) => ({
               value: column.name,
@@ -38,7 +42,12 @@ export function SlotPicker({
           return (
             <SetupField
               key={slot.id}
-              label={slot.required ? slot.label : `${slot.label} (opcional)`}
+              label={
+                <span className="flex items-center gap-1.5">
+                  <DataTypeIcon type={slotType} colored className="size-3.5 shrink-0" />
+                  <span>{slot.required ? slot.label : `${slot.label} (opcional)`}</span>
+                </span>
+              }
               hint={slot.description}
             >
               {candidates.length === 0 ? (

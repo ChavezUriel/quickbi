@@ -12,10 +12,20 @@ import {
 } from '@/components/ui/table';
 import { downloadTextFile } from '@/lib/download';
 import { cn } from '@/lib/utils';
+import { DataTypeIcon } from '@/components/icons/data-type-icons';
+import type { ColumnSubtype } from '@/features/dataset/lib/column-types';
 import { explorationToCsv } from '../lib/export-csv';
 import { deltaScale, formatCount, formatMetric, formatShare } from '../lib/format';
-import type { Currency, ExplorationResult, MetricDef } from '../types';
+import { COUNT_METRIC_ID, type Currency, type ExplorationResult, type MetricDef } from '../types';
 import { DeltaPill } from './delta-pill';
+
+function subtypeForMetric(metric?: MetricDef): ColumnSubtype {
+  if (!metric) return 'decimal';
+  if (metric.id === COUNT_METRIC_ID) return 'integer';
+  if (metric.format === 'moneda') return 'currency';
+  if (metric.format === 'porcentaje') return 'percentage';
+  return 'decimal';
+}
 
 /** Filas visibles: más allá de esto la tabla deja de ser legible y de ir fluida. */
 const MAX_ROWS = 200;
@@ -166,8 +176,9 @@ export function DetailTable({
                 <button
                   type="button"
                   onClick={() => handleSort('name')}
-                  className="inline-flex items-center gap-1 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                  className="inline-flex items-center gap-1.5 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
                 >
+                  <DataTypeIcon type="text" colored className="size-3.5 shrink-0" />
                   <span className="truncate" title={dimensionHeader}>
                     {dimensionHeader}
                   </span>
@@ -189,8 +200,14 @@ export function DetailTable({
                 <button
                   type="button"
                   onClick={() => handleSort('value')}
-                  className="inline-flex w-full items-center justify-end gap-1 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                  className="inline-flex w-full items-center justify-end gap-1.5 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
                 >
+                  <DataTypeIcon
+                    type="number"
+                    subtype={subtypeForMetric(metric)}
+                    colored
+                    className="size-3.5 shrink-0"
+                  />
                   <span>{metric.label}</span>
                   <SortIcon active={effectiveSortField === 'value'} order={sortOrder} />
                 </button>

@@ -6,6 +6,7 @@ import {
   type DateOrder,
   type DecimalSeparator,
 } from './column-types';
+import { inferColumnSubtype } from './infer-subtype';
 import { parseBoolean, parseDate, parseNumber } from './parse-values';
 import type { CellValue, DataRow } from '../types';
 
@@ -72,9 +73,18 @@ export function profileColumn(
     0,
   );
 
+  const subtype = inferColumnSubtype({
+    name,
+    type: detected.type,
+    samples,
+    format: detected.format,
+    distinctCount: distinct.size,
+  });
+
   return {
     name,
     type: detected.type,
+    subtype,
     format: detected.format,
     role: roleForType(detected.type),
     nullCount,

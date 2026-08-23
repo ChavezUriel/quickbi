@@ -1,4 +1,5 @@
-import { CalendarDays, CheckCircle2, CircleAlert, Hash, Tags } from 'lucide-react';
+import { CheckCircle2, CircleAlert } from 'lucide-react';
+import { DataTypeIcon } from '@/components/icons/data-type-icons';
 import {
   Card,
   CardContent,
@@ -37,21 +38,21 @@ export function DatasetReadiness({ dataset }: DatasetReadinessProps) {
 
       <CardContent className="grid gap-3 sm:grid-cols-3">
         <Check
-          icon={<CalendarDays className="size-4 text-primary" aria-hidden />}
+          icon={<DataTypeIcon type="date" colored className="size-4" aria-hidden />}
           label="Eje temporal"
           columns={dates}
           ok={dates.length > 0}
           missing="Sin fechas: no habrá evolución ni comparación de períodos."
         />
         <Check
-          icon={<Hash className="size-4 text-primary" aria-hidden />}
+          icon={<DataTypeIcon type="number" colored className="size-4" aria-hidden />}
           label="Métricas"
           columns={numbers}
           ok={numbers.length > 0}
           missing="Sin columnas numéricas: solo se podrán contar filas."
         />
         <Check
-          icon={<Tags className="size-4 text-primary" aria-hidden />}
+          icon={<DataTypeIcon type="text" colored className="size-4" aria-hidden />}
           label="Dimensiones"
           columns={categories}
           ok={categories.length > 0}
