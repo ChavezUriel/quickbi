@@ -37,15 +37,25 @@ export const geoMapTool: ToolDefinition = {
     if (capabilities.measures === 0) {
       return missing('Hace falta al menos una columna numérica para agregar.');
     }
+    const geoCol = capabilities.semantics.geoColumn ?? capabilities.dimensionNames[0]!;
+    const metricCol = capabilities.measureNames[0]!;
+    const matched = [geoCol, metricCol];
+    const matchedFields = [
+      { need: 'Una columna de territorio o país', column: geoCol },
+      { need: 'Una columna de importe o métrica', column: metricCol },
+    ];
+
     if (capabilities.semantics.hasGeo) {
       return recommended(
         `Desglose geográfico detectado en "${capabilities.semantics.geoColumn}".`,
-        [capabilities.semantics.geoColumn!, ...capabilities.measureNames.slice(0, 1)],
+        matched,
+        matchedFields,
       );
     }
     return compatible(
       'Estructura apta para distribución territorial.',
-      [capabilities.dimensionNames[0]!, ...capabilities.measureNames.slice(0, 1)],
+      matched,
+      matchedFields,
     );
   },
   Workspace: GeoMapWorkspace,

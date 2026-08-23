@@ -37,15 +37,25 @@ export const inventoryTool: ToolDefinition = {
     if (capabilities.measures === 0) {
       return missing('Hace falta al menos una columna numérica con el stock o existencias.');
     }
+    const productCol = capabilities.semantics.productColumn ?? capabilities.dimensionNames[0]!;
+    const stockCol = capabilities.semantics.inventoryColumn ?? capabilities.measureNames[0]!;
+    const matched = [stockCol, productCol].filter(Boolean) as string[];
+    const matchedFields = [
+      { need: 'Una columna de producto o SKU', column: productCol },
+      { need: 'Una columna de stock o existencias', column: stockCol },
+    ];
+
     if (capabilities.semantics.hasInventory) {
       return recommended(
         `Existencias y almacén detectados en "${capabilities.semantics.inventoryColumn}".`,
-        [capabilities.semantics.inventoryColumn!, capabilities.semantics.productColumn ?? capabilities.dimensionNames[0]].filter(Boolean) as string[],
+        matched,
+        matchedFields,
       );
     }
     return compatible(
       'Estructura apta para análisis de rotación e inventario.',
       [capabilities.dimensionNames[0]!, capabilities.measureNames[0]!],
+      matchedFields,
     );
   },
   Workspace: InventoryWorkspace,

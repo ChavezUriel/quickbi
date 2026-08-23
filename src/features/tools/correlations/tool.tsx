@@ -35,15 +35,25 @@ export const correlationsTool: ToolDefinition = {
     'Matriz de correlación de Pearson con mapa de calor entre todas las medidas, y diagrama de dispersión con recta de regresión lineal, ecuación y R² para examinar cualquier par.',
   icon: Activity,
   category: 'general',
-  needs: ['Al menos dos columnas numéricas'],
+  needs: ['Primera columna numérica', 'Segunda columna numérica'],
   hasSetup: false,
   fill: false,
-  requires: (capabilities) =>
-    capabilities.measures < 2
-      ? missing('Hacen falta al menos dos columnas numéricas para calcular correlaciones.')
-      : recommended(
-          `${capabilities.measures} columnas numéricas para matriz de Pearson y dispersión.`,
-          capabilities.measureNames.slice(0, 3),
-        ),
+  requires: (capabilities) => {
+    if (capabilities.measures < 2) {
+      return missing('Hacen falta al menos dos columnas numéricas para calcular correlaciones.');
+    }
+    const m1 = capabilities.measureNames[0]!;
+    const m2 = capabilities.measureNames[1]!;
+    const matched = capabilities.measureNames.slice(0, 3);
+    const matchedFields = [
+      { need: 'Primera columna numérica', column: m1 },
+      { need: 'Segunda columna numérica', column: m2 },
+    ];
+    return recommended(
+      `${capabilities.measures} columnas numéricas para matriz de Pearson y dispersión.`,
+      matched,
+      matchedFields,
+    );
+  },
   Workspace: CorrelationsWorkspace,
 };

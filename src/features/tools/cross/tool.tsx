@@ -2,7 +2,7 @@ import { ChartNoAxesCombined } from 'lucide-react';
 import { AnalysisDashboard } from '@/features/analysis/components/analysis-dashboard';
 import { useAnalysisConfig } from '@/features/analysis/use-analysis-config';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { compatible, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 
 function CrossWorkspace({ dataset, mapping, view, fill, onReady }: ToolWorkspaceProps) {
@@ -37,6 +37,15 @@ export const crossTool: ToolDefinition = {
   // El cuadro de mando quiere la ventana entera: filtrar y no ver a la vez el
   // total, la evolución y el detalle es perder lo que hace útil el gesto.
   fill: true,
-  requires: () => AVAILABLE,
+  requires: (capabilities) => {
+    const dateCol = capabilities.dateColumnNames[0] ?? null;
+    const dimCol = capabilities.dimensionNames[0] ?? null;
+    const matched = [dateCol, dimCol].filter(Boolean) as string[];
+    const matchedFields = [
+      { need: 'Una fecha para la evolución', column: dateCol },
+      { need: 'Categorías por las que abrir', column: dimCol },
+    ];
+    return compatible('Estructura lista para análisis cruzado.', matched, matchedFields);
+  },
   Workspace: CrossWorkspace,
 };

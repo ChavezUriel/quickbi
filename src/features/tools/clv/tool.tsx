@@ -36,16 +36,20 @@ export const clvTool: ToolDefinition = {
     if (capabilities.identifiers === 0 && !capabilities.semantics.hasCustomer) {
       return missing('Hace falta una columna que identifique al cliente.');
     }
-    const matched = [
-      capabilities.semantics.customerColumn ?? capabilities.identifierNames[0] ?? capabilities.dimensionNames[0],
-      capabilities.dateColumnNames[0],
-      capabilities.measureNames[0],
-    ].filter(Boolean) as string[];
+    const customerCol = capabilities.semantics.customerColumn ?? capabilities.identifierNames[0] ?? capabilities.dimensionNames[0];
+    const dateCol = capabilities.dateColumnNames[0];
+    const measureCol = capabilities.measureNames[0];
+    const matched = [customerCol, dateCol, measureCol].filter(Boolean) as string[];
+    const matchedFields = [
+      { need: 'Una columna de cliente', column: customerCol },
+      { need: 'Una fecha de compra', column: dateCol },
+      { need: 'Un importe', column: measureCol },
+    ];
 
     if (capabilities.semantics.hasCustomer) {
-      return recommended('Cliente, fecha e importe detectados para cálculo de CLV.', matched);
+      return recommended('Cliente, fecha e importe detectados para cálculo de CLV.', matched, matchedFields);
     }
-    return compatible('Estructura apta para análisis de CLV.', matched);
+    return compatible('Estructura apta para análisis de CLV.', matched, matchedFields);
   },
   Workspace: ClvWorkspace,
 };

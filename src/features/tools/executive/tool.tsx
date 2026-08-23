@@ -1,6 +1,6 @@
 import { Sparkles } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ExecutiveDashboard } from './components/executive-dashboard';
 import { useExecutiveConfig } from './use-executive-config';
@@ -27,14 +27,23 @@ export const executiveTool: ToolDefinition = {
     'Redacta un informe narrativo estructurado en lenguaje natural con las conclusiones clave: dirección de tendencia, principales impulsores, concentración de Pareto, picos y anomalías estadísticas.',
   icon: Sparkles,
   category: 'general',
-  needs: ['Una métrica numérica', 'Opcional: columna de fecha y categoría'],
+  needs: ['Una métrica numérica', 'Columna de fecha (opcional)', 'Categoría (opcional)'],
   hasSetup: false,
   fill: false,
   requires: (capabilities) => {
     if (capabilities.measures === 0) {
       return missing('Hace falta al menos una columna numérica.');
     }
-    return AVAILABLE;
+    const measureCol = capabilities.measureNames[0]!;
+    const dateCol = capabilities.dateColumnNames[0] ?? null;
+    const dimCol = capabilities.dimensionNames[0] ?? null;
+    const matched = [measureCol, dateCol, dimCol].filter(Boolean) as string[];
+    const matchedFields = [
+      { need: 'Una métrica numérica', column: measureCol },
+      { need: 'Columna de fecha (opcional)', column: dateCol },
+      { need: 'Categoría (opcional)', column: dimCol },
+    ];
+    return compatible('Listo para generar síntesis narrativa ejecutiva.', matched, matchedFields);
   },
   Workspace: ExecutiveWorkspace,
 };

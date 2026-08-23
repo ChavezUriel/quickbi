@@ -49,16 +49,29 @@ export const reconciliationTool: ToolDefinition = {
     if (capabilities.measures === 0) {
       return missing('Hace falta al menos una columna numérica para conciliar importes.');
     }
+    const keyCol = capabilities.identifierNames[0] ?? capabilities.dimensionNames[0]!;
+    const m1 = capabilities.semantics.reconciliationColumns[0] ?? capabilities.measureNames[0]!;
+    const m2 =
+      capabilities.semantics.reconciliationColumns[1] ??
+      (capabilities.measureNames.length > 1 ? capabilities.measureNames[1] : null);
+    const matched = [m1, m2].filter(Boolean) as string[];
+    const matchedFields = [
+      { need: 'Una clave identificadora', column: keyCol },
+      { need: 'Uno o dos importes numéricos', column: m2 ? `${m1} / ${m2}` : m1 },
+    ];
+
     if (capabilities.semantics.hasReconciliation && capabilities.semantics.reconciliationColumns.length >= 2) {
       return recommended(
         'Columnas de conciliación y descuadres detectadas.',
         capabilities.semantics.reconciliationColumns.slice(0, 2),
+        matchedFields,
       );
     }
     if (capabilities.measures >= 2) {
       return compatible(
         'Estructura apta para conciliar entre dos métricas.',
-        capabilities.measureNames.slice(0, 2),
+        matched,
+        matchedFields,
       );
     }
     return missing('Hacen falta al menos dos columnas numéricas para comparar o conciliar importes entre fuentes.');

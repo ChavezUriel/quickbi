@@ -149,7 +149,7 @@ describe('Tool Compatibility Matrix', () => {
     expect(availabilityOf(pivotTool, caps).available).toBe(true);
   });
 
-  it('recommends specialized tools when domain columns match', () => {
+  it('recommends specialized tools when domain columns match and maps needed fields to detected columns', () => {
     const geoMapping = makeMapping([
       makeColumn('Ciudad', 'text', 20),
       makeColumn('Ingresos', 'number', 40),
@@ -161,5 +161,28 @@ describe('Tool Compatibility Matrix', () => {
     expect(avail.available).toBe(true);
     expect(avail.score).toBe('recommended');
     expect(avail.matchedColumns).toContain('Ciudad');
+    expect(avail.matchedFields).toBeDefined();
+    expect(avail.matchedFields).toEqual([
+      { need: 'Una columna de territorio o país', column: 'Ciudad' },
+      { need: 'Una columna de importe o métrica', column: 'Ingresos' },
+    ]);
+  });
+
+  it('maps needed fields to found columns in RFM analysis', () => {
+    const rfmMapping = makeMapping([
+      makeColumn('ID_Cliente', 'text', 50),
+      makeColumn('Fecha_Compra', 'date', 30),
+      makeColumn('Total_Venta', 'number', 40),
+    ]);
+    const rfmCaps = datasetCapabilities(rfmMapping);
+    const rfmTool = TOOLS.find((t) => t.id === 'rfm')!;
+    const avail = availabilityOf(rfmTool, rfmCaps);
+
+    expect(avail.available).toBe(true);
+    expect(avail.matchedFields).toEqual([
+      { need: 'Una columna de cliente', column: 'ID_Cliente' },
+      { need: 'Una fecha', column: 'Fecha_Compra' },
+      { need: 'Un importe', column: 'Total_Venta' },
+    ]);
   });
 });

@@ -34,15 +34,25 @@ export const funnelTool: ToolDefinition = {
     if (capabilities.dimensions === 0) {
       return missing('Hace falta al menos una columna de texto con las etapas.');
     }
+    const stageCol = capabilities.semantics.funnelColumn ?? capabilities.dimensionNames[0]!;
+    const metricCol = capabilities.measureNames[0] ?? null;
+    const matched = [stageCol, metricCol].filter(Boolean) as string[];
+    const matchedFields = [
+      { need: 'Una columna de etapa o fase', column: stageCol },
+      { need: 'Una métrica de importe o conteo (opcional)', column: metricCol },
+    ];
+
     if (capabilities.semantics.hasFunnelStage) {
       return recommended(
         `Etapas de embudo detectadas en "${capabilities.semantics.funnelColumn}".`,
-        [capabilities.semantics.funnelColumn!],
+        matched,
+        matchedFields,
       );
     }
     return compatible(
       'Estructura apta para embudo de conversión.',
-      [capabilities.dimensionNames[0]!],
+      matched,
+      matchedFields,
     );
   },
   Workspace: FunnelWorkspace,

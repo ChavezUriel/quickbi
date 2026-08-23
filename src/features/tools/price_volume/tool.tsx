@@ -49,20 +49,30 @@ export const priceVolumeTool: ToolDefinition = {
     if (capabilities.dimensions === 0 && capabilities.identifiers === 0) {
       return missing('Hace falta una columna que clasifique el producto o concepto.');
     }
+    const productCol = capabilities.semantics.productColumn ?? capabilities.dimensionNames[0]!;
+    const volumeCol =
+      capabilities.semantics.volumeColumn ??
+      (capabilities.measureNames.length > 1 ? capabilities.measureNames[1] : capabilities.measureNames[0])!;
+    const priceCol = capabilities.semantics.priceColumn ?? capabilities.measureNames[0]!;
+    const matched = [productCol, priceCol, volumeCol].filter(Boolean) as string[];
+    const matchedFields = [
+      { need: 'Columna de producto', column: productCol },
+      { need: 'Columna de volumen / cantidad', column: volumeCol },
+      { need: 'Columna de precio o importe', column: priceCol },
+    ];
+
     if (capabilities.semantics.hasPrice && capabilities.semantics.hasVolume) {
       return recommended(
         'Columnas de precio y volumen/cantidad detectadas.',
-        [
-          capabilities.semantics.productColumn ?? capabilities.dimensionNames[0],
-          capabilities.semantics.priceColumn!,
-          capabilities.semantics.volumeColumn!,
-        ].filter(Boolean) as string[],
+        matched,
+        matchedFields,
       );
     }
     if (capabilities.measures >= 2) {
       return compatible(
         'Dispersión disponible con métricas numéricas.',
         capabilities.measureNames.slice(0, 2),
+        matchedFields,
       );
     }
     return missing('Requiere columnas numéricas de precio y volumen o cantidad vendida.');

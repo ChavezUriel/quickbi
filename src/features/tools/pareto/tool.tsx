@@ -1,6 +1,6 @@
 import { Percent } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ParetoDashboard } from './components/pareto-dashboard';
 import { useParetoConfig } from './use-pareto-config';
@@ -45,7 +45,17 @@ export const paretoTool: ToolDefinition = {
     if (capabilities.measures === 0) {
       return missing('Hace falta al menos una columna numérica para medir la concentración.');
     }
-    return AVAILABLE;
+    const entityCol =
+      capabilities.semantics.productColumn ??
+      capabilities.identifierNames[0] ??
+      capabilities.dimensionNames[0]!;
+    const metricCol = capabilities.measureNames[0]!;
+    const matched = [entityCol, metricCol];
+    const matchedFields = [
+      { need: 'Una columna de entidades o productos', column: entityCol },
+      { need: 'Una columna numérica', column: metricCol },
+    ];
+    return compatible('Estructura apta para análisis Pareto 80/20.', matched, matchedFields);
   },
   Workspace: ParetoWorkspace,
 };

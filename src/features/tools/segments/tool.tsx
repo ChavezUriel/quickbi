@@ -1,6 +1,6 @@
 import { GitCompare } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { SegmentsDashboard } from './components/segments-dashboard';
 import { useSegmentsConfig } from './use-segments-config';
@@ -45,7 +45,14 @@ export const segmentsTool: ToolDefinition = {
     if (capabilities.measures === 0) {
       return missing('Hace falta al menos una columna numérica para comparar los segmentos.');
     }
-    return AVAILABLE;
+    const dimCol = capabilities.dimensionNames[0]!;
+    const measureCol = capabilities.measureNames[0]!;
+    const matched = [dimCol, measureCol];
+    const matchedFields = [
+      { need: 'Al menos una columna de categorías', column: dimCol },
+      { need: 'Al menos una columna numérica', column: measureCol },
+    ];
+    return compatible('Categorías y métricas listas para comparativa de segmentos.', matched, matchedFields);
   },
   Workspace: SegmentsWorkspace,
 };

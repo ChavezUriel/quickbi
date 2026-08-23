@@ -62,6 +62,13 @@ export interface DatasetCapabilities {
   semantics: DatasetSemantics;
 }
 
+export interface MatchedField {
+  /** Descripción del requisito de la herramienta */
+  need: string;
+  /** Nombre de la columna encontrada en el dataset, o null si no aplica / no se encontró */
+  column?: string | null;
+}
+
 /** Veredicto de si el dataset da para una herramienta, y por qué no. */
 export interface ToolAvailability {
   available: boolean;
@@ -70,6 +77,8 @@ export interface ToolAvailability {
   reason: string | null;
   /** Nombres de columnas clave detectadas que encajan con la herramienta */
   matchedColumns?: string[];
+  /** Mapeo de cada requisito de la herramienta a la columna detectada en el dataset */
+  matchedFields?: MatchedField[];
 }
 
 export const AVAILABLE: ToolAvailability = {
@@ -78,12 +87,20 @@ export const AVAILABLE: ToolAvailability = {
   reason: null,
 };
 
-export function recommended(reason: string, matchedColumns?: string[]): ToolAvailability {
-  return { available: true, score: 'recommended', reason, matchedColumns };
+export function recommended(
+  reason: string,
+  matchedColumns?: string[],
+  matchedFields?: MatchedField[],
+): ToolAvailability {
+  return { available: true, score: 'recommended', reason, matchedColumns, matchedFields };
 }
 
-export function compatible(reason?: string | null, matchedColumns?: string[]): ToolAvailability {
-  return { available: true, score: 'compatible', reason: reason ?? null, matchedColumns };
+export function compatible(
+  reason?: string | null,
+  matchedColumns?: string[],
+  matchedFields?: MatchedField[],
+): ToolAvailability {
+  return { available: true, score: 'compatible', reason: reason ?? null, matchedColumns, matchedFields };
 }
 
 export function missing(reason: string): ToolAvailability {

@@ -408,38 +408,73 @@ function ToolCard({
 
       {/* Requisitos de columnas y columnas detectadas */}
       <div className="space-y-2 pt-2 border-t border-border/50 w-full min-w-0">
-        <div className="flex flex-wrap items-center gap-1.5 w-full min-w-0">
-          {isAvailable ? (
-            <>
-              {tool.needs.map((need) => (
-                <span
-                  key={need}
-                  className="inline-flex max-w-full items-center rounded-md border border-border/60 bg-muted/30 px-2 py-0.5 text-[0.68rem] text-muted-foreground font-medium leading-normal whitespace-normal break-words"
-                >
-                  {need}
-                </span>
-              ))}
-              {availability.matchedColumns && availability.matchedColumns.length > 0 && (
-                <div className="w-full flex items-center gap-1 text-[0.68rem] text-emerald-600 dark:text-emerald-400 font-medium pt-0.5">
-                  <span className="text-muted-foreground/80 font-normal">Detectadas:</span>
-                  <span className="truncate font-mono bg-emerald-500/10 dark:bg-emerald-500/15 px-1 rounded border border-emerald-500/20">
-                    {availability.matchedColumns.join(', ')}
+        {isAvailable ? (
+          <div className="flex flex-col gap-1.5 w-full min-w-0">
+            {resolveFieldMappings(tool, availability).map((field, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between gap-2 text-[0.7rem] leading-tight min-w-0"
+              >
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  <span
+                    className={cn(
+                      'size-1.5 rounded-full shrink-0',
+                      field.column ? 'bg-emerald-500/70' : 'bg-muted-foreground/40',
+                    )}
+                    aria-hidden
+                  />
+                  <span
+                    className="text-muted-foreground truncate"
+                    title={field.need}
+                  >
+                    {field.need}
                   </span>
                 </div>
-              )}
-            </>
-          ) : (
-            <div className="flex items-start gap-1.5 text-amber-600 dark:text-amber-400 text-xs py-0.5 max-w-full min-w-0">
-              <CircleAlert className="size-3.5 shrink-0 mt-0.5 text-amber-500" aria-hidden />
-              <span className="text-[0.72rem] font-medium leading-tight">
-                {availability.reason}
-              </span>
-            </div>
-          )}
-        </div>
+                {field.column ? (
+                  <span
+                    className="shrink-0 font-mono text-[0.67rem] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/25 px-1.5 py-0.5 rounded-md truncate max-w-[55%]"
+                    title={field.column}
+                  >
+                    {field.column}
+                  </span>
+                ) : (
+                  <span className="shrink-0 text-[0.65rem] text-muted-foreground/50 italic">
+                    Opcional
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-start gap-1.5 text-amber-600 dark:text-amber-400 text-xs py-0.5 max-w-full min-w-0">
+            <CircleAlert className="size-3.5 shrink-0 mt-0.5 text-amber-500" aria-hidden />
+            <span className="text-[0.72rem] font-medium leading-tight">
+              {availability.reason}
+            </span>
+          </div>
+        )}
       </div>
     </button>
   );
+}
+
+function resolveFieldMappings(
+  tool: ToolDefinition,
+  availability: ReturnType<typeof availabilityOf>,
+): Array<{ need: string; column?: string | null }> {
+  if (availability.matchedFields && availability.matchedFields.length > 0) {
+    return availability.matchedFields;
+  }
+  if (availability.matchedColumns && availability.matchedColumns.length > 0) {
+    return tool.needs.map((need, idx) => ({
+      need,
+      column: availability.matchedColumns?.[idx] ?? null,
+    }));
+  }
+  return tool.needs.map((need) => ({
+    need,
+    column: null,
+  }));
 }
 
 /** Qué tiene el dataset, en una frase y sin repetir «columnas» cuatro veces. */

@@ -1,6 +1,6 @@
 import { BarChart3 } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { compatible, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { DistributionsDashboard } from './components/distributions-dashboard';
 import { useDistributionsConfig } from './use-distributions-config';
@@ -38,9 +38,16 @@ export const distributionsTool: ToolDefinition = {
   needs: ['Al menos una columna numérica'],
   hasSetup: false,
   fill: false,
-  requires: (capabilities) =>
-    capabilities.measures === 0
-      ? missing('Hace falta al menos una columna numérica para analizar su distribución.')
-      : AVAILABLE,
+  requires: (capabilities) => {
+    if (capabilities.measures === 0) {
+      return missing('Hace falta al menos una columna numérica para analizar su distribución.');
+    }
+    const measureCol = capabilities.measureNames[0]!;
+    const matched = [measureCol];
+    const matchedFields = [
+      { need: 'Al menos una columna numérica', column: measureCol },
+    ];
+    return compatible('Distribución y boxplot listos.', matched, matchedFields);
+  },
   Workspace: DistributionsWorkspace,
 };

@@ -1,6 +1,6 @@
 import { Scale } from 'lucide-react';
 import { ToolPanes } from '../components/tool-panes';
-import { AVAILABLE, missing, type ToolDefinition, type ToolWorkspaceProps } from '../types';
+import { compatible, missing, recommended, type ToolDefinition, type ToolWorkspaceProps } from '../types';
 import { useToolReady } from '../use-tool-ready';
 import { ConcentrationDashboard } from './components/concentration-dashboard';
 import { useConcentrationConfig } from './use-concentration-config';
@@ -45,7 +45,18 @@ export const concentrationTool: ToolDefinition = {
     if (capabilities.dimensions === 0 && capabilities.identifiers === 0) {
       return missing('Hace falta una columna que identifique al cliente.');
     }
-    return AVAILABLE;
+    const customerCol = capabilities.semantics.customerColumn ?? capabilities.identifierNames[0] ?? capabilities.dimensionNames[0];
+    const measureCol = capabilities.measureNames[0];
+    const matched = [customerCol, measureCol].filter(Boolean) as string[];
+    const matchedFields = [
+      { need: 'Columna de cliente', column: customerCol },
+      { need: 'Columna de importe / facturación', column: measureCol },
+    ];
+
+    if (capabilities.semantics.hasCustomer) {
+      return recommended('Cliente e importe detectados para curva de Lorenz y Gini.', matched, matchedFields);
+    }
+    return compatible('Estructura apta para concentración de clientes.', matched, matchedFields);
   },
   Workspace: ConcentrationWorkspace,
 };

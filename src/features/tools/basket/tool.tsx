@@ -34,14 +34,25 @@ export const basketTool: ToolDefinition = {
     if (capabilities.dimensions < 2 && capabilities.identifiers === 0) {
       return missing('Hacen falta al menos dos columnas de texto (producto y pedido/ticket).');
     }
+    const productCol = capabilities.semantics.productColumn ?? capabilities.dimensionNames[0];
+    const orderCol =
+      capabilities.semantics.orderColumn ??
+      capabilities.identifierNames[0] ??
+      (capabilities.dimensionNames.find((d) => d !== productCol) ?? capabilities.dimensionNames[1] ?? capabilities.dimensionNames[0]);
+    const matched = [orderCol, productCol].filter(Boolean) as string[];
+    const matchedFields = [
+      { need: 'Columna de producto', column: productCol },
+      { need: 'Columna de pedido / ticket', column: orderCol },
+    ];
+
     if (capabilities.semantics.hasOrder && capabilities.semantics.hasProduct) {
       return recommended('Pedido/ticket y producto detectados para minería de cesta.', [
         capabilities.semantics.orderColumn!,
         capabilities.semantics.productColumn!,
-      ]);
+      ], matchedFields);
     }
     if (capabilities.dimensions >= 2 || (capabilities.dimensions >= 1 && capabilities.identifiers >= 1)) {
-      return compatible('Dos dimensiones disponibles para analizar afinidades.', capabilities.dimensionNames.slice(0, 2));
+      return compatible('Dos dimensiones disponibles para analizar afinidades.', matched, matchedFields);
     }
     return missing('Hacen falta columnas de pedido y producto para asociar elementos en la cesta.');
   },
