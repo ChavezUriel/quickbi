@@ -5,6 +5,7 @@ import {
   newAccumulator,
   seriesValue,
   valueOf,
+  type Accumulator,
 } from './aggregate';
 import { columnMetric, countMetric } from './metrics';
 import type { AnalysisRow, MetricDef } from '../types';
@@ -41,7 +42,7 @@ describe('newAccumulator', () => {
 
 describe('bucketFor', () => {
   it('crea un nuevo acumulador si la clave no existe', () => {
-    const map = new Map();
+    const map = new Map<string, Accumulator>();
     const acc = bucketFor(map, 'Norte');
 
     expect(acc).toEqual({ sum: 0, count: 0 });
@@ -49,7 +50,7 @@ describe('bucketFor', () => {
   });
 
   it('recupera el acumulador existente si la clave ya existía', () => {
-    const map = new Map();
+    const map = new Map<string, Accumulator>();
     const existing = { sum: 100, count: 2 };
     map.set('Norte', existing);
 
@@ -62,7 +63,7 @@ describe('accumulate', () => {
   const row: AnalysisRow = {
     day: '2026-07-01',
     dims: { zona: 'Norte' },
-    values: { ventas: 100, devoluciones: null },
+    values: { ventas: 100, devoluciones: null, importe: 50 },
   };
 
   it('incrementa recuento y suma en 1 si la columna de la métrica es null', () => {
@@ -71,6 +72,9 @@ describe('accumulate', () => {
 
     accumulate(acc, row, metric);
     expect(acc).toEqual({ sum: 1, count: 1 });
+
+    accumulate(acc, row, metric);
+    expect(acc).toEqual({ sum: 2, count: 2 });
   });
 
   it('acumula el valor de la columna cuando no es nulo', () => {
@@ -79,6 +83,34 @@ describe('accumulate', () => {
 
     accumulate(acc, row, metric);
     expect(acc).toEqual({ sum: 100, count: 1 });
+  });
+
+  it('maneja valores cero correctamente sumando 0 e incrementando el recuento', () => {
+    const acc: Accumulator = { sum: 100, count: 5 };
+    const zeroRow: AnalysisRow = { day: '2026-07-01', dims: {}, values: { importe: 0 } };
+    const sumMetric = columnMetric('importe', 'sum', 'moneda');
+
+    accumulate(acc, zeroRow, sumMetric);
+    expect(acc).toEqual({ sum: 100, count: 6 });
+  });
+
+  it('maneja valores negativos correctamente', () => {
+    const acc: Accumulator = { sum: 100, count: 2 };
+    const negRow: AnalysisRow = { day: '2026-07-01', dims: {}, values: { importe: -25 } };
+    const sumMetric = columnMetric('importe', 'sum', 'moneda');
+
+    accumulate(acc, negRow, sumMetric);
+    expect(acc).toEqual({ sum: 75, count: 3 });
+  });
+
+  it('maneja valores con decimales correctamente', () => {
+    const acc: Accumulator = { sum: 10.5, count: 1 };
+    const floatRow: AnalysisRow = { day: '2026-07-01', dims: {}, values: { importe: 4.25 } };
+    const sumMetric = columnMetric('importe', 'sum', 'moneda');
+
+    accumulate(acc, floatRow, sumMetric);
+    expect(acc.sum).toBeCloseTo(14.75);
+    expect(acc.count).toBe(2);
   });
 
   it('ignora filas con valor nulo o indefinido', () => {

@@ -8,36 +8,13 @@ describe('RANGE_PRESETS lookup performance', () => {
     }
   });
 
-  it('compares Array.find vs Record lookup speed', () => {
+  it('compares Array.find vs Record lookup equivalence', () => {
     const idsToLookup = ['7d', '30d', '3m', '6m', '12m', '3a', 'invalid_id'];
-    const iterations = 100_000;
 
-    // Measure Array.find
-    const startArray = performance.now();
-    let countArray = 0;
-    for (let i = 0; i < iterations; i++) {
-      const id = idsToLookup[i % idsToLookup.length]!;
-      const preset = RANGE_PRESETS.find((option) => option.id === id);
-      if (preset !== undefined) countArray++;
+    for (const id of idsToLookup) {
+      const fromArray = RANGE_PRESETS.find((option) => option.id === id);
+      const fromRecord = RANGE_PRESETS_BY_ID[id];
+      expect(fromRecord).toBe(fromArray);
     }
-    const durationArray = performance.now() - startArray;
-
-    // Measure Record lookup
-    const startRecord = performance.now();
-    let countRecord = 0;
-    for (let i = 0; i < iterations; i++) {
-      const id = idsToLookup[i % idsToLookup.length]!;
-      const preset = RANGE_PRESETS_BY_ID[id];
-      if (preset !== undefined) countRecord++;
-    }
-    const durationRecord = performance.now() - startRecord;
-
-    expect(countArray).toBe(countRecord);
-
-    console.log(`\n⚡ Benchmark Results (${iterations.toLocaleString()} iterations):`);
-    console.log(`Array.prototype.find : ${durationArray.toFixed(3)} ms`);
-    console.log(`Record O(1) lookup   : ${durationRecord.toFixed(3)} ms`);
-    const speedup = durationArray / Math.max(durationRecord, 0.0001);
-    console.log(`Speedup factor       : ${speedup.toFixed(2)}x faster\n`);
   });
 });
