@@ -64,10 +64,11 @@ export function StepNavigation() {
         size="icon"
         onClick={goNext}
         disabled={!canAdvance}
+        aria-keyshortcuts={canAdvance ? 'Enter' : undefined}
         aria-label={nextStep ? `Avanzar a ${stepLabels[nextStep]}` : 'Siguiente paso'}
         title={
           canAdvance
-            ? (nextStep ? `Siguiente: ${stepLabels[nextStep]}` : 'Siguiente paso')
+            ? (nextStep ? `Siguiente: ${stepLabels[nextStep]} (Enter)` : 'Siguiente paso (Enter)')
             : 'Completa este paso para continuar'
         }
         className={cn(
