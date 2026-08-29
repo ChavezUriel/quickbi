@@ -142,7 +142,14 @@ export function DetailTable({
           {result.items.length === 1 ? 'categoría' : 'categorías'}
           {result.items.length > MAX_ROWS && ` — se muestran las ${MAX_ROWS} mayores`}
         </p>
-        <Button variant="outline" size="sm" className="h-7" onClick={exportCsv}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7"
+          onClick={exportCsv}
+          aria-label={`Exportar detalle de ${dimensionHeader} a CSV`}
+          title={`Exportar detalle de ${dimensionHeader} a CSV`}
+        >
           <Download />
           CSV
         </Button>
