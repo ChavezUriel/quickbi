@@ -188,6 +188,8 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
                   size="sm"
                   className="h-7"
                   onClick={() => chartRef.current?.exportPng()}
+                  aria-label="Exportar gráfico de evolución a PNG"
+                  title="Exportar gráfico de evolución a PNG"
                 >
                   <Download />
                   PNG
