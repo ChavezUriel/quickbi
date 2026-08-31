@@ -65,13 +65,14 @@ export function StepNavigation() {
         onClick={goNext}
         disabled={!canAdvance}
         aria-label={nextStep ? `Avanzar a ${stepLabels[nextStep]}` : 'Siguiente paso'}
+        aria-keyshortcuts="Enter"
         title={
           canAdvance
-            ? (nextStep ? `Siguiente: ${stepLabels[nextStep]}` : 'Siguiente paso')
+            ? `${nextStep ? `Siguiente: ${stepLabels[nextStep]}` : 'Siguiente paso'} (Enter)`
             : 'Completa este paso para continuar'
         }
         className={cn(
-          'group size-12 sm:size-14 rounded-full border p-0 transition-all duration-300 ease-out',
+          'group relative size-12 sm:size-14 rounded-full border p-0 transition-all duration-300 ease-out',
           'bg-background/95 backdrop-blur-xl dark:bg-card/95',
           'shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.45)]',
           canAdvance
@@ -87,6 +88,14 @@ export function StepNavigation() {
               : 'text-emerald-600/50 dark:text-emerald-400/50',
           )}
         />
+        {canAdvance && (
+          <kbd
+            aria-hidden="true"
+            className="absolute -top-1 -right-1 hidden select-none items-center justify-center rounded-full border border-emerald-500/40 bg-emerald-500 text-emerald-950 size-5 font-mono text-[10px] font-bold shadow-xs sm:flex dark:bg-emerald-400 dark:text-emerald-950"
+          >
+            ↵
+          </kbd>
+        )}
       </Button>
     </div>
   );

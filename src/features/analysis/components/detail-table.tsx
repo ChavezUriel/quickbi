@@ -96,6 +96,17 @@ export function DetailTable({
     }
   };
 
+  const getSortAriaLabel = (field: SortField, label: string) => {
+    const isActive = effectiveSortField === field;
+    if (!isActive) {
+      const nextOrder = field === 'name' ? 'ascendente' : 'descendente';
+      return `Ordenar por ${label} (${nextOrder})`;
+    }
+    const nextOrder = sortOrder === 'asc' ? 'descendente' : 'ascendente';
+    const currentOrder = sortOrder === 'asc' ? 'ascendente' : 'descendente';
+    return `${label}, orden actual ${currentOrder}. Cambiar a ${nextOrder}`;
+  };
+
   const sortedItems = useMemo(() => {
     return [...result.items].sort((a, b) => {
       const valA = a[effectiveSortField];
@@ -147,8 +158,8 @@ export function DetailTable({
           size="sm"
           className="h-7"
           onClick={exportCsv}
-          aria-label="Exportar datos del detalle a CSV"
-          title="Exportar datos del detalle a CSV"
+          aria-label={`Exportar detalle de ${dimensionHeader} a CSV`}
+          title={`Exportar detalle de ${dimensionHeader} a CSV`}
         >
           <Download />
           CSV
@@ -183,7 +194,8 @@ export function DetailTable({
                 <button
                   type="button"
                   onClick={() => handleSort('name')}
-                  className="inline-flex items-center gap-1.5 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                  aria-label={getSortAriaLabel('name', dimensionHeader)}
+                  className="inline-flex items-center gap-1.5 rounded-xs font-medium transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <DataTypeIcon type="text" colored className="size-3.5 shrink-0" />
                   <span className="truncate" title={dimensionHeader}>
@@ -207,7 +219,8 @@ export function DetailTable({
                 <button
                   type="button"
                   onClick={() => handleSort('value')}
-                  className="inline-flex w-full items-center justify-end gap-1.5 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                  aria-label={getSortAriaLabel('value', metric.label)}
+                  className="inline-flex w-full items-center justify-end gap-1.5 rounded-xs font-medium transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <DataTypeIcon
                     type="number"
@@ -235,7 +248,8 @@ export function DetailTable({
                   <button
                     type="button"
                     onClick={() => handleSort('sharePct')}
-                    className="inline-flex w-full items-center justify-end gap-1 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                    aria-label={getSortAriaLabel('sharePct', 'Participación')}
+                    className="inline-flex w-full items-center justify-end gap-1 rounded-xs font-medium transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <span>Participación</span>
                     <SortIcon active={effectiveSortField === 'sharePct'} order={sortOrder} />
@@ -259,7 +273,8 @@ export function DetailTable({
                     <button
                       type="button"
                       onClick={() => handleSort('previousValue')}
-                      className="inline-flex w-full items-center justify-end gap-1 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                      aria-label={getSortAriaLabel('previousValue', 'Período anterior')}
+                      className="inline-flex w-full items-center justify-end gap-1 rounded-xs font-medium transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <span>Período anterior</span>
                       <SortIcon
@@ -283,7 +298,8 @@ export function DetailTable({
                     <button
                       type="button"
                       onClick={() => handleSort('deltaPct')}
-                      className="inline-flex w-full items-center justify-end gap-1 font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                      aria-label={getSortAriaLabel('deltaPct', 'Variación')}
+                      className="inline-flex w-full items-center justify-end gap-1 rounded-xs font-medium transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <span>Variación</span>
                       <SortIcon active={effectiveSortField === 'deltaPct'} order={sortOrder} />
@@ -322,7 +338,8 @@ export function DetailTable({
                       <button
                         type="button"
                         aria-pressed={isSelected}
-                        className="block max-w-full truncate text-left underline-offset-2 hover:underline"
+                        aria-label={`Filtrar por ${item.name}`}
+                        className="block max-w-full truncate text-left underline-offset-2 hover:underline rounded-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={(event) => {
                           event.stopPropagation();
                           onSelect(item.name, event.ctrlKey || event.metaKey);
