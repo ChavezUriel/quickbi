@@ -1,0 +1,3 @@
+## 2025-05-18 - Avoid placing aria-hidden on parent containers of sr-only elements
+**Learning:** Placing `aria-hidden="true"` (or `aria-hidden`) on a parent element causes browser accessibility trees to hide all descendant elements including `<span className="sr-only">`. Screen reader announcements placed inside visually hidden spans will be completely ignored when wrapped inside `aria-hidden` containers.
+**Action:** Keep screen reader-only descriptive spans outside `aria-hidden` containers, and apply `aria-hidden="true"` strictly to the sub-containers of purely visual components (e.g. icon decorations, status dots, abbreviated counters).
