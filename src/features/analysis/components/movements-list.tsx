@@ -154,7 +154,7 @@ function Column({
                   className={cn(
                     // `min-h-8` da un objetivo táctil decente sin abrir la
                     // lista en pantallas donde caben diez entradas.
-                    'flex min-h-8 w-full items-center justify-between gap-2 rounded-md px-1.5 py-1 text-left text-sm transition-colors',
+                    'flex min-h-8 w-full items-center justify-between gap-2 rounded-md px-1.5 py-1 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
                     selectable && 'hover:bg-muted',
                     selectable ? 'cursor-pointer' : 'cursor-default',
                     dimming && !isSelected && 'opacity-40',
