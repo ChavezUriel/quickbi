@@ -161,7 +161,7 @@ function buildDataset({
   const names = normalizeHeaders(headerRow);
 
   const rows = bodyRows.map((cells) => {
-    const row: DataRow = {};
+    const row: DataRow = Object.create(null);
     for (const [index, name] of names.entries()) {
       row[name] = normalizeCell(cells[index]);
     }

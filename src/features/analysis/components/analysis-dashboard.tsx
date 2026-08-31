@@ -13,7 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { ParsedDataset } from '@/features/dataset/types';
 import type { ColumnMappingState } from '@/features/mapping/use-column-mapping';
-import { RANGE_ALL, RANGE_CUSTOM, RANGE_PRESETS } from '../labels';
+import { RANGE_ALL, RANGE_CUSTOM, RANGE_PRESETS_BY_ID } from '../labels';
 import { formatCount } from '../lib/format';
 import { prepareRows } from '../lib/prepare-rows';
 import { TOTAL_DIM } from '../types';
@@ -75,7 +75,7 @@ export function AnalysisDashboard({ dataset, mapping, analysis }: AnalysisDashbo
 
   const hasMovements = state.previousWindow !== null;
   const periodLabel =
-    RANGE_PRESETS.find((preset) => preset.id === state.rangeId)?.label ??
+    RANGE_PRESETS_BY_ID[state.rangeId]?.label ??
     (state.rangeId === RANGE_CUSTOM
       ? 'Rango personalizado'
       : state.rangeId === RANGE_ALL

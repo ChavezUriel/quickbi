@@ -192,6 +192,30 @@ describe('parseFile: Excel', () => {
   });
 });
 
+describe('parseFile: seguridad / contaminación de prototipos', () => {
+  it('no contamina Object.prototype ni permite acceso no seguro a constructor/__proto__/prototype', async () => {
+    const dataset = await parseFile(
+      csvFile('__proto__,constructor,prototype,polluted\ntest1,test2,test3,yes\n'),
+    );
+
+    expect(names(dataset)).toEqual([
+      '__proto___col',
+      'constructor_col',
+      'prototype_col',
+      'polluted',
+    ]);
+
+    expect((Object.prototype as unknown as Record<string, unknown>).polluted).toBeUndefined();
+    expect((Object.prototype as unknown as Record<string, unknown>).__proto___col).toBeUndefined();
+
+    const row = dataset.rows[0]!;
+    expect(row.__proto___col).toBe('test1');
+    expect(row.constructor_col).toBe('test2');
+    expect(row.prototype_col).toBe('test3');
+    expect(row.polluted).toBe('yes');
+  });
+});
+
 describe('parseFile: equivalencia entre formatos', () => {
   it('produce la misma estructura para el mismo contenido textual', async () => {
     const csv = await parseFile(csvFile('a,b\nx,y\n'));

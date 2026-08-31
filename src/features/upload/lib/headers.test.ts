@@ -48,4 +48,12 @@ describe('normalizeHeaders', () => {
   it('devuelve una lista vacía para una cabecera vacía', () => {
     expect(normalizeHeaders([])).toEqual([]);
   });
+
+  it('sanitiza nombres de cabecera peligrosos para evitar contaminación de prototipos', () => {
+    expect(normalizeHeaders(['__proto__', 'constructor', 'prototype'])).toEqual([
+      '__proto___col',
+      'constructor_col',
+      'prototype_col',
+    ]);
+  });
 });

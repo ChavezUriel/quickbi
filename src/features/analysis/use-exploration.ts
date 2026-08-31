@@ -4,6 +4,7 @@ import {
   RANGE_ALL,
   RANGE_CUSTOM,
   RANGE_PRESETS,
+  RANGE_PRESETS_BY_ID,
 } from './labels';
 import { autoGranularity, daysBetween } from './lib/dates';
 import { computeExploration, resolveWindows } from './lib/explore';
@@ -217,7 +218,7 @@ export function useExploration(
         return;
       }
 
-      const preset = RANGE_PRESETS.find((option) => option.id === id);
+      const preset = RANGE_PRESETS_BY_ID[id];
       if (preset !== undefined) {
         const mode =
           dateCondition?.op === 'ultimos_periodos' ? dateCondition.modo : 'ultimos';
