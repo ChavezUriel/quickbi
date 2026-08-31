@@ -434,7 +434,7 @@ function MembershipPopover({
           role="switch"
           aria-checked={mode === 'not_in'}
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] transition-colors',
+            'inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
             mode === 'not_in'
               ? 'border-primary/50 bg-primary/10 text-primary'
               : 'border-border text-muted-foreground hover:bg-muted',
@@ -653,13 +653,13 @@ function DatePopover({ state, onClose }: { state: ExplorationState; onClose: () 
           if (preset === undefined) return null;
           const active = state.rangeId === id;
           return (
-            <button key={id} type="button" className={cn('rounded-lg border px-2 py-2 text-xs transition-colors hover:bg-muted', active && 'border-primary bg-primary/10 text-primary')} onClick={() => state.setRange(id)}>
+            <button key={id} type="button" className={cn('rounded-lg border px-2 py-2 text-xs transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50', active && 'border-primary bg-primary/10 text-primary')} onClick={() => state.setRange(id)}>
               {shortPresetLabel(preset.id)}
               <span className="mt-0.5 block text-[10px] text-muted-foreground">{preset.label.replace(/^Últimos\s+/u, '')}</span>
             </button>
           );
         })}
-        <button type="button" className={cn('rounded-lg border px-2 py-2 text-xs transition-colors hover:bg-muted', state.rangeId === RANGE_ALL && 'border-primary bg-primary/10 text-primary')} onClick={() => state.setRange(RANGE_ALL)}>
+        <button type="button" className={cn('rounded-lg border px-2 py-2 text-xs transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50', state.rangeId === RANGE_ALL && 'border-primary bg-primary/10 text-primary')} onClick={() => state.setRange(RANGE_ALL)}>
           Todo
           <span className="mt-0.5 block text-[10px] text-muted-foreground">histórico</span>
         </button>
@@ -667,7 +667,7 @@ function DatePopover({ state, onClose }: { state: ExplorationState; onClose: () 
 
       <div className="mt-3 flex rounded-lg bg-muted p-0.5">
         {(['ultimos', 'completo', 'en_curso'] as DateFilterMode[]).map((mode) => (
-          <button key={mode} type="button" className={cn('flex-1 rounded-md px-2 py-1.5 text-[11px] transition-colors', state.dateMode === mode && 'bg-background font-medium shadow-sm')} onClick={() => state.setDateMode(mode)}>
+          <button key={mode} type="button" className={cn('flex-1 rounded-md px-2 py-1.5 text-[11px] transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50', state.dateMode === mode && 'bg-background font-medium shadow-sm')} onClick={() => state.setDateMode(mode)}>
             {dateModeLabel(mode)}
           </button>
         ))}
@@ -676,11 +676,11 @@ function DatePopover({ state, onClose }: { state: ExplorationState; onClose: () 
       <div className="mt-3 border-t pt-3">
         <p className="text-[11px] font-medium text-muted-foreground">Rango personalizado</p>
         <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-end gap-1.5">
-          <label className="space-y-1 text-[10px] text-muted-foreground">Desde<input type="date" value={custom.desde} onChange={(event) => setCustom({ ...custom, desde: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs outline-none focus-visible:border-primary" /></label>
+          <label className="space-y-1 text-[10px] text-muted-foreground">Desde<input type="date" value={custom.desde} onChange={(event) => setCustom({ ...custom, desde: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/30" /></label>
           <span className="pb-2 text-xs text-muted-foreground">–</span>
-          <label className="space-y-1 text-[10px] text-muted-foreground">Hasta<input type="date" value={custom.hasta} onChange={(event) => setCustom({ ...custom, hasta: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs outline-none focus-visible:border-primary" /></label>
+          <label className="space-y-1 text-[10px] text-muted-foreground">Hasta<input type="date" value={custom.hasta} onChange={(event) => setCustom({ ...custom, hasta: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/30" /></label>
         </div>
-        <button type="button" disabled={custom.desde === '' || custom.hasta === ''} className="mt-3 h-8 w-full rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/85 disabled:pointer-events-none disabled:opacity-50" onClick={() => { state.setCustomRange(custom); onClose(); }}>
+        <button type="button" disabled={custom.desde === '' || custom.hasta === ''} className="mt-3 h-8 w-full rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50" onClick={() => { state.setCustomRange(custom); onClose(); }}>
           Aplicar rango
         </button>
       </div>
@@ -698,7 +698,7 @@ function ComparisonPill({ state, open, onOpen, onClose }: { state: ExplorationSt
           {COMPARISONS.map((mode) => {
             const disabled = mode === 'anio_anterior' && state.comparisonBlockedReason !== null;
             return (
-              <button key={mode} type="button" disabled={disabled} title={disabled ? state.comparisonBlockedReason ?? undefined : undefined} className="flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-45" onClick={() => { state.setComparison(mode); if (mode !== 'personalizada') onClose(); }}>
+              <button key={mode} type="button" disabled={disabled} title={disabled ? state.comparisonBlockedReason ?? undefined : undefined} className="flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-45" onClick={() => { state.setComparison(mode); if (mode !== 'personalizada') onClose(); }}>
                 <span className={cn('mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full border', state.comparison === mode && 'border-primary bg-primary text-primary-foreground')}>
                   {state.comparison === mode && <Check className="size-2.5" aria-hidden />}
                 </span>
@@ -719,11 +719,11 @@ function CustomComparison({ state, onClose }: { state: ExplorationState; onClose
   return (
     <div className="mt-2 border-t pt-2">
       <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-1.5">
-        <label className="space-y-1 text-[10px] text-muted-foreground">Desde<input type="date" value={range.desde} onChange={(event) => setRange({ ...range, desde: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs" /></label>
+        <label className="space-y-1 text-[10px] text-muted-foreground">Desde<input type="date" value={range.desde} onChange={(event) => setRange({ ...range, desde: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/30" /></label>
         <span className="pb-2 text-xs text-muted-foreground">–</span>
-        <label className="space-y-1 text-[10px] text-muted-foreground">Hasta<input type="date" value={range.hasta} onChange={(event) => setRange({ ...range, hasta: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs" /></label>
+        <label className="space-y-1 text-[10px] text-muted-foreground">Hasta<input type="date" value={range.hasta} onChange={(event) => setRange({ ...range, hasta: event.target.value })} className="h-8 w-full rounded-lg border bg-transparent px-2 text-xs outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/30" /></label>
       </div>
-      <button type="button" className="mt-2 h-8 w-full rounded-lg bg-primary text-xs font-medium text-primary-foreground disabled:opacity-50" disabled={range.desde === '' || range.hasta === ''} onClick={() => { state.setCustomPrevious(range); onClose(); }}>Aplicar comparación</button>
+      <button type="button" className="mt-2 h-8 w-full rounded-lg bg-primary text-xs font-medium text-primary-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50" disabled={range.desde === '' || range.hasta === ''} onClick={() => { state.setCustomPrevious(range); onClose(); }}>Aplicar comparación</button>
     </div>
   );
 }
@@ -736,7 +736,7 @@ function GranularityPill({ state, open, onOpen, onClose }: { state: ExplorationS
         <p className="text-xs font-semibold">Granularidad temporal</p>
         <div className="mt-2 grid grid-cols-2 gap-1.5">
           {(['auto', ...GRANULARITIES] as const).map((value) => (
-            <button key={value} type="button" className={cn('rounded-lg border px-2 py-2 text-xs hover:bg-muted', state.granoChoice === value && 'border-primary bg-primary/10 text-primary')} onClick={() => { state.setGranoChoice(value); onClose(); }}>
+            <button key={value} type="button" className={cn('rounded-lg border px-2 py-2 text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50', state.granoChoice === value && 'border-primary bg-primary/10 text-primary')} onClick={() => { state.setGranoChoice(value); onClose(); }}>
               {value === 'auto' ? 'Auto' : GRANULARITY_LABEL[value]}
             </button>
           ))}
