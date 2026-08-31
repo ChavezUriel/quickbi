@@ -67,7 +67,9 @@ export function StepNavigation() {
         aria-label={nextStep ? `Avanzar a ${stepLabels[nextStep]}` : 'Siguiente paso'}
         title={
           canAdvance
-            ? (nextStep ? `Siguiente: ${stepLabels[nextStep]}` : 'Siguiente paso')
+            ? nextStep
+              ? `Siguiente: ${stepLabels[nextStep]} (Atajo: Enter ↵)`
+              : 'Siguiente paso (Atajo: Enter ↵)'
             : 'Completa este paso para continuar'
         }
         className={cn(
