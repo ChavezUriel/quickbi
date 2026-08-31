@@ -39,7 +39,7 @@ describe('DetailTable export accessibility', () => {
       }),
     );
 
-    expect(html).toContain('aria-label="Exportar datos del detalle a CSV"');
-    expect(html).toContain('title="Exportar datos del detalle a CSV"');
+    expect(html).toContain('aria-label="Exportar detalle de Región a CSV"');
+    expect(html).toContain('title="Exportar detalle de Región a CSV"');
   });
 });
