@@ -73,9 +73,13 @@ function FullIndicator() {
                 onClick={() => goToStep(id)}
                 aria-current={isCurrent ? 'step' : undefined}
                 title={
-                  isCurrent && id === 'herramienta' && toolId !== null
-                    ? 'Volver a la selección de herramientas'
-                    : `Paso ${index + 1}: ${stepLabels[id]}`
+                  isClickable
+                    ? isCurrent && id === 'herramienta' && toolId !== null
+                      ? 'Volver a la selección de herramientas'
+                      : `Paso ${index + 1}: ${stepLabels[id]}`
+                    : isCurrent
+                      ? `Paso ${index + 1}: ${stepLabels[id]} (Paso actual)`
+                      : `Paso ${index + 1}: ${stepLabels[id]} (Completa los pasos anteriores para acceder)`
                 }
                 className={cn(
                   'group flex items-center gap-2 rounded-full px-2 py-1 transition-all duration-200',
