@@ -51,6 +51,11 @@ export function StepNavigation() {
 
   if (nextStep === null) return null;
 
+  const nextStepLabel = nextStep ? stepLabels[nextStep] : 'Siguiente paso';
+  const ariaLabel = canAdvance
+    ? `Avanzar a ${nextStepLabel}`
+    : 'No se puede avanzar: completa este paso para continuar';
+
   return (
     <div
       className="fixed bottom-6 right-6 z-40 sm:bottom-8 sm:right-8"
@@ -65,11 +70,10 @@ export function StepNavigation() {
         onClick={goNext}
         disabled={!canAdvance}
         aria-keyshortcuts={canAdvance ? 'Enter' : undefined}
-        aria-label={nextStep ? `Avanzar a ${stepLabels[nextStep]}` : 'Siguiente paso'}
-        aria-keyshortcuts="Enter"
+        aria-label={ariaLabel}
         title={
           canAdvance
-            ? `${nextStep ? `Siguiente: ${stepLabels[nextStep]}` : 'Siguiente paso'} (Enter)`
+            ? `Siguiente: ${nextStepLabel} (Enter)`
             : 'Completa este paso para continuar'
         }
         className={cn(
