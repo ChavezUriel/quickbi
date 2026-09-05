@@ -313,10 +313,10 @@ function FileCard({ dataset, isOmitted = false, onRemove }: FileCardProps) {
           type="button"
           variant="ghost"
           size="icon"
-          className="size-6 shrink-0 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          className="size-6 shrink-0 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
           onClick={onRemove}
           aria-label={`Eliminar ${dataset.fileName}`}
-          title="Eliminar archivo"
+          title={`Eliminar ${dataset.fileName}`}
         >
           <X className="size-3" />
         </Button>
