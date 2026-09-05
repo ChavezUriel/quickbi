@@ -121,6 +121,7 @@ export function FileUploader({ onDatasetParsed, compact = false }: FileUploaderP
         onDrop={handleDrop}
         className={cn(
           'group flex h-full min-h-[150px] flex-col justify-center rounded-xl border-2 border-dashed transition-all duration-200 shadow-2xs',
+          'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
           isParsing ? 'cursor-progress' : 'cursor-pointer',
           isDragging
             ? 'border-primary bg-primary/5 shadow-md scale-[0.99]'
