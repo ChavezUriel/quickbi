@@ -142,12 +142,13 @@ export function ToolGallery({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Buscador */}
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" aria-hidden />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar herramienta (ej. RFM, clientes, tendencia, cohortes...)"
+            aria-label="Buscar herramienta de análisis"
             className={cn(
               'w-full h-9 rounded-xl border border-input bg-background/80 pl-9 pr-8 text-xs sm:text-sm',
               'placeholder:text-muted-foreground/60 transition-all shadow-2xs',
@@ -158,7 +159,7 @@ export function ToolGallery({
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground rounded-md transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
               aria-label="Limpiar búsqueda"
             >
               <X className="size-3.5" />
