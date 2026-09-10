@@ -66,7 +66,6 @@ export function StepNavigation() {
         disabled={!canAdvance}
         aria-keyshortcuts={canAdvance ? 'Enter' : undefined}
         aria-label={nextStep ? `Avanzar a ${stepLabels[nextStep]}` : 'Siguiente paso'}
-        aria-keyshortcuts="Enter"
         title={
           canAdvance
             ? `${nextStep ? `Siguiente: ${stepLabels[nextStep]}` : 'Siguiente paso'} (Enter)`
