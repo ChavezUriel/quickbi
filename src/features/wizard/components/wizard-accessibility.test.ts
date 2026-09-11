@@ -32,4 +32,21 @@ describe('Wizard accessibility hints', () => {
       'title="Paso 2: Tipos de campos (Completa los pasos anteriores para acceder)"',
     );
   });
+
+  it('omits aria-keyshortcuts on StepNavigation when canAdvance is false', () => {
+    const disabledStore = {
+      ...store,
+      canAdvance: false,
+    };
+
+    const html = renderToString(
+      createElement(
+        WizardContext.Provider,
+        { value: disabledStore },
+        createElement(StepNavigation),
+      ),
+    );
+
+    expect(html).not.toContain('aria-keyshortcuts');
+  });
 });
