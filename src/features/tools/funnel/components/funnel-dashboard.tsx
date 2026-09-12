@@ -390,9 +390,10 @@ export function FunnelDashboard({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-6"
+                      className="size-6 focus-visible:ring-2 focus-visible:ring-ring"
                       disabled={idx === 0}
                       onClick={() => moveStage(idx, 'up')}
+                      aria-label={`Mover ${st.stage} hacia arriba`}
                       title="Mover arriba"
                     >
                       <MoveUp className="size-3" />
@@ -400,9 +401,10 @@ export function FunnelDashboard({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-6"
+                      className="size-6 focus-visible:ring-2 focus-visible:ring-ring"
                       disabled={idx === stages.length - 1}
                       onClick={() => moveStage(idx, 'down')}
+                      aria-label={`Mover ${st.stage} hacia abajo`}
                       title="Mover abajo"
                     >
                       <MoveDown className="size-3" />
